@@ -129,8 +129,10 @@ def test_duplicate_and_rejected_reports(seeded, db_engine):
 def test_tasks_have_a_cached_greedy_route_from_the_depot(seeded, db_engine):
     rows = q(db_engine, "SELECT route_geojson, status FROM cleanup_tasks ORDER BY id")
     for geo, _status in rows:
-        coords = geo["coordinates"]
-        assert geo["type"] == "LineString" and coords[0] == coords[-1] == [73.856, 18.52]
+        coords = geo["geometry"]["coordinates"]
+        assert geo["geometry"]["type"] == "LineString"
+        assert coords[0] == coords[-1] == [73.856, 18.52]
+        assert geo["properties"]["source"] == "greedy"
     # Five cleanups were carried out (one awaits the authority's review); one is planned.
     assert sorted(s for _, s in rows) == ["done"] * 5 + ["planned"]
 

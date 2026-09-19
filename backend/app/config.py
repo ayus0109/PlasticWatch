@@ -66,8 +66,12 @@ class Settings(BaseSettings):
     # --- Routing (OPEN ITEM SPEC §20.4 — confirm current ORS free quota) ----
     ORS_API_KEY: str = ""
     ORS_DAILY_QUOTA: int = 500
+    ORS_OPTIMIZATION_URL: str = "https://api.openrouteservice.org/optimization"
+    ORS_TIMEOUT_S: float = 8.0
     # Average cleanup-vehicle speed for route durations when ORS is unavailable.
     ROUTE_SPEED_KMH: float = 15.0
+    # A team member must be this close to a stop to mark arrival (SPEC §8).
+    ARRIVE_RADIUS_M: float = 50.0
 
     # --- Duplicate detection (SPEC §12) -------------------------------------
     DEDUPE_RADIUS_M: int = 30
