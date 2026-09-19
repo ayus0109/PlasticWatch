@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "name": "drains",
+  "_note": "SAMPLE data in a placeholder area so Stage 2 runs offline. Replace with the real Overpass export once the demo city is chosen (SPEC §20.1). Drain 1 runs exactly east-west and Drain 2 exactly north-south so test distances can be hand-computed.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "kind": "drain", "name": "Sample Nala 1", "source": "osm" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[73.8467, 18.5234], [73.8557, 18.5234]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "drain", "name": "Sample Nala 2 (digitised)", "source": "manual" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[73.8627, 18.5104], [73.8627, 18.5224]]
+      }
+    }
+  ]
+}

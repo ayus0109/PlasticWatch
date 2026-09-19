@@ -1,0 +1,18 @@
+{
+  "type": "FeatureCollection",
+  "name": "water",
+  "_note": "SAMPLE data in a placeholder area (SPEC §20.1 not yet decided). Axis-aligned so test distances can be hand-computed.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "kind": "water", "name": "Sample Lake", "source": "osm" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [73.8587, 18.5264], [73.8612, 18.5264], [73.8612, 18.5294],
+          [73.8587, 18.5294], [73.8587, 18.5264]
+        ]]
+      }
+    }
+  ]
+}

@@ -37,6 +37,10 @@ services:
     volumes:
       # Bind mount for --reload; uploads persist on the host (gitignored).
       - ./backend:/app
+      # GIS loader + seed script live outside backend/; mount them so
+      # `make load-geo` / `make seed` can run inside the api container.
+      - ./gis:/gis
+      - ./seed:/seed
     restart: unless-stopped
 
 volumes:

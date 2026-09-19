@@ -1,0 +1,40 @@
+{
+  "type": "FeatureCollection",
+  "name": "wards",
+  "_note": "SAMPLE ward boundaries in a placeholder area (SPEC §20.1 not yet decided). Replace with the real ward boundaries for the chosen city. Each feature needs an integer 'id' and a 'name'.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": 1, "name": "Ward A" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [73.8447, 18.5204], [73.8567, 18.5204], [73.8567, 18.5324],
+          [73.8447, 18.5324], [73.8447, 18.5204]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 2, "name": "Ward B" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [73.8567, 18.5084], [73.8687, 18.5084], [73.8687, 18.5324],
+          [73.8567, 18.5324], [73.8567, 18.5084]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 3, "name": "Ward C" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [73.8447, 18.5084], [73.8567, 18.5084], [73.8567, 18.5204],
+          [73.8447, 18.5204], [73.8447, 18.5084]
+        ]]
+      }
+    }
+  ]
+}
