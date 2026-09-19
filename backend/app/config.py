@@ -70,6 +70,49 @@ class Settings(BaseSettings):
     PHASH_HAMMING_MAX: int = 6
     REOPEN_WINDOW_DAYS: int = 90
 
+    # --- Scoring (SPEC §11) --------------------------------------------------
+    # TUNABLE PROPOSALS, not published truth (CLAUDE.md §2.8). Defaults mirror
+    # SPEC §11 exactly; the golden test (Impact 73.1, Evidence 0.755) pins them.
+    # Impact = 100 x (W_S*S + W_R*R + W_SE*Se + W_P*P)
+    SCORE_W_SEVERITY: float = 0.35
+    SCORE_W_RECURRENCE: float = 0.25
+    SCORE_W_SENSITIVITY: float = 0.30
+    SCORE_W_PERSISTENCE: float = 0.10
+    # Severity S = 0.6*min(1, n/15) + 0.4*min(1, a/0.25), over the latest 3 reports
+    SCORE_SEV_W_COUNT: float = 0.6
+    SCORE_SEV_W_AREA: float = 0.4
+    SCORE_SEV_COUNT_SAT: float = 15
+    SCORE_SEV_AREA_SAT: float = 0.25
+    SCORE_SEV_LATEST_N: int = 3
+    # Recurrence R = min(1, (D + 2*C) / 8), D over the last 60 days
+    SCORE_REC_WINDOW_DAYS: int = 60
+    SCORE_REC_RETURN_WEIGHT: float = 2
+    SCORE_REC_DIVISOR: float = 8
+    # Sensitivity Se = min(1, 0.75*max(drain, water) + 0.25*max(school, hospital, market))
+    # prox(d) = 1 if d <= 50 m, 0 if d >= 300 m, linear between
+    SCORE_SENS_W_WATER: float = 0.75
+    SCORE_SENS_W_AMENITY: float = 0.25
+    SCORE_PROX_NEAR_M: float = 50
+    SCORE_PROX_FAR_M: float = 300
+    # Persistence P = min(1, days_open / 14)
+    SCORE_PERSIST_SAT_DAYS: float = 14
+    # Evidence Ev = 0.5*mean_conf + 0.3*min(1, unique_reporters/3) + 0.2*reliability
+    SCORE_EV_W_CONFIDENCE: float = 0.5
+    SCORE_EV_W_REPORTERS: float = 0.3
+    SCORE_EV_W_RELIABILITY: float = 0.2
+    SCORE_EV_REPORTERS_SAT: float = 3
+    # Half-open bands. Impact: >=70 critical, [50,70) high, [30,50) medium, <30 low.
+    BAND_IMPACT_CRITICAL: float = 70
+    BAND_IMPACT_HIGH: float = 50
+    BAND_IMPACT_MEDIUM: float = 30
+    # Evidence: <0.4 low, [0.4,0.75) moderate, >=0.75 strong.
+    BAND_EVIDENCE_MODERATE: float = 0.4
+    BAND_EVIDENCE_STRONG: float = 0.75
+    # SPEC §12 step 6: promote ai_detected -> needs_verification (a queue for a
+    # human; never verification itself).
+    PROMOTE_MIN_REPORTERS: int = 2
+    PROMOTE_MIN_EVIDENCE: float = 0.6
+
     # --- Local disk storage (CLAUDE.md §3) ----------------------------------
     UPLOAD_DIR: str = "uploads"
 
