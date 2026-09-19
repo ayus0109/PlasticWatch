@@ -41,6 +41,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.config import get_settings
+from app.schemas import HotspotStatus
 from app.services.events import record_event
 
 
@@ -178,11 +179,8 @@ _DISTANCE_M = text(
     """
 )
 
-_REOPEN = text(
-    """
-    UPDATE hotspots SET status = 'ai_detected', recurrence_returns = recurrence_returns + 1
-    WHERE id = :hid
-    """
+_COUNT_RETURN = text(
+    "UPDATE hotspots SET recurrence_returns = recurrence_returns + 1 WHERE id = :hid"
 )
 
 
@@ -253,10 +251,14 @@ def assign_report(conn: Connection, report: ReportInput) -> DedupeResult:
 
     reopened = status == "resolved"
     if reopened:
-        conn.execute(_REOPEN, {"hid": hotspot_id})
-        record_event(
-            conn, hotspot_id, "ai_detected", from_status="resolved", at=report.created_at,
-            note=f"Reopened: new report within {radius:.0f} m (recurrence +1).",
+        # Imported here: workflow -> hotspot_state -> scoring; keeps dedupe importable
+        # on its own. The pipeline rescores after dedupe, so no rescore here.
+        from app.services.workflow import transition
+
+        conn.execute(_COUNT_RETURN, {"hid": hotspot_id})
+        transition(
+            conn, hotspot_id, HotspotStatus.ai_detected, actor=None, at=report.created_at,
+            note=f"Reopened: new report within {radius:.0f} m (recurrence +1).", rescore=False,
         )
     else:
         record_event(

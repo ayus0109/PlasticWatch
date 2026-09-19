@@ -36,8 +36,8 @@ Filters: status, band, ward, min_evidence, as_of (SPEC §8/§10).
 There is deliberately no property naming a responsible party (CLAUDE.md §2.3).
 ====================================================================================
 
-List and detail are served from PostGIS. POST /verify is still a Stage 1 stub until
-Stage 7 wires the status machine (409 on illegal transitions).
+Served from PostGIS. POST /verify goes through services/workflow.py: illegal
+transition -> 409, non-authority -> 403, and every change writes an audit event.
 """
 
 from datetime import datetime
@@ -50,7 +50,6 @@ from app.deps import authority_only
 from app.schemas import (
     DemoUser,
     HotspotDetail,
-    HotspotEvent,
     HotspotFeatureCollection,
     HotspotStatus,
     PriorityBand,
@@ -59,11 +58,13 @@ from app.schemas import (
     VerifyResponse,
 )
 from app.services.hotspot_views import hotspot_detail, list_features
+from app.services.workflow import WorkflowError, transition
 
 router = APIRouter(prefix="/hotspots", tags=["hotspots"])
 
-# The only terminal reachable from a rejection in the SPEC §13 machine. Stage 4 owns
-# the real transition table and returns 409 on illegal moves.
+# SPEC §8 decisions -> SPEC §13 statuses. §13 has no "rejected" state; every §13
+# reject reason describes a hotspot that should not proceed, so a reject lands in
+# false_positive with its reason recorded — the audit row keeps the two apart.
 _DECISION_TO_STATUS = {
     VerifyDecision.verify: HotspotStatus.verified,
     VerifyDecision.reject: HotspotStatus.false_positive,
@@ -111,20 +112,23 @@ def verify_hotspot(
     hotspot_id: int,
     body: VerifyRequest,
     user: DemoUser = Depends(authority_only),
+    conn: Connection = Depends(get_conn),
 ) -> VerifyResponse:
-    """Human verification gate (CLAUDE.md §2.5). Only an authority reaches this."""
-    from_status = HotspotStatus.needs_verification
-    to_status = _DECISION_TO_STATUS[body.decision]
-    event = HotspotEvent(
-        id=0,
-        from_status=from_status,
-        to_status=to_status,
-        reason=body.reason,
-        note=body.note,
-        actor_id=user.id,
-        actor_name=user.name,
-        created_at=datetime.now().astimezone(),
-    )
+    """Human verification gate (CLAUDE.md §2.5). Illegal transition -> 409."""
+    try:
+        event = transition(
+            conn,
+            hotspot_id,
+            _DECISION_TO_STATUS[body.decision],
+            actor=user,
+            reason=body.reason.value if body.reason else None,
+            note=body.note,
+        )
+    except WorkflowError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return VerifyResponse(
-        hotspot_id=hotspot_id, from_status=from_status, to_status=to_status, event=event
+        hotspot_id=hotspot_id,
+        from_status=event.from_status,
+        to_status=event.to_status,
+        event=event,
     )

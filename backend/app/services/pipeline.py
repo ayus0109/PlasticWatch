@@ -30,13 +30,13 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.config import get_settings
-from app.schemas import AiStatus, DetectorOutput, LocationSource
+from app.schemas import AiStatus, DetectorOutput, HotspotStatus, LocationSource
 from app.services import detector, quality
 from app.services.dedupe import DedupeResult, ReportInput, assign_report, image_phash
-from app.services.events import record_event
 from app.services.hotspot_state import refresh_geo_context, rescore_hotspot
 from app.services.media import to_public, upload_root
 from app.services.scoring import report_severity, should_promote
+from app.services.workflow import transition
 
 # Serialises dedupe so two simultaneous nearby reports cannot both create a hotspot.
 _DEDUPE_LOCK_KEY = 0x504C5754  # "PLWT"
@@ -215,20 +215,14 @@ def process_report(
     status, reporters = conn.execute(_HOTSPOT_STATE, {"hid": result.hotspot_id}).one()
     promoted = should_promote(status, reporters, score.evidence)
     if promoted:
-        conn.execute(
-            text("UPDATE hotspots SET status = 'needs_verification' WHERE id = :hid"),
-            {"hid": result.hotspot_id},
-        )
         why = (
             f"{reporters} independent reporters"
             if reporters >= s.PROMOTE_MIN_REPORTERS
             else f"evidence {score.evidence:.2f}"
         )
-        record_event(
-            conn, result.hotspot_id, "needs_verification", from_status="ai_detected",
+        transition(  # system edge: queues for a human, never verifies (workflow.py)
+            conn, result.hotspot_id, HotspotStatus.needs_verification, actor=None,
             at=created_at, note=f"Queued for human verification ({why}).",
         )
-        # Status changed -> rescore so the stored breakdown reflects it.
-        rescore_hotspot(conn, result.hotspot_id, created_at)
 
     return PipelineResult(report_id, det, result, low_accuracy, promoted)

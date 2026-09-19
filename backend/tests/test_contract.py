@@ -1,7 +1,8 @@
 """Stage 1 contract tests: the frozen API surface, fixtures and the role gate.
 
-Runs without a database — every Stage 1 route is a fixture stub, and the app's
-startup schema bootstrap already tolerates an absent DB.
+Runs WITHOUT a database: only checks that fail before a DB connection is opened
+(OpenAPI shape, fixtures, 401/403 from the auth dependencies). DB-backed behaviour
+lives in test_reports_e2e.py and test_workflow.py.
 """
 
 import re
@@ -174,21 +175,6 @@ def test_verify_as_citizen_is_403_even_with_bad_id_and_no_body():
 def test_verify_as_team_is_403():
     res = client.post("/hotspots/3/verify", json=VERIFY_BODY, headers=token_for(TEAM))
     assert res.status_code == 403
-
-
-def test_verify_as_authority_is_200():
-    res = client.post("/hotspots/3/verify", json=VERIFY_BODY, headers=token_for(AUTHORITY))
-    assert res.status_code == 200, res.text
-    body = res.json()
-    assert body["to_status"] == "verified"
-    assert body["event"]["actor_id"] == AUTHORITY  # the human gate is recorded
-
-
-def test_reject_without_reason_is_422():
-    res = client.post(
-        "/hotspots/3/verify", json={"decision": "reject"}, headers=token_for(AUTHORITY)
-    )
-    assert res.status_code == 422
 
 
 def test_no_token_is_401():

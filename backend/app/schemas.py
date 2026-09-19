@@ -460,9 +460,11 @@ class VerifyRequest(BaseModel):
     note: str | None = None
 
     @model_validator(mode="after")
-    def _reason_required_for_rejection(self) -> VerifyRequest:
+    def _reason_matches_decision(self) -> VerifyRequest:
         if self.decision != VerifyDecision.verify and self.reason is None:
             raise ValueError("reason is required when decision is reject or false_positive")
+        if self.decision == VerifyDecision.verify and self.reason is not None:
+            raise ValueError("reason only applies to reject or false_positive")
         return self
 
 
