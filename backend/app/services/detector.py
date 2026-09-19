@@ -22,11 +22,13 @@ Both modes feed one summarise() so count / area / confidence follow SPEC §6 exa
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import random
 from functools import lru_cache
 from pathlib import Path
 
+import imagehash
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from app.config import get_settings
@@ -210,6 +212,51 @@ def _run_stub(path: Path) -> DetectorOutput:
 
 
 # ---------------------------------------------------------------------------
+# Known detections: the demo cache and the seed
+# ---------------------------------------------------------------------------
+
+
+def from_known(path: Path, known: list[dict], simulated: bool = True) -> DetectorOutput:
+    """Contract output for boxes we already know (synthetic demo scenes, or a cached
+    inference). Writes the annotated image like a live run would. Synthetic boxes
+    are simulated data, so the SIMULATED watermark goes on by default (§2.2)."""
+    with Image.open(path) as raw:
+        img = ImageOps.exif_transpose(raw).convert("RGB")
+    w, h = img.size
+    dets = [
+        _box(DetectionClass(k["class_name"]), float(k["confidence"]),
+             k["x1"], k["y1"], k["x2"], k["y2"], w, h)
+        for k in known
+        if k["class_name"] in ALLOWED_CLASS_NAMES
+    ]
+    annotated = _write_annotated(img, dets, _annotated_path(path), simulated=simulated)
+    return summarise(dets, annotated)
+
+
+@lru_cache
+def _load_cache(cache_path: str) -> tuple[tuple[imagehash.ImageHash, list[dict], bool], ...]:
+    p = Path(cache_path)
+    if not cache_path or not p.is_file():
+        return ()
+    data = json.loads(p.read_text(encoding="utf-8"))
+    return tuple(
+        (imagehash.hex_to_hash(e["phash"]), e["detections"], e.get("simulated", True))
+        for e in data.get("entries", [])
+    )
+
+
+def _cache_lookup(path: Path) -> tuple[list[dict], bool] | None:
+    s = get_settings()
+    entries = _load_cache(s.DETECTOR_CACHE_PATH)
+    if not entries or not path.is_file():
+        return None
+    with Image.open(path) as img:
+        h = imagehash.phash(ImageOps.exif_transpose(img))
+    best = min(entries, key=lambda e: h - e[0])
+    return (best[1], best[2]) if h - best[0] <= s.DETECTOR_CACHE_HAMMING else None
+
+
+# ---------------------------------------------------------------------------
 # Real (Ultralytics) — exercised once ML-3 delivers weights
 # ---------------------------------------------------------------------------
 
@@ -258,9 +305,17 @@ def _run_real(path: Path) -> DetectorOutput:
 
 
 def run_detection(image_path: str | Path) -> DetectorOutput:
-    """Detect likely plastic. Always returns a contract-valid DetectorOutput."""
+    """Detect likely plastic. Always returns a contract-valid DetectorOutput.
+
+    A committed demo photo (matched by pHash in DETECTOR_CACHE_PATH) returns its
+    precomputed detections instantly, so the live demo never waits on inference.
+    """
     path = Path(image_path)
     try:
+        cached = _cache_lookup(path)
+        if cached is not None:
+            known, simulated = cached
+            return from_known(path, known, simulated=simulated or is_stub_mode())
         return _run_stub(path) if is_stub_mode() else _run_real(path)
     except Exception:
         logger.exception("Detection failed for %s", path)

@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Operating threshold; pick from the F1-vs-confidence curve on validation
     # (SPEC §6: ~0.25-0.4). Below it a box is dropped.
     DETECTOR_CONF_THRESHOLD: float = 0.3
+    # Precomputed detections for the committed demo photos, keyed by perceptual
+    # hash, so the live demo never waits on inference (Stage 10). Empty = off.
+    DETECTOR_CACHE_PATH: str = "../seed/demo_images/detections.json"
+    DETECTOR_CACHE_HAMMING: int = 6
 
     # --- Confidence tiers (CLAUDE.md §2.7) ----------------------------------
     # Raw confidence is not a calibrated probability; the UI always shows a tier.
@@ -62,6 +66,8 @@ class Settings(BaseSettings):
     # --- Routing (OPEN ITEM SPEC §20.4 — confirm current ORS free quota) ----
     ORS_API_KEY: str = ""
     ORS_DAILY_QUOTA: int = 500
+    # Average cleanup-vehicle speed for route durations when ORS is unavailable.
+    ROUTE_SPEED_KMH: float = 15.0
 
     # --- Duplicate detection (SPEC §12) -------------------------------------
     DEDUPE_RADIUS_M: int = 30
@@ -117,6 +123,10 @@ class Settings(BaseSettings):
     # Recompute stored geo-context only when the hotspot centre moved this far.
     GEO_RECOMPUTE_MOVE_M: float = 10.0
     MAX_UPLOAD_MB: float = 15.0
+
+    # --- Demo seed (SPEC F11) -------------------------------------------------
+    # Where seed_demo.py + scenario.json live (mounted at /seed in docker).
+    SEED_DIR: str = "../seed"
 
     # --- Local disk storage (CLAUDE.md §3) ----------------------------------
     UPLOAD_DIR: str = "uploads"

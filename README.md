@@ -44,22 +44,47 @@ make down
 | `make up` | `docker compose up -d --build` |
 | `make down` | `docker compose down` |
 | `make schema` | `docker compose exec -T db psql -U plasticwatch -d plasticwatch < backend/app/sql/schema.sql` |
-| `make seed` | `docker compose exec api python seed/seed_demo.py` |
-| `make reset-demo` | `docker compose exec api python seed/seed_demo.py --reset` |
+| `make load-geo` | `docker compose exec -e PYTHONPATH=/app api python /gis/load_geo.py` |
+| `make seed` | `docker compose exec -e PYTHONPATH=/app api python /seed/seed_demo.py` |
+| `make reset-demo` | `docker compose exec -e PYTHONPATH=/app api python /seed/seed_demo.py --reset` |
 | `make test` | `docker compose exec api pytest -q` |
 | `make lint` | `docker compose exec api ruff check .` |
 
-`make seed` / `make reset-demo` refer to `seed/seed_demo.py`, which arrives in a later stage.
+### Demo data
+
+```bash
+make load-geo      # once per machine: sample wards, drains, water, amenities
+make reset-demo    # wipe + reseed the SIMULATED 45-day history (~20 s)
+```
+
+A fresh reset has 61 reports and 16 hotspots across 3 wards, spread over every status
+(queue, verified, scheduled, resolved, ruled out, reopened after cleanup). It is replayed
+through the real pipeline and status machine, so it obeys every rule the live system does.
+Authorities can also reset from **Dashboard → Reset demo data**. The click-by-click demo
+is in [docs/demo-script.md](docs/demo-script.md).
 
 ### Frontend
 
 ```bash
-cd frontend && npm run dev     # Vite dev server
-cd frontend && npm run build   # production build for the demo laptop
+cd frontend && npm install
+npm run dev        # http://localhost:5173 — proxies /api to the API on :8000
+npm run build      # type-check + production build
+npm run preview    # serve the build on http://localhost:4173 (same proxy)
+npm run gen:api    # regenerate src/api/schema.d.ts from frontend/openapi.json
 ```
 
-The frontend app is scaffolded in a later stage; `frontend/src/` currently holds the folder
-structure only.
+Pages: login role picker · citizen `/report`, `/my-reports` · authority `/map`, `/queue`,
+`/hotspots/:id`, `/dashboard`, `/tasks` · team `/team/tasks`.
+
+### Tests
+
+```bash
+make test          # pytest in the api container (DB tests use a throwaway database)
+make lint          # ruff
+```
+
+Without Docker, point `DATABASE_URL` / `TEST_DATABASE_URL` at any PostgreSQL 16 + PostGIS
+3.4; DB-backed tests are skipped (with the reason shown) when no server is reachable.
 
 ---
 

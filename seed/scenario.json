@@ -1,0 +1,196 @@
+{
+  "_note": "SIMULATED 45-day demo history (SPEC §19). Every geotag, photo and detection here is fabricated and flagged is_simulated. Days count from 45 days ago (day 45 = the moment of seeding). 'by': A / B = the demo citizen accounts, numbers = extra seeded citizens. Actions are taken by the demo authority (verify / reject / false_positive / schedule / resolve) or the demo cleanup team (complete). Placeholder area — SPEC §20.1 (demo city) is still open.",
+  "days": 45,
+  "depot": [73.8560, 18.5200],
+  "seed_citizens": 8,
+  "hotspots": [
+    {
+      "key": "H01", "name": "Nala 1 grate", "at": [73.8497, 18.5236],
+      "reports": [
+        {"day": 2, "by": "A", "plastic": 13, "note": "Bottles and bags stuck against the nala grate"},
+        {"day": 3, "by": 1, "plastic": 11},
+        {"day": 20, "by": 4, "plastic": 12, "note": "Back again after the cleanup"},
+        {"day": 21, "by": 5, "plastic": 14},
+        {"day": 27, "by": "B", "plastic": 13, "note": "Water is backing up behind the grate"},
+        {"day": 33, "by": 6, "plastic": 12},
+        {"day": 40, "by": "A", "plastic": 14},
+        {"day": 43, "by": 7, "plastic": 13},
+        {"day": 44, "by": 2, "plastic": 14}
+      ],
+      "actions": [
+        {"day": 4, "do": "verify", "note": "Large pile against the grate, clearly visible."},
+        {"day": 5, "do": "schedule"},
+        {"day": 7, "do": "complete"},
+        {"day": 8, "do": "resolve", "note": "Cleanup confirmed by the ward authority."}
+      ]
+    },
+    {
+      "key": "H02", "name": "Market lane", "at": [73.8524, 18.5217],
+      "reports": [
+        {"day": 10, "by": 1, "plastic": 9, "note": "Packets behind the vegetable stalls"},
+        {"day": 11, "by": 2, "plastic": 8},
+        {"day": 20, "by": 5, "plastic": 9},
+        {"day": 25, "by": 6, "plastic": 10},
+        {"day": 30, "by": "B", "plastic": 9},
+        {"day": 41, "by": 3, "plastic": 11},
+        {"day": 44, "by": 4, "plastic": 10}
+      ],
+      "actions": [
+        {"day": 31, "do": "verify", "note": "Recurring market waste."},
+        {"day": 42, "do": "schedule"}
+      ]
+    },
+    {
+      "key": "H03", "name": "Lake edge", "at": [73.8583, 18.5272],
+      "reports": [
+        {"day": 5, "by": 3, "plastic": 7, "note": "Film and bottles at the water's edge"},
+        {"day": 6, "by": 4, "plastic": 8},
+        {"day": 38, "by": 5, "plastic": 9, "note": "It's back"},
+        {"day": 42, "by": "A", "plastic": 8}
+      ],
+      "actions": [
+        {"day": 7, "do": "verify"},
+        {"day": 8, "do": "schedule"},
+        {"day": 9, "do": "complete"},
+        {"day": 10, "do": "resolve", "note": "Cleanup confirmed by the ward authority."}
+      ]
+    },
+    {
+      "key": "H04", "name": "Drain 2 outfall", "at": [73.8634, 18.5140],
+      "reports": [
+        {"day": 12, "by": 5, "plastic": 10},
+        {"day": 13, "by": 6, "plastic": 9},
+        {"day": 13, "by": "B", "plastic": 10, "hour": 11},
+        {"day": 14, "by": "A", "plastic": 11}
+      ],
+      "actions": [
+        {"day": 15, "do": "verify"},
+        {"day": 16, "do": "schedule"},
+        {"day": 18, "do": "complete"},
+        {"day": 19, "do": "resolve", "note": "Cleanup confirmed by the ward authority."}
+      ]
+    },
+    {
+      "key": "H05", "name": "School gate", "at": [73.8509, 18.5279],
+      "reports": [
+        {"day": 33, "by": 1, "plastic": 6, "note": "Snack wrappers by the school gate"},
+        {"day": 34, "by": 2, "plastic": 7},
+        {"day": 40, "by": 3, "plastic": 7},
+        {"day": 41, "by": "B", "plastic": 8},
+        {"day": 42, "by": 4, "plastic": 6}
+      ],
+      "actions": []
+    },
+    {
+      "key": "H06", "name": "Hospital road", "at": [73.8531, 18.5150],
+      "reports": [
+        {"day": 20, "by": 6, "plastic": 8},
+        {"day": 21, "by": 8, "plastic": 7},
+        {"day": 22, "by": 7, "plastic": 9},
+        {"day": 23, "by": "A", "plastic": 8, "hour": 3}
+      ],
+      "actions": [
+        {"day": 23, "do": "verify"},
+        {"day": 24, "do": "schedule"},
+        {"day": 26, "do": "complete"}
+      ]
+    },
+    {
+      "key": "H07", "name": "Ward C lane", "at": [73.8470, 18.5120],
+      "reports": [{"day": 40, "by": 8, "plastic": 4, "conf": [0.42, 0.66]}],
+      "actions": []
+    },
+    {
+      "key": "H08", "name": "Back street", "at": [73.8662, 18.5252],
+      "reports": [{"day": 42, "by": 1, "plastic": 3, "conf": [0.4, 0.62]}],
+      "actions": []
+    },
+    {
+      "key": "H09", "name": "Construction site", "at": [73.8481, 18.5181],
+      "reports": [
+        {"day": 15, "by": 2, "plastic": 3, "note": "Sacks near the building site"},
+        {"day": 16, "by": 3, "plastic": 2}
+      ],
+      "actions": [
+        {"day": 17, "do": "false_positive", "reason": "not_plastic", "note": "Cement sacks and rubble, not plastic."}
+      ]
+    },
+    {
+      "key": "H10", "name": "Empty lot", "at": [73.8651, 18.5101],
+      "reports": [{"day": 25, "by": 4, "plastic": 4}],
+      "actions": [
+        {"day": 28, "do": "reject", "reason": "already_cleaned", "note": "Site visit: already cleared by residents."}
+      ]
+    },
+    {
+      "key": "H11", "name": "Bus stop", "at": [73.8546, 18.5301],
+      "reports": [
+        {"day": 5, "by": 5, "plastic": 6},
+        {"day": 12, "by": 1, "plastic": 6},
+        {"day": 18, "by": 6, "plastic": 7},
+        {"day": 31, "by": 7, "plastic": 7},
+        {"day": 44, "by": "A", "plastic": 8}
+      ],
+      "actions": [
+        {"day": 32, "do": "verify", "note": "Bottles under the shelter."}
+      ]
+    },
+    {
+      "key": "H12", "name": "Canal bend", "at": [73.8622, 18.5218],
+      "reports": [
+        {"day": 36, "by": 8, "plastic": 12, "note": "Heavy pile where the canal bends"},
+        {"day": 37, "by": 1, "plastic": 13},
+        {"day": 39, "by": 2, "plastic": 12},
+        {"day": 40, "by": 5, "plastic": 14},
+        {"day": 43, "by": "B", "plastic": 13},
+        {"day": 44, "by": 3, "plastic": 14}
+      ],
+      "actions": []
+    },
+    {
+      "key": "H13", "name": "Park corner", "at": [73.8591, 18.5181],
+      "reports": [
+        {"day": 8, "by": 4, "plastic": 7},
+        {"day": 9, "by": 5, "plastic": 6},
+        {"day": 9, "by": "B", "plastic": 7, "hour": 11}
+      ],
+      "actions": [
+        {"day": 10, "do": "verify"},
+        {"day": 11, "do": "schedule"},
+        {"day": 12, "do": "complete"},
+        {"day": 13, "do": "resolve", "note": "Cleanup confirmed by the ward authority."}
+      ]
+    },
+    {
+      "key": "H14", "name": "Tea stall", "at": [73.8461, 18.5299],
+      "reports": [{"day": 44, "by": 7, "plastic": 5, "acc": 60, "conf": [0.42, 0.66], "note": "GPS was jumpy here"}],
+      "actions": []
+    },
+    {
+      "key": "H15", "name": "Riverside path", "at": [73.8679, 18.5290],
+      "reports": [
+        {"day": 28, "by": 8, "plastic": 4, "conf": [0.4, 0.62]},
+        {"day": 28, "by": 8, "plastic": 5, "hour": 12, "conf": [0.4, 0.62], "note": "Same person, a few hours later: counts once"}
+      ],
+      "actions": []
+    },
+    {
+      "key": "H16", "name": "Sacks by the wall",
+      "_demo": "Queued, but the photos are mostly cans and paper: the one for the presenter to reject as not_plastic (SPEC §19).",
+      "at": [73.8655, 18.5170],
+      "reports": [
+        {"day": 41, "by": 6, "plastic": 2, "other": 6, "conf": [0.5, 0.72], "note": "Pile of sacks against the wall"},
+        {"day": 42, "by": 7, "plastic": 2, "other": 5, "conf": [0.5, 0.72]}
+      ],
+      "actions": []
+    }
+  ],
+  "rejected_reports": [
+    {"day": 14, "by": 6, "at": [73.8540, 18.5260], "note": "Is this plastic?"},
+    {"day": 30, "by": "A", "at": [73.8600, 18.5150], "note": "Might be waste"},
+    {"day": 43, "by": 2, "at": [73.8490, 18.5140]}
+  ],
+  "duplicates": [
+    {"day": 44, "by": "B", "of": ["H02", 0], "note": "Uploaded the same photo again"}
+  ]
+}

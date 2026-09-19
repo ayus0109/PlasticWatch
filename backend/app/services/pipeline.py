@@ -146,7 +146,14 @@ def process_report(
     note: str | None = None,
     created_at: datetime | None = None,
     simulated_location: bool = False,
+    known_detections: list[dict] | None = None,
 ) -> PipelineResult:
+    """Run one report through the whole pipeline.
+
+    `known_detections` is for the demo seed only: boxes of a synthetic scene whose
+    objects we drew ourselves, used instead of the detector. They are simulated
+    data and the report is flagged so.
+    """
     s = get_settings()
     created_at = created_at or datetime.now(UTC)
     img = _decode(image_bytes)
@@ -176,7 +183,11 @@ def process_report(
     image_path = _store_photo(img, report_id)
     stored = upload_root() / "reports" / f"{report_id}.jpg"
     phash = image_phash(stored)
-    det = detector.run_detection(stored)
+    det = (
+        detector.run_detection(stored)
+        if known_detections is None
+        else detector.from_known(stored, known_detections, simulated=True)
+    )
 
     low_accuracy = accuracy_m is not None and accuracy_m > s.GPS_ACCURACY_WIDEN_M
     conn.execute(
@@ -189,7 +200,9 @@ def process_report(
             "count": det.plastic_count, "area": det.plastic_area_frac,
             "severity": report_severity(det.plastic_count, det.plastic_area_frac),
             # Fabricated geotag OR fabricated detection: either is simulated data (§2.2).
-            "simulated": simulated_location or detector.is_stub_mode(),
+            "simulated": (
+                simulated_location or known_detections is not None or detector.is_stub_mode()
+            ),
         },
     )
     for d in det.detections:

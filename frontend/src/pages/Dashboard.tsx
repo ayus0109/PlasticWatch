@@ -4,12 +4,13 @@
  */
 import { useState } from "react";
 import { Link } from "react-router";
-import type { AnalyticsSummary, AnalyticsTrend, AnalyticsWards, HotspotStatus } from "../api/client";
+import { api, type AnalyticsSummary, type AnalyticsTrend, type AnalyticsWards, type HotspotStatus, type ResetDemoResponse } from "../api/client";
 import { useApi } from "../api/hooks";
 import { BandBars, OpenedResolved, ReportsTrend, WardBars } from "../components/charts";
 import { Icon, type IconName } from "../components/Icon";
 import { Shell, SimulatedBanner } from "../components/Shell";
-import { Card, ErrorState, Skeleton, cx } from "../components/ui";
+import { useToast } from "../components/Toast";
+import { Button, Card, ErrorState, Skeleton, cx } from "../components/ui";
 import { STATUS } from "../lib/status";
 
 const RANGES = [7, 30, 45, 90] as const;
@@ -55,6 +56,23 @@ export default function Dashboard() {
   const trend = useApi<AnalyticsTrend>("/analytics/trend", { days });
   const wards = useApi<AnalyticsWards>("/analytics/wards");
   const k = summary.data?.kpis;
+  const toast = useToast();
+  const [resetting, setResetting] = useState(false);
+  const resetDemo = async () => {
+    if (!window.confirm("Wipe all demo data and reseed the simulated 45-day history? (~20 s)")) return;
+    setResetting(true);
+    try {
+      const res = await api.post<ResetDemoResponse>("/admin/reset-demo");
+      toast("ok", res.message);
+      summary.refetch();
+      trend.refetch();
+      wards.refetch();
+    } catch (e) {
+      toast("error", (e as Error).message);
+    } finally {
+      setResetting(false);
+    }
+  };
   const counts = new Map(summary.data?.by_status.map((s) => [s.status, s.count]) ?? []);
 
   return (
@@ -64,6 +82,9 @@ export default function Dashboard() {
           <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted">Where waste is reported, and how fast it gets cleaned.</p>
         </div>
+        <Button variant="ghost" icon="refresh" loading={resetting} onClick={resetDemo}>
+          {resetting ? "Reseeding demo…" : "Reset demo data"}
+        </Button>
       </div>
 
       {summary.error ? (
