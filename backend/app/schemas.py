@@ -266,6 +266,9 @@ class ReportSummary(BaseModel):
     lon: float
     location_source: LocationSource
     gps_accuracy_m: float | None = None
+    low_accuracy: bool = Field(
+        False, description="GPS accuracy was poor enough to widen the merge radius."
+    )
     ai_status: AiStatus
     plastic_count: int | None = None
     plastic_area_frac: float | None = None
@@ -312,6 +315,9 @@ class ReportCreateResponse(BaseModel):
         ..., description="True when the report joined an existing hotspot rather than creating one."
     )
     duplicate_of: UUID | None = None
+    low_accuracy: bool = Field(
+        False, description="Location accuracy was low; the merge radius was widened."
+    )
     message: str = Field(
         ...,
         description="Plain-language outcome for the citizen, e.g. no likely plastic found.",

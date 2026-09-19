@@ -36,15 +36,17 @@ Filters: status, band, ward, min_evidence, as_of (SPEC §8/§10).
 There is deliberately no property naming a responsible party (CLAUDE.md §2.3).
 ====================================================================================
 
-STAGE 1 STUB: returns fixtures. Scoring, the status machine (409 on illegal
-transitions) and the as_of time slider land in Stages 4-7.
+List and detail are served from PostGIS. POST /verify is still a Stage 1 stub until
+Stage 7 wires the status machine (409 on illegal transitions).
 """
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.engine import Connection
 
-from app.deps import authority_only, load_fixture
+from app.db import get_conn
+from app.deps import authority_only
 from app.schemas import (
     DemoUser,
     HotspotDetail,
@@ -56,6 +58,7 @@ from app.schemas import (
     VerifyRequest,
     VerifyResponse,
 )
+from app.services.hotspot_views import hotspot_detail, list_features
 
 router = APIRouter(prefix="/hotspots", tags=["hotspots"])
 
@@ -75,34 +78,32 @@ def list_hotspots(
     ward: int | None = Query(None, description="Ward id."),
     min_evidence: float | None = Query(None, ge=0, le=1),
     as_of: datetime | None = Query(
-        None, description="Time slider: score using only reports up to this time. Stub ignores it."
+        None,
+        description=(
+            "Time slider: recompute scores from reports and events up to this time. "
+            "Read-only — stored rows are never changed."
+        ),
     ),
     _user: DemoUser = Depends(authority_only),
+    conn: Connection = Depends(get_conn),
 ) -> HotspotFeatureCollection:
-    """GeoJSON of hotspots. Filters are applied in memory to the fixture for now."""
-    collection = HotspotFeatureCollection.model_validate(load_fixture("hotspots"))
-
-    def keep(props) -> bool:
-        if status is not None and props.status != status:
-            return False
-        if band is not None and props.priority_band != band:
-            return False
-        if ward is not None and props.ward_id != ward:
-            return False
-        if min_evidence is not None and (props.evidence_score or 0) < min_evidence:
-            return False
-        return True
-
-    return collection.model_copy(
-        update={"features": [f for f in collection.features if keep(f.properties)]}
+    """GeoJSON of hotspots, highest Impact first."""
+    return list_features(
+        conn, status=status, band=band, ward=ward, min_evidence=min_evidence, as_of=as_of
     )
 
 
 @router.get("/{hotspot_id}", response_model=HotspotDetail)
-def get_hotspot(hotspot_id: int, _user: DemoUser = Depends(authority_only)) -> HotspotDetail:
+def get_hotspot(
+    hotspot_id: int,
+    _user: DemoUser = Depends(authority_only),
+    conn: Connection = Depends(get_conn),
+) -> HotspotDetail:
     """Score breakdown, member reports and the audit trail (the evidence ledger)."""
-    detail = HotspotDetail.model_validate(load_fixture("hotspot_detail"))
-    return detail.model_copy(update={"id": hotspot_id})
+    detail = hotspot_detail(conn, hotspot_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Hotspot not found.")
+    return detail
 
 
 @router.post("/{hotspot_id}/verify", response_model=VerifyResponse)

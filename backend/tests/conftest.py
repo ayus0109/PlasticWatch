@@ -66,6 +66,8 @@ def db_url() -> Iterator[str]:
 
 @pytest.fixture(scope="session")
 def db_engine(db_url: str) -> Iterator[Engine]:
+    # Deliberately NOT forced to UTC (unlike app.db): scoring must be correct whatever
+    # time zone the session returns timestamps in.
     engine = create_engine(db_url, future=True)
     yield engine
     engine.dispose()
@@ -100,3 +102,35 @@ def conn(db_engine: Engine) -> Iterator[Connection]:
         tx = c.begin()
         yield c
         tx.rollback()
+
+
+@pytest.fixture
+def api(db_engine: Engine, set_env, tmp_path):
+    """TestClient wired to the throwaway DB: empty tables + seeded demo users,
+    uploads in a temp dir, stub detector. Each request commits, like production."""
+    from fastapi.testclient import TestClient
+
+    from app.db import get_conn
+    from app.main import app
+    from app.services.users import ensure_demo_users
+
+    set_env(UPLOAD_DIR=tmp_path / "uploads", DETECTOR_MODE="stub")
+    truncate_all(db_engine)
+    with db_engine.begin() as c:
+        ensure_demo_users(c)
+
+    def _conn():
+        with db_engine.begin() as c:
+            yield c
+
+    app.dependency_overrides[get_conn] = _conn
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(get_conn, None)
+
+
+def auth_header(client, role: str) -> dict[str, str]:
+    res = client.post("/auth/demo-login", json={"role": role})
+    assert res.status_code == 200, res.text
+    return {"Authorization": f"Bearer {res.json()['token']}"}

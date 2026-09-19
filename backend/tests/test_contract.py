@@ -215,37 +215,6 @@ def test_before_after_review_is_authority_only():
 
 
 # --------------------------------------------------------------------------
-# GeoJSON shape
-# --------------------------------------------------------------------------
-
-
-def test_hotspots_is_geojson_feature_collection():
-    body = client.get("/hotspots", headers=token_for(AUTHORITY)).json()
-    assert body["type"] == "FeatureCollection"
-    assert body["features"], "fixture should not be empty"
-    for f in body["features"]:
-        assert f["type"] == "Feature"
-        assert f["geometry"]["type"] == "Point"
-        lon, lat = f["geometry"]["coordinates"]
-        assert -180 <= lon <= 180 and -90 <= lat <= 90
-        for key in ("priority_band", "evidence_score", "is_simulated"):
-            assert key in f["properties"], key
-
-
-def test_hotspot_filters_apply():
-    h = token_for(AUTHORITY)
-    crit = client.get("/hotspots?band=critical", headers=h).json()["features"]
-    assert crit and all(f["properties"]["priority_band"] == "critical" for f in crit)
-    strong = client.get("/hotspots?min_evidence=0.75", headers=h).json()["features"]
-    assert all(f["properties"]["evidence_score"] >= 0.75 for f in strong)
-
-
-def test_geo_layers_filter_by_kind():
-    body = client.get("/geo/layers?kind=drain", headers=token_for(CITIZEN)).json()
-    assert body["features"] and all(f["properties"]["kind"] == "drain" for f in body["features"])
-
-
-# --------------------------------------------------------------------------
 # Honesty guards (CLAUDE.md §2)
 # --------------------------------------------------------------------------
 

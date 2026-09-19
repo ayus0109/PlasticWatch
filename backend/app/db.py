@@ -20,13 +20,19 @@ def get_engine() -> Engine:
 
     connect_timeout makes an unreachable database FAIL rather than hang, so startup
     and /health degrade to postgis=false instead of blocking forever.
+
+    Every session runs in UTC so timestamps (and anything derived from calendar
+    days) are identical whatever time zone the database server is configured in.
     """
     settings = get_settings()
     return create_engine(
         settings.DATABASE_URL,
         pool_pre_ping=True,
         future=True,
-        connect_args={"connect_timeout": settings.DB_CONNECT_TIMEOUT_S},
+        connect_args={
+            "connect_timeout": settings.DB_CONNECT_TIMEOUT_S,
+            "options": "-c timezone=UTC",
+        },
     )
 
 

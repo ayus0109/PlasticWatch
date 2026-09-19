@@ -32,6 +32,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from app.config import get_settings
 from app.schemas import AiStatus, Detection, DetectionClass, DetectorOutput
 from app.services.confidence import confidence_tier
+from app.services.media import to_public, upload_root
 
 logger = logging.getLogger("plasticwatch.detector")
 
@@ -129,7 +130,7 @@ def _font(size: int):
 
 
 def _annotated_path(image_path: Path) -> Path:
-    return Path(get_settings().UPLOAD_DIR) / "annotated" / f"{image_path.stem}.jpg"
+    return upload_root() / "annotated" / f"{image_path.stem}.jpg"
 
 
 def _write_annotated(
@@ -161,7 +162,7 @@ def _write_annotated(
 
     out.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out, "JPEG", quality=85)
-    return out.as_posix()
+    return to_public(out)
 
 
 # ---------------------------------------------------------------------------

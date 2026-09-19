@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from app.schemas import AiStatus, Detection, DetectionClass, DetectorOutput
 from app.services import detector, quality
 from app.services.confidence import confidence_tier
+from app.services.media import to_fs
 
 FROZEN_KEYS = {
     "plastic_count",
@@ -103,7 +104,8 @@ def test_stub_writes_a_watermarked_annotated_image(tmp_path):
         if o.ai_status == AiStatus.detected
     )
     assert out.annotated_jpg_path is not None
-    with Image.open(out.annotated_jpg_path) as annotated:
+    assert out.annotated_jpg_path.startswith("uploads/annotated/")
+    with Image.open(to_fs(out.annotated_jpg_path)) as annotated:
         assert annotated.format == "JPEG"
         # The amber SIMULATED banner spans the top edge.
         r, g, b = annotated.convert("RGB").getpixel((annotated.width - 5, 3))

@@ -113,8 +113,19 @@ class Settings(BaseSettings):
     PROMOTE_MIN_REPORTERS: int = 2
     PROMOTE_MIN_EVIDENCE: float = 0.6
 
+    # --- Report pipeline (SPEC §10, §12) -------------------------------------
+    # Recompute stored geo-context only when the hotspot centre moved this far.
+    GEO_RECOMPUTE_MOVE_M: float = 10.0
+    MAX_UPLOAD_MB: float = 15.0
+
     # --- Local disk storage (CLAUDE.md §3) ----------------------------------
     UPLOAD_DIR: str = "uploads"
+
+    # --- Frontend origins allowed to call the API (comma-separated) ----------
+    # Vite dev (5173) and preview (4173) by default.
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
+    )
 
     # --- Demo auth (CLAUDE.md §8: seeded demo users + role switcher) --------
     # Signs the demo role token. This is NOT real authentication and guards

@@ -9,11 +9,16 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 
+from app.config import get_settings
 from app.db import get_engine
 from app.routers import admin, analytics, auth, before_after, geo, hotspots, reports, tasks
+from app.services.media import PUBLIC_PREFIX, to_fs
+from app.services.users import ensure_demo_users
 
 logger = logging.getLogger("plasticwatch")
 
@@ -50,9 +55,11 @@ def apply_schema_if_absent() -> None:
 async def lifespan(app: FastAPI):
     try:
         apply_schema_if_absent()
+        with get_engine().begin() as conn:
+            logger.info("Demo users ready: %d", ensure_demo_users(conn))
     except Exception:
         # Don't take the API down if the db is still settling — /health will report it.
-        logger.exception("Schema bootstrap failed.")
+        logger.exception("Startup database bootstrap failed.")
     yield
 
 
@@ -67,8 +74,30 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in get_settings().CORS_ORIGINS.split(",") if o.strip()],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 for module in (auth, reports, hotspots, geo, tasks, before_after, analytics, admin):
     app.include_router(module.router)
+
+
+@app.get(f"/{PUBLIC_PREFIX}/{{path:path}}", include_in_schema=False)
+def media(path: str) -> FileResponse:
+    """Report photos and annotated images from local disk (CLAUDE.md §3).
+
+    Names are random UUIDs; paths are confined to UPLOAD_DIR.
+    """
+    try:
+        target = to_fs(f"{PUBLIC_PREFIX}/{path}")
+    except ValueError as exc:
+        raise HTTPException(status_code=404) from exc
+    if not target.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(target)
 
 
 @app.get("/health")

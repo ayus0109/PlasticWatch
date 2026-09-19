@@ -43,13 +43,16 @@ GET /wards  -> GeoJSON FeatureCollection of MultiPolygon
 Layers are pulled from Overpass ONCE and stored — never fetched at runtime (SPEC §5).
 ====================================================================================
 
-STAGE 1 STUB: returns fixtures. PostGIS-backed layers land in Stage 2.
+Served from PostGIS (loaded once by gis/load_geo.py).
 """
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.engine import Connection
 
-from app.deps import any_role, load_fixture
+from app.db import get_conn
+from app.deps import any_role
 from app.schemas import DemoUser, GeoFeatureCollection, GeoFeatureKind, WardFeatureCollection
+from app.services import geo_views
 
 router = APIRouter(tags=["geo"])
 
@@ -58,16 +61,14 @@ router = APIRouter(tags=["geo"])
 def geo_layers(
     kind: GeoFeatureKind | None = Query(None, description="Omit for all kinds."),
     _user: DemoUser = Depends(any_role),
+    conn: Connection = Depends(get_conn),
 ) -> GeoFeatureCollection:
-    collection = GeoFeatureCollection.model_validate(load_fixture("geo_layers"))
-    if kind is None:
-        return collection
-    return collection.model_copy(
-        update={"features": [f for f in collection.features if f.properties.kind == kind]}
-    )
+    return geo_views.layers(conn, kind)
 
 
 @router.get("/wards", response_model=WardFeatureCollection)
-def wards(_user: DemoUser = Depends(any_role)) -> WardFeatureCollection:
+def wards(
+    _user: DemoUser = Depends(any_role), conn: Connection = Depends(get_conn)
+) -> WardFeatureCollection:
     """Ward boundaries with per-ward hotspot stats, for the choropleth."""
-    return WardFeatureCollection.model_validate(load_fixture("wards"))
+    return geo_views.wards(conn)
