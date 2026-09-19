@@ -31,6 +31,28 @@ class Settings(BaseSettings):
     # "stub" returns the frozen fake contract; "real" loads weights/best.pt.
     # The whole pipeline must stay demoable on "stub".
     DETECTOR_MODE: str = "stub"
+    DETECTOR_WEIGHTS: str = "weights/best.pt"
+    DETECTOR_IMGSZ: int = 640
+    # Operating threshold; pick from the F1-vs-confidence curve on validation
+    # (SPEC §6: ~0.25-0.4). Below it a box is dropped.
+    DETECTOR_CONF_THRESHOLD: float = 0.3
+
+    # --- Confidence tiers (CLAUDE.md §2.7) ----------------------------------
+    # Raw confidence is not a calibrated probability; the UI always shows a tier.
+    # [0, MEDIUM) low, [MEDIUM, HIGH) medium, [HIGH, 1] high.
+    CONF_TIER_MEDIUM: float = 0.5
+    CONF_TIER_HIGH: float = 0.75
+
+    # --- Image quality gates (SPEC §14, USERFLOW quality gate) --------------
+    # Laplacian variance below this = too blurry. Measured after resizing the
+    # longest side to QUALITY_MAX_SIDE so the threshold is resolution-independent.
+    # Deliberately lenient: rejecting a real report loses evidence, while a soft
+    # photo only adds weak evidence the Evidence axis already discounts.
+    # CALIBRATE on the team's local photo set before the demo.
+    BLUR_MIN_VARIANCE: float = 25.0
+    BRIGHTNESS_MIN: float = 35.0
+    BRIGHTNESS_MAX: float = 230.0
+    QUALITY_MAX_SIDE: int = 1024
 
     # --- Demo area (OPEN ITEM SPEC §20.1 — blocks OSM pull, wards, seed) -----
     # "min_lon,min_lat,max_lon,max_lat" in EPSG:4326.
