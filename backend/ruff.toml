@@ -1,0 +1,11 @@
+# Lint config for `make lint` (CLAUDE.md §5: type hints + ruff).
+# Pinned settings so the result is identical inside the container and on a laptop.
+
+target-version = "py311"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011"]

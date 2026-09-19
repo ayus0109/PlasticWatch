@@ -9,15 +9,18 @@ __pycache__/
 *$py.class
 *.so
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 .venv/
 env/
 venv/
 
-# AI / ML weights & models
-backend/weights/
-weights/
+# AI / ML weights & models — ignore the contents, keep the directory itself.
+# (A bare "weights/" would match at any depth and defeat the negation below.)
+backend/weights/*
+!backend/weights/.gitkeep
+ml/weights/
 *.pt
 *.onnx
 
