@@ -7,7 +7,7 @@ import { homeFor, loginAs, logout, useSession } from "../store/auth";
 import { Icon, type IconName } from "./Icon";
 import { useToast } from "./Toast";
 import { NON_ATTRIBUTION_NOTE } from "../lib/status";
-import { NonAttributionNote, cx } from "./ui";
+import { cx } from "./ui";
 
 const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
   citizen: [
@@ -231,8 +231,9 @@ export function ThemeToggle() {
 
 /**
  * The frame every signed-in page lives in. `fullBleed` pages (the map) get the
- * whole viewport under the top bar; authority views always carry the persistent
- * non-attribution note (CLAUDE.md §2.3).
+ * whole viewport under the top bar. Every authority view carries the persistent
+ * non-attribution note as a strip under the header (CLAUDE.md §2.3) — in the page
+ * frame, so it is always visible and can never cover content.
  */
 export function Shell({
   children,
@@ -259,7 +260,7 @@ export function Shell({
           </div>
         </div>
         {banner}
-        {role === "authority" && fullBleed ? (
+        {role === "authority" ? (
           <p className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-1 text-center text-[11px] text-muted">
             <Icon name="info" size={12} className="shrink-0 text-accent" />
             {NON_ATTRIBUTION_NOTE}
@@ -274,11 +275,6 @@ export function Shell({
       >
         {children}
       </main>
-      {role === "authority" && !fullBleed ? (
-        <div className="pointer-events-none fixed bottom-20 left-4 z-[900] md:bottom-4">
-          <NonAttributionNote className="pointer-events-auto" />
-        </div>
-      ) : null}
       <MobileNav role={role} />
     </div>
   );

@@ -103,6 +103,38 @@ export const palette: Record<ThemeMode, Palette> = {
   },
 };
 
+/**
+ * Chart tokens. The two categorical series slots are COOL hues on purpose: warm
+ * colours are reserved for the priority ramp. Validated with the dataviz skill's
+ * validate_palette.js against each mode's real surface (all checks PASS):
+ *   light #0aa595 / #6d5bd0 on #ffffff — worst CVD dE 19.7, normal dE 24.9
+ *   dark  #0d9b8d / #9085e9 on #15181d — worst CVD dE 13.2, normal dE 20.6
+ * Slot order is fixed: series1 = "opened / open", series2 = "resolved", everywhere.
+ */
+export const chart: Record<
+  ThemeMode,
+  { series1: string; series2: string; grid: string; axis: string; ink: string; muted: string; surface: string }
+> = {
+  light: {
+    series1: "#0aa595",
+    series2: "#6d5bd0",
+    grid: "#ebe9e4",
+    axis: "#cfccc3",
+    ink: "#1b1a17",
+    muted: "#8a867d",
+    surface: "#ffffff",
+  },
+  dark: {
+    series1: "#0d9b8d",
+    series2: "#9085e9",
+    grid: "#23272e",
+    axis: "#363c46",
+    ink: "#ecebe7",
+    muted: "#8d8b85",
+    surface: "#15181d",
+  },
+};
+
 /** Spacing scale in px (Tailwind's 4 px grid; named here so JS layouts match). */
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
 
