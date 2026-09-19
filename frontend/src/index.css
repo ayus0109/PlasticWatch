@@ -1,0 +1,212 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tailwind utilities read the CSS variables that src/lib/theme.ts writes at startup,
+   so theme.ts stays the single source of truth for every colour. */
+@theme inline {
+  --color-bg: var(--pw-bg);
+  --color-surface: var(--pw-surface);
+  --color-surface-2: var(--pw-surface2);
+  --color-line: var(--pw-border);
+  --color-line-strong: var(--pw-border-strong);
+  --color-ink: var(--pw-text);
+  --color-muted: var(--pw-muted);
+  --color-faint: var(--pw-faint);
+  --color-accent: var(--pw-accent);
+  --color-accent-hover: var(--pw-accent-hover);
+  --color-accent-soft: var(--pw-accent-soft);
+  --color-accent-fg: var(--pw-accent-fg);
+  --color-sim-bg: var(--pw-sim-bg);
+  --color-sim-fg: var(--pw-sim-fg);
+  --color-sim-line: var(--pw-sim-border);
+  --color-ok: var(--pw-ok);
+  --color-ok-soft: var(--pw-ok-soft);
+  --color-danger: var(--pw-danger);
+  --color-danger-soft: var(--pw-danger-soft);
+  --color-info: var(--pw-info);
+  --color-info-soft: var(--pw-info-soft);
+  --color-band-low: var(--pw-band-low);
+  --color-band-medium: var(--pw-band-medium);
+  --color-band-high: var(--pw-band-high);
+  --color-band-critical: var(--pw-band-critical);
+
+  --shadow-card: var(--pw-shadow-card);
+  --shadow-raised: var(--pw-shadow-raised);
+  --shadow-pop: var(--pw-shadow-pop);
+
+  --radius-card: 14px;
+
+  --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui,
+    -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter Display", "Segoe UI Variable Display", "Segoe UI", ui-sans-serif,
+    system-ui, -apple-system, sans-serif;
+
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-rise: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade: fade 0.25s ease-out both;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--pw-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--pw-surface2) 0%,
+      var(--pw-border) 50%,
+      var(--pw-surface2) 100%
+    );
+    background-size: 800px 100%;
+    @apply animate-shimmer rounded-md;
+  }
+}
+
+/* ---------------------------------------------------------------- Leaflet ---- */
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--pw-surface2);
+}
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--pw-surface) 86%, transparent) !important;
+  color: var(--pw-muted) !important;
+  font-size: 10px !important;
+  border-top-left-radius: 6px;
+}
+.leaflet-control-attribution a {
+  color: var(--pw-accent) !important;
+}
+/* The priority ramp (grey/amber/orange/red) must be the only warm colour on the map,
+   but OSM tiles are full of red hospital crosses and orange roads. Desaturate the
+   basemap so a red thing on screen always means "critical" (CLAUDE.md §9). */
+.leaflet-tile-pane {
+  filter: grayscale(0.92) contrast(0.92) brightness(1.04);
+}
+/* Dark basemap: invert, then rotate hue back so water stays blue; nearly grey. */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.9) saturate(0.2);
+}
+.leaflet-bar a {
+  background: var(--pw-surface) !important;
+  color: var(--pw-text) !important;
+  border-color: var(--pw-border) !important;
+}
+
+/* Hotspot markers — divIcons so every visual rule is CSS (CLAUDE.md §9). */
+.pw-marker {
+  background: none;
+  border: none;
+}
+.pw-marker__dot {
+  --c: var(--pw-band-low);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 88%, transparent);
+  border: 2.5px solid #fff;
+  color: #fff;
+  font: 700 11px/1 var(--font-sans);
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease;
+}
+.dark .pw-marker__dot {
+  border-color: var(--pw-surface);
+}
+/* Weak evidence / not human-verified: dashed ring, lower fill opacity. */
+.pw-marker--weak .pw-marker__dot {
+  background: color-mix(in srgb, var(--c) 45%, transparent);
+  border: 2.5px dashed var(--c);
+  color: var(--pw-text);
+  box-shadow: none;
+}
+/* Weak evidence on top of unverified: fade further so it reads as tentative. */
+.pw-marker--lowev .pw-marker__dot {
+  opacity: 0.62;
+}
+/* Human-verified: solid with a subtle glow. */
+.pw-marker--verified .pw-marker__dot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 28%, transparent),
+    0 0 14px 2px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.pw-marker--closed .pw-marker__dot {
+  background: var(--pw-surface);
+  border: 2.5px solid var(--c);
+  color: var(--c);
+  opacity: 0.8;
+}
+.pw-marker:hover .pw-marker__dot,
+.pw-marker--selected .pw-marker__dot {
+  transform: translateY(-3px) scale(1.12);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.45);
+}
+.pw-marker__sim {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  border: 1px dashed var(--pw-sim-border);
+  background: var(--pw-sim-bg);
+  color: var(--pw-sim-fg);
+  font: 700 7px/1.2 var(--font-sans);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+.pw-pin {
+  background: none;
+  border: none;
+}
+.pw-pin__head {
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--pw-accent);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}

@@ -51,7 +51,10 @@ See CLAUDE.md §8.
 See CLAUDE.md §3 for the exact choices. Reasons/alternatives (Plain HTML+Leaflet, Chart.js, Flask,
 SQLite+Shapely, Roboflow API, nearest-neighbour only, Supabase/Cloudinary) are documented; **do not
 switch without editing this file**. Notes: Ultralytics is AGPL-3.0 (fine for hackathon; mention in
-future scope). **OPEN ITEM:** current ORS free quota for `/optimization` (older source said ~500/day;
+future scope). **Frontend build-time tooling** (no runtime footprint, added Stage 8): TypeScript,
+`@vitejs/plugin-react`, `@tailwindcss/vite`, `@types/*`, `react-is` (Recharts peer), and
+`openapi-typescript`, which generates `src/api/schema.d.ts` from the frozen OpenAPI contract so the
+client cannot drift from `schemas.py`. Map uses plain Leaflet (no react-leaflet); icons are inline SVG. **OPEN ITEM:** current ORS free quota for `/optimization` (older source said ~500/day;
 recheck) — cache the demo route.
 
 ## §5 Datasets

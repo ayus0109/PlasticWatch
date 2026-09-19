@@ -1,0 +1,330 @@
+/**
+ * UI primitives. Rules from CLAUDE.md §9 baked in:
+ *  - colour never carries meaning alone: every chip pairs a colour with a label/icon;
+ *  - hit targets are at least 40 px;
+ *  - every async surface has deliberate loading / empty / error states.
+ */
+import type { ReactNode } from "react";
+import type { ConfidenceTier, EvidenceBand, HotspotStatus, PriorityBand } from "../api/client";
+import { conf } from "../lib/format";
+import { BAND, EVIDENCE, NON_ATTRIBUTION_NOTE, STATUS, TIER, type Tone } from "../lib/status";
+import { Icon, type IconName } from "./Icon";
+
+export function cx(...parts: (string | false | null | undefined)[]): string {
+  return parts.filter(Boolean).join(" ");
+}
+
+// ------------------------------------------------------------------ buttons ----
+
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+
+const BUTTON: Record<ButtonVariant, string> = {
+  primary: "bg-accent text-accent-fg hover:bg-accent-hover shadow-card",
+  secondary: "bg-surface text-ink border border-line hover:border-line-strong hover:bg-surface-2",
+  ghost: "text-muted hover:text-ink hover:bg-surface-2",
+  danger: "bg-danger text-white hover:opacity-90",
+};
+
+export function Button({
+  variant = "secondary",
+  icon,
+  children,
+  className,
+  loading,
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  icon?: IconName;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      {...rest}
+      disabled={rest.disabled || loading}
+      className={cx(
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold",
+        "transition-[background-color,border-color,transform,opacity] duration-150 active:scale-[0.98]",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        BUTTON[variant],
+        className,
+      )}
+    >
+      {loading ? <Spinner /> : icon ? <Icon name={icon} size={17} /> : null}
+      {children}
+    </button>
+  );
+}
+
+export function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={cx(
+        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent",
+        className,
+      )}
+      role="status"
+      aria-label="Loading"
+    />
+  );
+}
+
+// -------------------------------------------------------------------- cards ----
+
+export function Card({
+  children,
+  className,
+  as: Tag = "section",
+}: {
+  children: ReactNode;
+  className?: string;
+  as?: "section" | "div" | "article" | "aside";
+}) {
+  return (
+    <Tag className={cx("rounded-card border border-line bg-surface shadow-card", className)}>
+      {children}
+    </Tag>
+  );
+}
+
+export function SectionTitle({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
+        {children}
+      </h2>
+      {hint ? <span className="text-xs text-faint">{hint}</span> : null}
+    </div>
+  );
+}
+
+// -------------------------------------------------------------------- chips ----
+
+const TONE: Record<Tone, string> = {
+  neutral: "bg-surface-2 text-ink border-line",
+  accent: "bg-accent-soft text-accent border-transparent",
+  info: "bg-info-soft text-info border-transparent",
+  ok: "bg-ok-soft text-ok border-transparent",
+  warn: "bg-sim-bg text-sim-fg border-transparent",
+  danger: "bg-danger-soft text-danger border-transparent",
+  muted: "bg-surface-2 text-muted border-line",
+};
+
+export function Chip({
+  tone = "neutral",
+  icon,
+  children,
+  title,
+  className,
+}: {
+  tone?: Tone;
+  icon?: IconName;
+  children: ReactNode;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      title={title}
+      className={cx(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
+        TONE[tone],
+        className,
+      )}
+    >
+      {icon ? <Icon name={icon} size={13} /> : null}
+      {children}
+    </span>
+  );
+}
+
+export function StatusChip({ status }: { status: HotspotStatus }) {
+  const m = STATUS[status];
+  return (
+    <Chip tone={m.tone} icon={m.icon} title={m.hint}>
+      {m.label}
+    </Chip>
+  );
+}
+
+export function BandChip({ band, score }: { band: PriorityBand | null | undefined; score?: number | null }) {
+  if (!band) return <Chip tone="muted">Unscored</Chip>;
+  const m = BAND[band];
+  return (
+    <span
+      title={`${m.label} priority — ${m.range}`}
+      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-semibold"
+    >
+      <span
+        aria-hidden
+        className="grid h-4 w-4 place-items-center rounded-full text-[9px] font-bold text-white"
+        style={{ background: `var(--pw-band-${band})` }}
+      >
+        {m.letter}
+      </span>
+      {m.label}
+      {score !== undefined && score !== null ? (
+        <span className="tabular text-muted">{score.toFixed(1)}</span>
+      ) : null}
+    </span>
+  );
+}
+
+export function EvidenceChip({
+  band,
+  score,
+  humanVerified,
+}: {
+  band: EvidenceBand | null | undefined;
+  score?: number | null;
+  humanVerified?: boolean;
+}) {
+  if (humanVerified) {
+    return (
+      <Chip tone="accent" icon="shield" title="An authority verified this hotspot">
+        Human-verified
+      </Chip>
+    );
+  }
+  if (!band) return <Chip tone="muted">No evidence yet</Chip>;
+  const m = EVIDENCE[band];
+  return (
+    <Chip
+      tone={band === "strong" ? "accent" : band === "moderate" ? "neutral" : "warn"}
+      icon={band === "low" ? "alert" : "scale"}
+      title={m.hint}
+    >
+      {m.label}
+      {score !== undefined && score !== null ? (
+        <span className="tabular opacity-70">{score.toFixed(2)}</span>
+      ) : null}
+    </Chip>
+  );
+}
+
+/** A raw confidence is NEVER shown without its tier (CLAUDE.md §2.7). */
+export function TierChip({
+  tier,
+  value,
+  label = "confidence",
+}: {
+  tier: ConfidenceTier | null | undefined;
+  value?: number | null;
+  label?: string;
+}) {
+  if (!tier) return <Chip tone="muted">No {label}</Chip>;
+  const m = TIER[tier];
+  return (
+    <span
+      title="Raw model confidence is not a calibrated probability — read the tier, not the number."
+      className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-semibold"
+    >
+      <span className="flex gap-0.5" aria-hidden>
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={cx("h-1.5 w-1.5 rounded-full", i <= m.dots ? "bg-ink" : "bg-line-strong")}
+          />
+        ))}
+      </span>
+      {m.label} {label}
+      {value !== undefined && value !== null ? (
+        <span className="tabular font-medium text-muted">{conf(value)}</span>
+      ) : null}
+    </span>
+  );
+}
+
+/** CLAUDE.md §9: amber pill, dashed border, "SIMULATED". */
+export function SimulatedBadge({ className, title }: { className?: string; title?: string }) {
+  return (
+    <span
+      title={title ?? "Simulated demo data: geotags and/or detections are fabricated."}
+      className={cx(
+        "inline-flex items-center rounded-full border border-dashed border-sim-line bg-sim-bg px-2 py-0.5",
+        "text-[10px] font-bold uppercase tracking-[0.08em] text-sim-fg",
+        className,
+      )}
+    >
+      Simulated
+    </span>
+  );
+}
+
+/** The persistent note on authority views (CLAUDE.md §2.3). */
+export function NonAttributionNote({ className }: { className?: string }) {
+  return (
+    <p
+      className={cx(
+        "inline-flex items-start gap-2 rounded-full border border-line bg-surface/95 px-3 py-1.5 text-xs text-muted shadow-card backdrop-blur",
+        className,
+      )}
+    >
+      <Icon name="info" size={14} className="mt-px text-accent" />
+      <span>{NON_ATTRIBUTION_NOTE}</span>
+    </p>
+  );
+}
+
+// ------------------------------------------------------------------ states ----
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cx("skeleton", className)} aria-hidden />;
+}
+
+export function EmptyState({
+  icon = "info",
+  title,
+  children,
+  action,
+}: {
+  icon?: IconName;
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center px-6 py-12 text-center animate-fade">
+      <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-surface-2 text-muted">
+        <Icon name={icon} size={22} />
+      </div>
+      <h3 className="text-base font-semibold">{title}</h3>
+      {children ? <p className="mt-1.5 max-w-sm text-sm text-muted">{children}</p> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
+    </div>
+  );
+}
+
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-3 rounded-card border border-danger/30 bg-danger-soft px-6 py-8 text-center"
+    >
+      <Icon name="alert" size={22} className="text-danger" />
+      <p className="max-w-md text-sm font-medium">{message}</p>
+      {onRetry ? (
+        <Button variant="secondary" icon="refresh" onClick={onRetry}>
+          Try again
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+export function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: ReactNode;
+}) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-muted">{label}</div>
+      <div className="tabular mt-0.5 text-lg font-semibold tracking-tight">{value}</div>
+      {hint ? <div className="text-xs text-faint">{hint}</div> : null}
+    </div>
+  );
+}

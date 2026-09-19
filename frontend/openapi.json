@@ -1,0 +1,3870 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PlasticWatch API",
+    "description": "AI-GIS detection and prioritisation of likely plastic-waste hotspots. Reports show waste appears to be present; they do not establish who is responsible.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/auth/demo-users": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Demo Users",
+        "description": "Seeded accounts for the login role picker (SPEC \u00a79). No token required.",
+        "operationId": "list_demo_users_auth_demo_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DemoUser"
+                  },
+                  "type": "array",
+                  "title": "Response List Demo Users Auth Demo Users Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/demo-login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Demo Login",
+        "description": "Pick a seeded user by id, or by role; returns a signed demo token.",
+        "operationId": "demo_login_auth_demo_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/detect": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Detect Preview",
+        "description": "P1: preview likely-plastic detection without saving a report.",
+        "operationId": "detect_preview_detect_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_detect_preview_detect_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/reports": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Create Report",
+        "description": "Submit a photo report. Records that waste appears to be present \u2014 not who is\nresponsible (CLAUDE.md \u00a72.3).",
+        "operationId": "create_report_reports_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_report_reports_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/reports/mine": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Mine",
+        "description": "The caller's own reports and the status of each one's hotspot.",
+        "operationId": "mine_reports_mine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportSummary"
+                  },
+                  "type": "array",
+                  "title": "Response Mine Reports Mine Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Report",
+        "description": "A citizen may read their own reports; an authority may read any. Another\ncitizen's report is a 404, so report ids can't be probed.",
+        "operationId": "get_report_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hotspots": {
+      "get": {
+        "tags": [
+          "hotspots"
+        ],
+        "summary": "List Hotspots",
+        "description": "GeoJSON of hotspots, highest Impact first.",
+        "operationId": "list_hotspots_hotspots_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HotspotStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "band",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PriorityBand"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "name": "ward",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ward id.",
+              "title": "Ward"
+            },
+            "description": "Ward id."
+          },
+          {
+            "name": "min_evidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Evidence"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Time slider: recompute scores from reports and events up to this time. Read-only \u2014 stored rows are never changed.",
+              "title": "As Of"
+            },
+            "description": "Time slider: recompute scores from reports and events up to this time. Read-only \u2014 stored rows are never changed."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotspotFeatureCollection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hotspots/{hotspot_id}": {
+      "get": {
+        "tags": [
+          "hotspots"
+        ],
+        "summary": "Get Hotspot",
+        "description": "Score breakdown, member reports and the audit trail (the evidence ledger).",
+        "operationId": "get_hotspot_hotspots__hotspot_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hotspot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Hotspot Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotspotDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hotspots/{hotspot_id}/verify": {
+      "post": {
+        "tags": [
+          "hotspots"
+        ],
+        "summary": "Verify Hotspot",
+        "description": "Human verification gate (CLAUDE.md \u00a72.5). Illegal transition -> 409.",
+        "operationId": "verify_hotspot_hotspots__hotspot_id__verify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hotspot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Hotspot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/geo/layers": {
+      "get": {
+        "tags": [
+          "geo"
+        ],
+        "summary": "Geo Layers",
+        "operationId": "geo_layers_geo_layers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GeoFeatureKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Omit for all kinds.",
+              "title": "Kind"
+            },
+            "description": "Omit for all kinds."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoFeatureCollection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wards": {
+      "get": {
+        "tags": [
+          "geo"
+        ],
+        "summary": "Wards",
+        "description": "Ward boundaries with per-ward hotspot stats, for the choropleth.",
+        "operationId": "wards_wards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardFeatureCollection"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Tasks",
+        "operationId": "list_tasks_tasks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaskSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Tasks Tasks Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Task",
+        "description": "Optimised route over VERIFIED hotspots only. Non-verified ids will be a 409.",
+        "operationId": "create_task_tasks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get Task",
+        "operationId": "get_task_tasks__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/stops/{stop_id}/arrive": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Arrive At Stop",
+        "description": "Mark arrival. The real check requires the team within 50 m of the stop.",
+        "operationId": "arrive_at_stop_tasks__task_id__stops__stop_id__arrive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "stop_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Stop Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArriveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArriveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/stops/{stop_id}/after": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Upload After Photos",
+        "description": "Two after-photos -> before/after record + verdict. Never resolves anything.",
+        "operationId": "upload_after_photos_tasks__task_id__stops__stop_id__after_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "stop_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Stop Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_after_photos_tasks__task_id__stops__stop_id__after_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeforeAfterRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/before-after/{ba_id}/review": {
+      "post": {
+        "tags": [
+          "before-after"
+        ],
+        "summary": "Review Before After",
+        "description": "Authority inspects before/after side by side and confirms or rejects.",
+        "operationId": "review_before_after_before_after__ba_id__review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ba_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ba Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/summary": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Summary",
+        "description": "The 6 KPI cards plus band and status breakdowns.",
+        "operationId": "summary_analytics_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/analytics/trend": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Trend",
+        "operationId": "trend_analytics_trend_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsTrend"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/wards": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Ward Stats",
+        "operationId": "ward_stats_analytics_wards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsWards"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/reset-demo": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reset Demo",
+        "description": "Wipe and reseed the simulated demo state.",
+        "operationId": "reset_demo_admin_reset_demo_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetDemoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Liveness + PostGIS availability.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AiStatus": {
+        "type": "string",
+        "enum": [
+          "detected",
+          "not_detected",
+          "error"
+        ],
+        "title": "AiStatus",
+        "description": "SPEC \u00a76 detector contract."
+      },
+      "AnalyticsSummary": {
+        "properties": {
+          "kpis": {
+            "$ref": "#/components/schemas/KpiCards"
+          },
+          "by_band": {
+            "items": {
+              "$ref": "#/components/schemas/BandCount"
+            },
+            "type": "array",
+            "title": "By Band"
+          },
+          "by_status": {
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            },
+            "type": "array",
+            "title": "By Status"
+          },
+          "simulated_data": {
+            "type": "boolean",
+            "title": "Simulated Data",
+            "description": "True while the dashboard is showing seeded demo data (CLAUDE.md \u00a72.2).",
+            "default": true
+          },
+          "non_attribution_note": {
+            "type": "string",
+            "title": "Non Attribution Note",
+            "default": "Reports show waste appears to be present; they do not establish who is responsible."
+          }
+        },
+        "type": "object",
+        "required": [
+          "kpis",
+          "by_band",
+          "by_status"
+        ],
+        "title": "AnalyticsSummary"
+      },
+      "AnalyticsTrend": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "simulated_data": {
+            "type": "boolean",
+            "title": "Simulated Data",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "days",
+          "points"
+        ],
+        "title": "AnalyticsTrend"
+      },
+      "AnalyticsWards": {
+        "properties": {
+          "wards": {
+            "items": {
+              "$ref": "#/components/schemas/WardStats"
+            },
+            "type": "array",
+            "title": "Wards"
+          },
+          "simulated_data": {
+            "type": "boolean",
+            "title": "Simulated Data",
+            "default": true
+          },
+          "non_attribution_note": {
+            "type": "string",
+            "title": "Non Attribution Note",
+            "default": "Reports show waste appears to be present; they do not establish who is responsible."
+          }
+        },
+        "type": "object",
+        "required": [
+          "wards"
+        ],
+        "title": "AnalyticsWards"
+      },
+      "ArriveRequest": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "gps_accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gps Accuracy M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "ArriveRequest",
+        "description": "The team's current position, checked against the stop (SPEC \u00a78: within 50 m)."
+      },
+      "ArriveResponse": {
+        "properties": {
+          "stop": {
+            "$ref": "#/components/schemas/TaskStop"
+          },
+          "distance_m": {
+            "type": "number",
+            "title": "Distance M"
+          },
+          "within_range": {
+            "type": "boolean",
+            "title": "Within Range"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stop",
+          "distance_m",
+          "within_range"
+        ],
+        "title": "ArriveResponse",
+        "description": "Arrival is checked within 50 m of the stop (SPEC \u00a78)."
+      },
+      "BandCount": {
+        "properties": {
+          "band": {
+            "$ref": "#/components/schemas/PriorityBand"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "band",
+          "count"
+        ],
+        "title": "BandCount"
+      },
+      "BeforeAfterRecord": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "task_stop_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Stop Id"
+          },
+          "hotspot_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotspot Id"
+          },
+          "before_report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Report Id"
+          },
+          "before_image_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Image Path"
+          },
+          "after_image_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "After Image Paths",
+            "default": []
+          },
+          "before_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Count"
+          },
+          "before_area": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Area"
+          },
+          "after_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Count"
+          },
+          "after_area": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Area"
+          },
+          "reduction_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reduction Ratio",
+            "description": "1 - (after plastic area / before plastic area), using the worse photo."
+          },
+          "viewpoint_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewpoint Match",
+            "description": "ORB match score against the before image."
+          },
+          "quality_flags": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Quality Flags",
+            "default": {}
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict_note": {
+            "type": "string",
+            "title": "Verdict Note",
+            "description": "CLAUDE.md \u00a72.5/\u00a72.6.",
+            "default": "A verdict is a suggestion. Only an authority can resolve a hotspot."
+          },
+          "review_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "BeforeAfterRecord",
+        "description": "SPEC \u00a714. The system computes a verdict but NEVER auto-resolves (CLAUDE.md \u00a72.5).\n\nAbsence of detections after cleanup is not proof of cleanliness (CLAUDE.md \u00a72.6)."
+      },
+      "Body_create_report_reports_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "title": "Image"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat",
+            "description": "Omit lat/lon to use the photo's EXIF GPS."
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocationSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "browser | exif | pin"
+          },
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy",
+            "description": "GPS accuracy in metres."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_create_report_reports_post"
+      },
+      "Body_detect_preview_detect_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "title": "Image",
+            "description": "Photo to preview. Not saved."
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_detect_preview_detect_post"
+      },
+      "Body_upload_after_photos_tasks__task_id__stops__stop_id__after_post": {
+        "properties": {
+          "wide": {
+            "type": "string",
+            "format": "binary",
+            "title": "Wide",
+            "description": "Wide after-photo."
+          },
+          "close": {
+            "type": "string",
+            "format": "binary",
+            "title": "Close",
+            "description": "Close-up after-photo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "wide",
+          "close"
+        ],
+        "title": "Body_upload_after_photos_tasks__task_id__stops__stop_id__after_post"
+      },
+      "ConfidenceTier": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "ConfidenceTier",
+        "description": "Raw model confidence is not a calibrated probability (CLAUDE.md \u00a72.7).\n\nA tier is shown beside every number so a score is never read as a promise."
+      },
+      "DemoLoginRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DemoLoginRequest",
+        "description": "Pick a seeded user by id, or by role to take the first account with it."
+      },
+      "DemoUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "ward_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Id"
+          },
+          "reliability": {
+            "type": "number",
+            "title": "Reliability",
+            "description": "Static 0.5 \u2014 learned reporter reliability is out of scope.",
+            "default": 0.5
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "DemoUser",
+        "description": "A seeded demo account. There is no real auth in this system (CLAUDE.md \u00a78)."
+      },
+      "DetectPreview": {
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/DetectorOutput"
+          },
+          "confidence_tier": {
+            "$ref": "#/components/schemas/ConfidenceTier",
+            "description": "Shown beside result.report_confidence; raw confidence is not calibrated."
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "description": "True while the detector runs in stub mode (fabricated output).",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "result",
+          "confidence_tier"
+        ],
+        "title": "DetectPreview",
+        "description": "POST /detect \u2014 the frozen DetectorOutput, wrapped with the tier the UI must show.\n\nComposition, not inheritance: `result` is exactly what detector.py returns, so\nthe \u00a76 contract appears verbatim (as its own schema) in /docs, and the tier is\nadded at the API layer without touching it (CLAUDE.md \u00a72.7)."
+      },
+      "Detection": {
+        "properties": {
+          "class_name": {
+            "$ref": "#/components/schemas/DetectionClass"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Raw model confidence, not calibrated."
+          },
+          "x1": {
+            "type": "number",
+            "title": "X1"
+          },
+          "y1": {
+            "type": "number",
+            "title": "Y1"
+          },
+          "x2": {
+            "type": "number",
+            "title": "X2"
+          },
+          "y2": {
+            "type": "number",
+            "title": "Y2"
+          },
+          "area_frac": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Area Frac",
+            "description": "Box area / image area."
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_name",
+          "confidence",
+          "x1",
+          "y1",
+          "x2",
+          "y2",
+          "area_frac"
+        ],
+        "title": "Detection",
+        "description": "One detected litter item. Box coordinates are pixels in the source image."
+      },
+      "DetectionClass": {
+        "type": "string",
+        "enum": [
+          "plastic_bottle",
+          "plastic_bag_film",
+          "plastic_packaging",
+          "plastic_other",
+          "non_plastic_litter"
+        ],
+        "title": "DetectionClass",
+        "description": "SPEC \u00a76 \u2014 5 classes collapsed from TACO's 60.\n\nThe four plastic_* classes are \"plastic-likely\". No person, vehicle or\nlicence-plate class may ever be added here (CLAUDE.md \u00a72.4)."
+      },
+      "DetectorOutput": {
+        "properties": {
+          "plastic_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Plastic Count",
+            "description": "Count of likely-plastic items."
+          },
+          "plastic_area_frac": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Plastic Area Frac",
+            "description": "Sum of likely-plastic box areas / image area, capped at 1.0."
+          },
+          "report_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Report Confidence",
+            "description": "Mean of the top-3 plastic-likely confidences."
+          },
+          "detections": {
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            },
+            "type": "array",
+            "title": "Detections"
+          },
+          "annotated_jpg_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotated Jpg Path",
+            "description": "Always present; null when no annotated image was written."
+          },
+          "ai_status": {
+            "$ref": "#/components/schemas/AiStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plastic_count",
+          "plastic_area_frac",
+          "report_confidence",
+          "detections",
+          "annotated_jpg_path",
+          "ai_status"
+        ],
+        "title": "DetectorOutput",
+        "description": "FROZEN CONTRACT (SPEC \u00a76) \u2014 detector.py returns exactly this shape in both\nstub and real mode. Do not add, rename or reorder fields without a stage."
+      },
+      "EvidenceBand": {
+        "type": "string",
+        "enum": [
+          "low",
+          "moderate",
+          "strong"
+        ],
+        "title": "EvidenceBand",
+        "description": "SPEC \u00a711 Evidence bands (half-open): <0.4 low, [0.4,0.75) moderate, >=0.75 strong."
+      },
+      "GeoContext": {
+        "properties": {
+          "d_drain_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Drain M"
+          },
+          "d_water_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Water M"
+          },
+          "d_school_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D School M"
+          },
+          "d_hospital_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Hospital M"
+          },
+          "d_market_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Market M"
+          }
+        },
+        "type": "object",
+        "title": "GeoContext",
+        "description": "Distances stored on the hotspot row at create/update (SPEC \u00a710)."
+      },
+      "GeoFeature": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "Feature",
+            "title": "Type",
+            "default": "Feature"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Geometry",
+            "description": "Any GeoJSON geometry: drains are lines, water polygons, amenities points."
+          },
+          "properties": {
+            "$ref": "#/components/schemas/GeoFeatureProperties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoFeature"
+      },
+      "GeoFeatureCollection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FeatureCollection",
+            "title": "Type",
+            "default": "FeatureCollection"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoFeature"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "attribution": {
+            "type": "string",
+            "title": "Attribution",
+            "default": "\u00a9 OpenStreetMap contributors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "features"
+        ],
+        "title": "GeoFeatureCollection"
+      },
+      "GeoFeatureKind": {
+        "type": "string",
+        "enum": [
+          "drain",
+          "water",
+          "school",
+          "hospital",
+          "market"
+        ],
+        "title": "GeoFeatureKind",
+        "description": "SPEC \u00a77 geo_features.kind."
+      },
+      "GeoFeatureProperties": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/GeoFeatureKind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "osm",
+              "manual"
+            ],
+            "title": "Source",
+            "default": "osm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "GeoFeatureProperties"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HotspotDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "radius_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius M"
+          },
+          "ward_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Id"
+          },
+          "ward_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Name"
+          },
+          "first_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Reported At"
+          },
+          "last_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reported At"
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count"
+          },
+          "unique_reporters": {
+            "type": "integer",
+            "title": "Unique Reporters"
+          },
+          "recurrence_returns": {
+            "type": "integer",
+            "title": "Recurrence Returns"
+          },
+          "geo_context": {
+            "$ref": "#/components/schemas/GeoContext"
+          },
+          "score_breakdown": {
+            "$ref": "#/components/schemas/ScoreBreakdown"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSummary"
+            },
+            "type": "array",
+            "title": "Reports"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/HotspotEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          },
+          "non_attribution_note": {
+            "type": "string",
+            "title": "Non Attribution Note",
+            "description": "Persistent note required on authority views.",
+            "default": "Reports show waste appears to be present; they do not establish who is responsible."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "lat",
+          "lon",
+          "report_count",
+          "unique_reporters",
+          "recurrence_returns",
+          "geo_context",
+          "score_breakdown",
+          "reports",
+          "events"
+        ],
+        "title": "HotspotDetail",
+        "description": "GET /hotspots/{id} \u2014 score breakdown, reports, events (the evidence ledger)."
+      },
+      "HotspotEvent": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RejectReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "to_status",
+          "created_at"
+        ],
+        "title": "HotspotEvent",
+        "description": "Audit log row. actor_id is the human who acted, null for system transitions."
+      },
+      "HotspotFeature": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "Feature",
+            "title": "Type",
+            "default": "Feature"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/HotspotProperties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "HotspotFeature"
+      },
+      "HotspotFeatureCollection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FeatureCollection",
+            "title": "Type",
+            "default": "FeatureCollection"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/HotspotFeature"
+            },
+            "type": "array",
+            "title": "Features"
+          }
+        },
+        "type": "object",
+        "required": [
+          "features"
+        ],
+        "title": "HotspotFeatureCollection"
+      },
+      "HotspotProperties": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "impact_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Score"
+          },
+          "priority_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Score"
+          },
+          "evidence_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count"
+          },
+          "unique_reporters": {
+            "type": "integer",
+            "title": "Unique Reporters"
+          },
+          "recurrence_returns": {
+            "type": "integer",
+            "title": "Recurrence Returns"
+          },
+          "radius_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius M"
+          },
+          "ward_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Id"
+          },
+          "ward_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Name"
+          },
+          "first_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Reported At"
+          },
+          "last_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reported At"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "description": "True when any member report has a fabricated geotag (CLAUDE.md \u00a72.2).",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "report_count",
+          "unique_reporters",
+          "recurrence_returns"
+        ],
+        "title": "HotspotProperties",
+        "description": "FROZEN \u2014 the property set every map marker styles itself from."
+      },
+      "HotspotStatus": {
+        "type": "string",
+        "enum": [
+          "ai_detected",
+          "needs_verification",
+          "verified",
+          "cleanup_scheduled",
+          "cleanup_completed",
+          "resolved",
+          "false_positive"
+        ],
+        "title": "HotspotStatus",
+        "description": "SPEC \u00a713. Only an authority reaches verified / false_positive / resolved."
+      },
+      "HotspotSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "radius_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius M"
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count"
+          },
+          "unique_reporters": {
+            "type": "integer",
+            "title": "Unique Reporters"
+          },
+          "impact_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Score"
+          },
+          "priority_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Score"
+          },
+          "evidence_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "lat",
+          "lon",
+          "report_count",
+          "unique_reporters"
+        ],
+        "title": "HotspotSummary",
+        "description": "The hotspot a report landed on, as returned to the citizen who reported it."
+      },
+      "KpiCards": {
+        "properties": {
+          "total_reports": {
+            "type": "integer",
+            "title": "Total Reports"
+          },
+          "active_hotspots": {
+            "type": "integer",
+            "title": "Active Hotspots"
+          },
+          "awaiting_verification": {
+            "type": "integer",
+            "title": "Awaiting Verification"
+          },
+          "verified_hotspots": {
+            "type": "integer",
+            "title": "Verified Hotspots"
+          },
+          "resolved_hotspots": {
+            "type": "integer",
+            "title": "Resolved Hotspots"
+          },
+          "median_days_to_resolve": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Days To Resolve"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_reports",
+          "active_hotspots",
+          "awaiting_verification",
+          "verified_hotspots",
+          "resolved_hotspots"
+        ],
+        "title": "KpiCards",
+        "description": "The 6 KPI cards of SPEC \u00a72 F8."
+      },
+      "LocationSource": {
+        "type": "string",
+        "enum": [
+          "browser",
+          "exif",
+          "pin"
+        ],
+        "title": "LocationSource",
+        "description": "SPEC \u00a77 reports.location_source. Capture order: browser GPS -> EXIF -> map pin."
+      },
+      "PointGeometry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "Point",
+            "title": "Type",
+            "default": "Point"
+          },
+          "coordinates": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Coordinates",
+            "description": "[lon, lat] \u2014 GeoJSON order."
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinates"
+        ],
+        "title": "PointGeometry"
+      },
+      "PriorityBand": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ],
+        "title": "PriorityBand",
+        "description": "SPEC \u00a711 Impact bands (half-open): >=70 critical, [50,70) high, [30,50) medium, <30 low."
+      },
+      "RejectReason": {
+        "type": "string",
+        "enum": [
+          "not_plastic",
+          "no_waste_visible",
+          "wrong_location",
+          "duplicate",
+          "already_cleaned",
+          "other"
+        ],
+        "title": "RejectReason",
+        "description": "SPEC \u00a713."
+      },
+      "ReportCreateResponse": {
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportDetail"
+          },
+          "detections": {
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            },
+            "type": "array",
+            "title": "Detections"
+          },
+          "hotspot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "merged": {
+            "type": "boolean",
+            "title": "Merged",
+            "description": "True when the report joined an existing hotspot rather than creating one."
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of"
+          },
+          "low_accuracy": {
+            "type": "boolean",
+            "title": "Low Accuracy",
+            "description": "Location accuracy was low; the merge radius was widened.",
+            "default": false
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Plain-language outcome for the citizen, e.g. no likely plastic found."
+          }
+        },
+        "type": "object",
+        "required": [
+          "report",
+          "detections",
+          "merged",
+          "message"
+        ],
+        "title": "ReportCreateResponse",
+        "description": "Result of POST /reports: detect -> dedupe -> context -> score (SPEC \u00a78)."
+      },
+      "ReportDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At"
+          },
+          "image_path": {
+            "type": "string",
+            "title": "Image Path"
+          },
+          "annotated_jpg_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotated Jpg Path"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "location_source": {
+            "$ref": "#/components/schemas/LocationSource"
+          },
+          "gps_accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gps Accuracy M"
+          },
+          "low_accuracy": {
+            "type": "boolean",
+            "title": "Low Accuracy",
+            "description": "GPS accuracy was poor enough to widen the merge radius.",
+            "default": false
+          },
+          "ai_status": {
+            "$ref": "#/components/schemas/AiStatus"
+          },
+          "plastic_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plastic Count"
+          },
+          "plastic_area_frac": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plastic Area Frac"
+          },
+          "report_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Confidence"
+          },
+          "confidence_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hotspot_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotspot Id"
+          },
+          "hotspot_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pending / work in progress / completed, as shown to the citizen."
+          },
+          "is_duplicate": {
+            "type": "boolean",
+            "title": "Is Duplicate",
+            "description": "Matched an existing image; attached as evidence but not counted twice.",
+            "default": false
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          },
+          "detections": {
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            },
+            "type": "array",
+            "title": "Detections",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "image_path",
+          "lat",
+          "lon",
+          "location_source",
+          "ai_status"
+        ],
+        "title": "ReportDetail"
+      },
+      "ReportSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At"
+          },
+          "image_path": {
+            "type": "string",
+            "title": "Image Path"
+          },
+          "annotated_jpg_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotated Jpg Path"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "location_source": {
+            "$ref": "#/components/schemas/LocationSource"
+          },
+          "gps_accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gps Accuracy M"
+          },
+          "low_accuracy": {
+            "type": "boolean",
+            "title": "Low Accuracy",
+            "description": "GPS accuracy was poor enough to widen the merge radius.",
+            "default": false
+          },
+          "ai_status": {
+            "$ref": "#/components/schemas/AiStatus"
+          },
+          "plastic_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plastic Count"
+          },
+          "plastic_area_frac": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plastic Area Frac"
+          },
+          "report_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Confidence"
+          },
+          "confidence_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hotspot_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotspot Id"
+          },
+          "hotspot_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pending / work in progress / completed, as shown to the citizen."
+          },
+          "is_duplicate": {
+            "type": "boolean",
+            "title": "Is Duplicate",
+            "description": "Matched an existing image; attached as evidence but not counted twice.",
+            "default": false
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "image_path",
+          "lat",
+          "lon",
+          "location_source",
+          "ai_status"
+        ],
+        "title": "ReportSummary",
+        "description": "A citizen's own report and the status of the hotspot it belongs to."
+      },
+      "ResetDemoResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "reports": {
+            "type": "integer",
+            "title": "Reports"
+          },
+          "hotspots": {
+            "type": "integer",
+            "title": "Hotspots"
+          },
+          "users": {
+            "type": "integer",
+            "title": "Users"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Demo state reseeded. All geotags in this dataset are simulated."
+          }
+        },
+        "type": "object",
+        "required": [
+          "reports",
+          "hotspots",
+          "users"
+        ],
+        "title": "ResetDemoResponse",
+        "description": "POST /admin/reset-demo \u2014 wipes and reseeds the simulated demo state."
+      },
+      "ReviewDecision": {
+        "type": "string",
+        "enum": [
+          "confirm_resolved",
+          "reject"
+        ],
+        "title": "ReviewDecision",
+        "description": "SPEC \u00a78 POST /before-after/{id}/review. Only confirm_resolved closes a hotspot."
+      },
+      "ReviewRequest": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/ReviewDecision"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "ReviewRequest",
+        "description": "A human authority action. Only confirm_resolved closes the hotspot."
+      },
+      "ReviewResponse": {
+        "properties": {
+          "before_after": {
+            "$ref": "#/components/schemas/BeforeAfterRecord"
+          },
+          "hotspot_id": {
+            "type": "integer",
+            "title": "Hotspot Id"
+          },
+          "hotspot_status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "event": {
+            "$ref": "#/components/schemas/HotspotEvent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "before_after",
+          "hotspot_id",
+          "hotspot_status",
+          "event"
+        ],
+        "title": "ReviewResponse"
+      },
+      "ScoreBreakdown": {
+        "properties": {
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreFactor"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "impact_score": {
+            "type": "number",
+            "title": "Impact Score"
+          },
+          "priority_band": {
+            "$ref": "#/components/schemas/PriorityBand"
+          },
+          "evidence_score": {
+            "type": "number",
+            "title": "Evidence Score"
+          },
+          "evidence_band": {
+            "$ref": "#/components/schemas/EvidenceBand"
+          },
+          "evidence_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Label",
+            "description": "e.g. \"human-verified\" once an authority has confirmed."
+          },
+          "weights_note": {
+            "type": "string",
+            "title": "Weights Note",
+            "description": "CLAUDE.md \u00a72.8.",
+            "default": "Weights are tunable proposals, not published truth."
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "factors",
+          "impact_score",
+          "priority_band",
+          "evidence_score",
+          "evidence_band"
+        ],
+        "title": "ScoreBreakdown"
+      },
+      "ScoreFactor": {
+        "properties": {
+          "axis": {
+            "type": "string",
+            "enum": [
+              "impact",
+              "evidence"
+            ],
+            "title": "Axis",
+            "description": "Impact ranks the hotspot; Evidence governs what may be claimed."
+          },
+          "factor": {
+            "type": "string",
+            "title": "Factor"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "Normalised 0-1."
+          },
+          "weight": {
+            "type": "number",
+            "title": "Weight"
+          },
+          "contribution": {
+            "type": "number",
+            "title": "Contribution",
+            "description": "Impact axis: points out of 100. Evidence axis: share of 0-1."
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "axis",
+          "factor",
+          "value",
+          "weight",
+          "contribution"
+        ],
+        "title": "ScoreFactor",
+        "description": "One row of the explanation card (SPEC \u00a711).\n\nWeights are tunable proposals documented here, not published truth (CLAUDE.md \u00a72.8)."
+      },
+      "StatusCount": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "count"
+        ],
+        "title": "StatusCount"
+      },
+      "TaskCreateRequest": {
+        "properties": {
+          "hotspot_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Hotspot Ids"
+          },
+          "team_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Team Id"
+          },
+          "depot": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Depot",
+            "description": "[lon, lat] start/end point of the route."
+          }
+        },
+        "type": "object",
+        "required": [
+          "hotspot_ids",
+          "team_id",
+          "depot"
+        ],
+        "title": "TaskCreateRequest",
+        "description": "Tasks accept VERIFIED hotspots only (SPEC \u00a713) \u2014 a non-verified id is a 409."
+      },
+      "TaskDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "assigned_team": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Team"
+          },
+          "assigned_team_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Team Name"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "stop_count": {
+            "type": "integer",
+            "title": "Stop Count"
+          },
+          "route_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Distance M"
+          },
+          "route_duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Duration S"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          },
+          "depot": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depot"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/TaskStop"
+            },
+            "type": "array",
+            "title": "Stops"
+          },
+          "route_geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Geojson",
+            "description": "Decoded ORS geometry, or straight lines when the fallback ran."
+          },
+          "route_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ors",
+                  "greedy"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "stop_count",
+          "created_at",
+          "stops"
+        ],
+        "title": "TaskDetail"
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "in_progress",
+          "done"
+        ],
+        "title": "TaskStatus",
+        "description": "SPEC \u00a77 cleanup_tasks.status."
+      },
+      "TaskStop": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "hotspot_id": {
+            "type": "integer",
+            "title": "Hotspot Id"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "priority_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "arrived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrived At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "hotspot_id",
+          "lat",
+          "lon"
+        ],
+        "title": "TaskStop"
+      },
+      "TaskSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "assigned_team": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Team"
+          },
+          "assigned_team_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Team Name"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "stop_count": {
+            "type": "integer",
+            "title": "Stop Count"
+          },
+          "route_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Distance M"
+          },
+          "route_duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Duration S"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "stop_count",
+          "created_at"
+        ],
+        "title": "TaskSummary"
+      },
+      "TokenResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "token_type": {
+            "type": "string",
+            "const": "bearer",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/DemoUser"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "user",
+          "expires_at"
+        ],
+        "title": "TokenResponse"
+      },
+      "TrendPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "ISO date, YYYY-MM-DD."
+          },
+          "reports": {
+            "type": "integer",
+            "title": "Reports"
+          },
+          "hotspots_opened": {
+            "type": "integer",
+            "title": "Hotspots Opened"
+          },
+          "hotspots_resolved": {
+            "type": "integer",
+            "title": "Hotspots Resolved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "reports",
+          "hotspots_opened",
+          "hotspots_resolved"
+        ],
+        "title": "TrendPoint"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "citizen",
+          "authority",
+          "team"
+        ],
+        "title": "UserRole",
+        "description": "SPEC \u00a77 users.role."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "likely_cleaned",
+          "partial",
+          "not_cleaned",
+          "inconclusive"
+        ],
+        "title": "Verdict",
+        "description": "SPEC \u00a714. A verdict is a suggestion \u2014 it never resolves anything by itself."
+      },
+      "VerifyDecision": {
+        "type": "string",
+        "enum": [
+          "verify",
+          "reject",
+          "false_positive"
+        ],
+        "title": "VerifyDecision",
+        "description": "SPEC \u00a78 POST /hotspots/{id}/verify."
+      },
+      "VerifyRequest": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/VerifyDecision"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RejectReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required when decision is reject or false_positive."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "VerifyRequest",
+        "description": "SPEC \u00a78. A human authority action \u2014 nothing here happens automatically."
+      },
+      "VerifyResponse": {
+        "properties": {
+          "hotspot_id": {
+            "type": "integer",
+            "title": "Hotspot Id"
+          },
+          "from_status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/HotspotStatus"
+          },
+          "event": {
+            "$ref": "#/components/schemas/HotspotEvent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hotspot_id",
+          "from_status",
+          "to_status",
+          "event"
+        ],
+        "title": "VerifyResponse"
+      },
+      "WardFeature": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "Feature",
+            "title": "Type",
+            "default": "Feature"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Geometry"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/WardProperties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "WardFeature"
+      },
+      "WardFeatureCollection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FeatureCollection",
+            "title": "Type",
+            "default": "FeatureCollection"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/WardFeature"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "attribution": {
+            "type": "string",
+            "title": "Attribution",
+            "default": "\u00a9 OpenStreetMap contributors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "features"
+        ],
+        "title": "WardFeatureCollection"
+      },
+      "WardProperties": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hotspot_count": {
+            "type": "integer",
+            "title": "Hotspot Count",
+            "default": 0
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count",
+            "default": 0
+          },
+          "resolved_count": {
+            "type": "integer",
+            "title": "Resolved Count",
+            "default": 0
+          },
+          "avg_impact": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Impact"
+          },
+          "is_simulated": {
+            "type": "boolean",
+            "title": "Is Simulated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "WardProperties"
+      },
+      "WardStats": {
+        "properties": {
+          "ward_id": {
+            "type": "integer",
+            "title": "Ward Id"
+          },
+          "ward_name": {
+            "type": "string",
+            "title": "Ward Name"
+          },
+          "hotspot_count": {
+            "type": "integer",
+            "title": "Hotspot Count"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "resolved_count": {
+            "type": "integer",
+            "title": "Resolved Count"
+          },
+          "avg_impact": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Impact"
+          },
+          "total_reports": {
+            "type": "integer",
+            "title": "Total Reports",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "ward_id",
+          "ward_name",
+          "hotspot_count",
+          "open_count",
+          "resolved_count"
+        ],
+        "title": "WardStats"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
