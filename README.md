@@ -63,15 +63,25 @@ structure only.
 
 ---
 
-## What's in the box (Stage 0)
+## What's in the box
 
 | Path | Purpose |
 |---|---|
 | `docker-compose.yml` | `db` (postgis/postgis:16-3.4) + `api` (FastAPI, hot reload) |
 | `backend/app/config.py` | every tunable, read from env — no hard-coded radii or weights |
 | `backend/app/db.py` | SQLAlchemy **Core** engine + `get_conn` dependency (no ORM) |
-| `backend/app/sql/schema.sql` | the 10 tables, SRID 4326, GiST indexes, CHECK constraints |
+| `backend/app/sql/schema.sql` | the 10 tables of SPEC §7, SRID 4326, GiST indexes |
 | `backend/app/main.py` | app wiring, schema bootstrap on startup, `GET /health` |
+| `backend/app/schemas.py` | **frozen API contract** — every request/response model + the SPEC §6 detector output |
+| `backend/app/deps.py` | demo auth (HMAC-signed role token) + `require_role` → 403 |
+| `backend/app/routers/` | every SPEC §8 endpoint |
+| `backend/fixtures/` | simulated example payloads (all `is_simulated: true`) |
+
+### Demo auth
+
+There is no real authentication (CLAUDE.md §8). The login page lists seeded accounts from
+`GET /auth/demo-users`; `POST /auth/demo-login` with `{"role": "authority"}` (or a `user_id`)
+returns a bearer token. Send it as `Authorization: Bearer <token>`. A role mismatch is a 403.
 
 ### Database
 
@@ -82,11 +92,14 @@ Geometry is SRID 4326 throughout; distances use `::geography`; every geometry co
 GiST index. The schema is applied automatically the first time the API starts against an empty
 database, and `schema.sql` is idempotent.
 
-**There is deliberately no column anywhere naming a responsible party.** Rows whose
-geolocation or identity is fabricated for the demo carry `is_simulated = true` — TACO images
-have no GPS, so all seeded geotags are simulated and the UI badges them. Columns only a human
-authority may fill (`verified_by`, `resolved_at`, `review_decision`) are nullable with no
-default: nothing reaches Verified, Resolved or False-positive without a human action.
+**There is deliberately no column anywhere naming a responsible party.** Reports whose
+geolocation is fabricated for the demo carry `reports.is_simulated = true` — TACO images have
+no GPS, so all seeded geotags are simulated. A hotspot counts as simulated when any of its
+reports is; the API returns that flag and the UI badges it.
+
+Nothing reaches Verified, Resolved or False-positive without a human action. Every hotspot
+status change writes a `hotspot_events` row whose `actor_id` records the human who acted, and
+`before_after.review_decision` stays NULL until an authority confirms the cleanup.
 
 ### Configuration
 

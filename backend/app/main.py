@@ -1,7 +1,8 @@
 """PlasticWatch API entrypoint.
 
-Stage 0 scope: app wiring, schema bootstrap and /health only. Routers, auth and the
-detector arrive in later stages (docs/CLAUDE_CODE_STAGES.md).
+App wiring, schema bootstrap, /health, and the Stage 1 frozen API surface. Routers
+return fixtures until later stages replace each stub with real logic
+(docs/CLAUDE_CODE_STAGES.md).
 """
 
 import logging
@@ -12,6 +13,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from app.db import get_engine
+from app.routers import admin, analytics, auth, before_after, geo, hotspots, reports, tasks
 
 logger = logging.getLogger("plasticwatch")
 
@@ -64,6 +66,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+for module in (auth, reports, hotspots, geo, tasks, before_after, analytics, admin):
+    app.include_router(module.router)
 
 
 @app.get("/health")

@@ -7,5 +7,19 @@ line-length = 100
 [lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[lint.flake8-bugbear]
+# FastAPI declares dependencies and params as call defaults; that is the framework
+# idiom, not the mutable-default bug B008 guards against.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Form",
+    "fastapi.File",
+    "fastapi.Header",
+    "fastapi.Security",
+]
+
 [lint.per-file-ignores]
 "tests/*" = ["B011"]

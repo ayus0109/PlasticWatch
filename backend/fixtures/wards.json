@@ -1,0 +1,132 @@
+{
+  "type": "FeatureCollection",
+  "attribution": "© OpenStreetMap contributors",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                73.8447,
+                18.5204
+              ],
+              [
+                73.8567,
+                18.5204
+              ],
+              [
+                73.8567,
+                18.5324
+              ],
+              [
+                73.8447,
+                18.5324
+              ],
+              [
+                73.8447,
+                18.5204
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "name": "Ward A",
+        "hotspot_count": 2,
+        "open_count": 2,
+        "resolved_count": 0,
+        "avg_impact": 52.6,
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                73.8567,
+                18.5084
+              ],
+              [
+                73.8687,
+                18.5084
+              ],
+              [
+                73.8687,
+                18.5324
+              ],
+              [
+                73.8567,
+                18.5324
+              ],
+              [
+                73.8567,
+                18.5084
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "name": "Ward B",
+        "hotspot_count": 3,
+        "open_count": 2,
+        "resolved_count": 0,
+        "avg_impact": 36.6,
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                73.8447,
+                18.5084
+              ],
+              [
+                73.8567,
+                18.5084
+              ],
+              [
+                73.8567,
+                18.5204
+              ],
+              [
+                73.8447,
+                18.5204
+              ],
+              [
+                73.8447,
+                18.5084
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "name": "Ward C",
+        "hotspot_count": 3,
+        "open_count": 2,
+        "resolved_count": 1,
+        "avg_impact": 50.0,
+        "is_simulated": true
+      }
+    }
+  ]
+}

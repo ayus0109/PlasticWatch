@@ -1,0 +1,33 @@
+{
+  "wards": [
+    {
+      "ward_id": 1,
+      "ward_name": "Ward A",
+      "hotspot_count": 2,
+      "open_count": 2,
+      "resolved_count": 0,
+      "avg_impact": 52.6,
+      "total_reports": 6
+    },
+    {
+      "ward_id": 2,
+      "ward_name": "Ward B",
+      "hotspot_count": 3,
+      "open_count": 2,
+      "resolved_count": 0,
+      "avg_impact": 36.6,
+      "total_reports": 7
+    },
+    {
+      "ward_id": 3,
+      "ward_name": "Ward C",
+      "hotspot_count": 3,
+      "open_count": 2,
+      "resolved_count": 1,
+      "avg_impact": 50.0,
+      "total_reports": 7
+    }
+  ],
+  "simulated_data": true,
+  "non_attribution_note": "Reports show waste appears to be present; they do not establish who is responsible."
+}

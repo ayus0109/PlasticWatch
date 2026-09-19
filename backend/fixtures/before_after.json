@@ -1,0 +1,30 @@
+{
+  "id": 9,
+  "task_stop_id": 41,
+  "hotspot_id": 1,
+  "before_report_id": "aaaaaaaa-0000-4000-8000-000000000302",
+  "before_image_path": "uploads/reports/aaaaaaaa-0000-4000-8000-000000000302.jpg",
+  "after_image_paths": [
+    "uploads/after/9-wide.jpg",
+    "uploads/after/9-close.jpg"
+  ],
+  "before_count": 10,
+  "before_area": 0.08,
+  "after_count": 1,
+  "after_area": 0.006,
+  "reduction_ratio": 0.925,
+  "viewpoint_match": 0.81,
+  "quality_flags": {
+    "blur_ok": true,
+    "brightness_ok": true,
+    "location_ok": true,
+    "viewpoint_ok": true
+  },
+  "verdict": "likely_cleaned",
+  "verdict_note": "A verdict is a suggestion. Only an authority can resolve a hotspot.",
+  "review_decision": null,
+  "reviewed_by": null,
+  "reviewed_by_name": null,
+  "created_at": "2026-09-19T10:05:00+05:30",
+  "is_simulated": true
+}

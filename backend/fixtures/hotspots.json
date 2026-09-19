@@ -1,0 +1,229 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 3,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8533,
+          18.5225
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "status": "needs_verification",
+        "impact_score": 73.1,
+        "priority_band": "critical",
+        "evidence_score": 0.755,
+        "evidence_band": "strong",
+        "report_count": 5,
+        "unique_reporters": 3,
+        "recurrence_returns": 1,
+        "radius_m": 18.5,
+        "ward_id": 1,
+        "ward_name": "Ward A",
+        "first_reported_at": "2026-08-02T08:14:00+05:30",
+        "last_reported_at": "2026-09-17T18:25:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8618,
+          18.5162
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "status": "verified",
+        "impact_score": 64.2,
+        "priority_band": "high",
+        "evidence_score": 1.0,
+        "evidence_band": "strong",
+        "report_count": 4,
+        "unique_reporters": 3,
+        "recurrence_returns": 0,
+        "radius_m": 14.0,
+        "ward_id": 2,
+        "ward_name": "Ward B",
+        "first_reported_at": "2026-09-01T10:00:00+05:30",
+        "last_reported_at": "2026-09-16T12:10:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8579,
+          18.5267
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "status": "ai_detected",
+        "impact_score": 41.8,
+        "priority_band": "medium",
+        "evidence_score": 0.31,
+        "evidence_band": "low",
+        "report_count": 1,
+        "unique_reporters": 1,
+        "recurrence_returns": 0,
+        "radius_m": 0.0,
+        "ward_id": 1,
+        "ward_name": "Ward A",
+        "first_reported_at": "2026-09-18T16:45:00+05:30",
+        "last_reported_at": "2026-09-18T16:45:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8496,
+          18.5186
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "status": "cleanup_scheduled",
+        "impact_score": 55.6,
+        "priority_band": "high",
+        "evidence_score": 1.0,
+        "evidence_band": "strong",
+        "report_count": 3,
+        "unique_reporters": 2,
+        "recurrence_returns": 0,
+        "radius_m": 11.2,
+        "ward_id": 3,
+        "ward_name": "Ward C",
+        "first_reported_at": "2026-08-28T07:30:00+05:30",
+        "last_reported_at": "2026-09-10T08:00:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8545,
+          18.5293
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "status": "needs_verification",
+        "impact_score": 33.4,
+        "priority_band": "medium",
+        "evidence_score": 0.52,
+        "evidence_band": "moderate",
+        "report_count": 2,
+        "unique_reporters": 2,
+        "recurrence_returns": 0,
+        "radius_m": 9.8,
+        "ward_id": 2,
+        "ward_name": "Ward B",
+        "first_reported_at": "2026-09-12T13:05:00+05:30",
+        "last_reported_at": "2026-09-14T09:40:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8552,
+          18.5133
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "status": "resolved",
+        "impact_score": 22.9,
+        "priority_band": "low",
+        "evidence_score": 1.0,
+        "evidence_band": "strong",
+        "report_count": 3,
+        "unique_reporters": 3,
+        "recurrence_returns": 0,
+        "radius_m": 12.0,
+        "ward_id": 3,
+        "ward_name": "Ward C",
+        "first_reported_at": "2026-08-10T11:00:00+05:30",
+        "last_reported_at": "2026-08-19T17:30:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 7,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8645,
+          18.5238
+        ]
+      },
+      "properties": {
+        "id": 7,
+        "status": "false_positive",
+        "impact_score": 12.1,
+        "priority_band": "low",
+        "evidence_score": 0.28,
+        "evidence_band": "low",
+        "report_count": 1,
+        "unique_reporters": 1,
+        "recurrence_returns": 0,
+        "radius_m": 0.0,
+        "ward_id": 2,
+        "ward_name": "Ward B",
+        "first_reported_at": "2026-09-05T15:15:00+05:30",
+        "last_reported_at": "2026-09-05T15:15:00+05:30",
+        "is_simulated": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 8,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.866,
+          18.5148
+        ]
+      },
+      "properties": {
+        "id": 8,
+        "status": "ai_detected",
+        "impact_score": 71.4,
+        "priority_band": "critical",
+        "evidence_score": 0.38,
+        "evidence_band": "low",
+        "report_count": 1,
+        "unique_reporters": 1,
+        "recurrence_returns": 0,
+        "radius_m": 0.0,
+        "ward_id": 3,
+        "ward_name": "Ward C",
+        "first_reported_at": "2026-09-19T06:50:00+05:30",
+        "last_reported_at": "2026-09-19T06:50:00+05:30",
+        "is_simulated": true
+      }
+    }
+  ]
+}

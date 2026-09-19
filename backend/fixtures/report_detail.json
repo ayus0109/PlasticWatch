@@ -1,0 +1,131 @@
+{
+  "id": "aaaaaaaa-0000-4000-8000-000000000399",
+  "created_at": "2026-09-19T10:12:00+05:30",
+  "captured_at": "2026-09-19T10:11:30+05:30",
+  "image_path": "uploads/reports/aaaaaaaa-0000-4000-8000-000000000399.jpg",
+  "annotated_jpg_path": "uploads/annotated/aaaaaaaa-0000-4000-8000-000000000399.jpg",
+  "note": "Bottles and bags near the drain cover.",
+  "lat": 18.5225,
+  "lon": 73.8533,
+  "location_source": "browser",
+  "gps_accuracy_m": 9.0,
+  "ai_status": "detected",
+  "plastic_count": 11,
+  "plastic_area_frac": 0.1201,
+  "report_confidence": 0.71,
+  "confidence_tier": "medium",
+  "hotspot_id": 3,
+  "hotspot_status": "needs_verification",
+  "is_duplicate": false,
+  "is_simulated": true,
+  "detections": [
+    {
+      "class_name": "plastic_bottle",
+      "confidence": 0.74,
+      "x1": 12,
+      "y1": 20,
+      "x2": 140,
+      "y2": 84,
+      "area_frac": 0.02
+    },
+    {
+      "class_name": "plastic_bag_film",
+      "confidence": 0.71,
+      "x1": 154,
+      "y1": 20,
+      "x2": 274,
+      "y2": 81,
+      "area_frac": 0.0179
+    },
+    {
+      "class_name": "plastic_packaging",
+      "confidence": 0.68,
+      "x1": 288,
+      "y1": 20,
+      "x2": 384,
+      "y2": 84,
+      "area_frac": 0.015
+    },
+    {
+      "class_name": "plastic_bottle",
+      "confidence": 0.62,
+      "x1": 398,
+      "y1": 20,
+      "x2": 478,
+      "y2": 87,
+      "area_frac": 0.0131
+    },
+    {
+      "class_name": "plastic_other",
+      "confidence": 0.58,
+      "x1": 492,
+      "y1": 20,
+      "x2": 572,
+      "y2": 81,
+      "area_frac": 0.0119
+    },
+    {
+      "class_name": "plastic_bag_film",
+      "confidence": 0.55,
+      "x1": 12,
+      "y1": 110,
+      "x2": 87,
+      "y2": 170,
+      "area_frac": 0.011
+    },
+    {
+      "class_name": "plastic_packaging",
+      "confidence": 0.51,
+      "x1": 101,
+      "y1": 110,
+      "x2": 165,
+      "y2": 168,
+      "area_frac": 0.0091
+    },
+    {
+      "class_name": "plastic_other",
+      "confidence": 0.47,
+      "x1": 179,
+      "y1": 110,
+      "x2": 243,
+      "y2": 161,
+      "area_frac": 0.008
+    },
+    {
+      "class_name": "plastic_bottle",
+      "confidence": 0.44,
+      "x1": 257,
+      "y1": 110,
+      "x2": 305,
+      "y2": 161,
+      "area_frac": 0.006
+    },
+    {
+      "class_name": "plastic_packaging",
+      "confidence": 0.41,
+      "x1": 319,
+      "y1": 110,
+      "x2": 364,
+      "y2": 156,
+      "area_frac": 0.0051
+    },
+    {
+      "class_name": "plastic_other",
+      "confidence": 0.38,
+      "x1": 378,
+      "y1": 110,
+      "x2": 410,
+      "y2": 148,
+      "area_frac": 0.003
+    },
+    {
+      "class_name": "non_plastic_litter",
+      "confidence": 0.52,
+      "x1": 400,
+      "y1": 480,
+      "x2": 470,
+      "y2": 540,
+      "area_frac": 0.0103
+    }
+  ]
+}

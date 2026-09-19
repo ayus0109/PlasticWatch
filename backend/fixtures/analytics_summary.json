@@ -1,0 +1,56 @@
+{
+  "kpis": {
+    "total_reports": 20,
+    "active_hotspots": 6,
+    "awaiting_verification": 2,
+    "verified_hotspots": 1,
+    "resolved_hotspots": 1,
+    "median_days_to_resolve": 6.5
+  },
+  "by_band": [
+    {
+      "band": "critical",
+      "count": 2
+    },
+    {
+      "band": "high",
+      "count": 2
+    },
+    {
+      "band": "medium",
+      "count": 2
+    },
+    {
+      "band": "low",
+      "count": 2
+    }
+  ],
+  "by_status": [
+    {
+      "status": "ai_detected",
+      "count": 2
+    },
+    {
+      "status": "cleanup_scheduled",
+      "count": 1
+    },
+    {
+      "status": "false_positive",
+      "count": 1
+    },
+    {
+      "status": "needs_verification",
+      "count": 2
+    },
+    {
+      "status": "resolved",
+      "count": 1
+    },
+    {
+      "status": "verified",
+      "count": 1
+    }
+  ],
+  "simulated_data": true,
+  "non_attribution_note": "Reports show waste appears to be present; they do not establish who is responsible."
+}

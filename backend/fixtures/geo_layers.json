@@ -1,0 +1,144 @@
+{
+  "type": "FeatureCollection",
+  "attribution": "© OpenStreetMap contributors",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 101,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            73.8507,
+            18.5223
+          ],
+          [
+            73.8533,
+            18.52275
+          ],
+          [
+            73.8577,
+            18.5234
+          ]
+        ]
+      },
+      "properties": {
+        "id": 101,
+        "kind": "drain",
+        "name": "Nala 1",
+        "source": "osm"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 102,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            73.8487,
+            18.5184
+          ],
+          [
+            73.8557,
+            18.5144
+          ]
+        ]
+      },
+      "properties": {
+        "id": 102,
+        "kind": "drain",
+        "name": "Nala 2 (digitised)",
+        "source": "manual"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 103,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              73.8607,
+              18.5254
+            ],
+            [
+              73.8637,
+              18.5254
+            ],
+            [
+              73.8637,
+              18.5279
+            ],
+            [
+              73.8607,
+              18.5279
+            ],
+            [
+              73.8607,
+              18.5254
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": 103,
+        "kind": "water",
+        "name": "Lake",
+        "source": "osm"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 104,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8522,
+          18.5254
+        ]
+      },
+      "properties": {
+        "id": 104,
+        "kind": "school",
+        "name": "School 1",
+        "source": "osm"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 105,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8557,
+          18.5174
+        ]
+      },
+      "properties": {
+        "id": 105,
+        "kind": "hospital",
+        "name": "Hospital 1",
+        "source": "osm"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 106,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.8533,
+          18.5235
+        ]
+      },
+      "properties": {
+        "id": 106,
+        "kind": "market",
+        "name": "Market 1",
+        "source": "osm"
+      }
+    }
+  ]
+}

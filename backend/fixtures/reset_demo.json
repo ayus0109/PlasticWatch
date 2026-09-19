@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "reports": 0,
+  "hotspots": 0,
+  "users": 4,
+  "is_simulated": true,
+  "message": "Stub: no reseed was performed. The seed script arrives in Stage 10."
+}

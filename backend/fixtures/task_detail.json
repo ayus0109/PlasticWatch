@@ -1,0 +1,60 @@
+{
+  "id": 7,
+  "status": "in_progress",
+  "assigned_team": "33333333-3333-4333-8333-333333333333",
+  "assigned_team_name": "Demo Cleanup Team 1",
+  "created_by": "22222222-2222-4222-8222-222222222222",
+  "stop_count": 2,
+  "route_distance_m": 3140.0,
+  "route_duration_s": 1260.0,
+  "created_at": "2026-09-19T08:30:00+05:30",
+  "is_simulated": true,
+  "depot": [
+    73.8572,
+    18.5124
+  ],
+  "stops": [
+    {
+      "id": 41,
+      "seq": 1,
+      "hotspot_id": 1,
+      "lat": 18.5162,
+      "lon": 73.8618,
+      "priority_band": "high",
+      "arrived_at": "2026-09-19T09:40:00+05:30",
+      "completed_at": null
+    },
+    {
+      "id": 42,
+      "seq": 2,
+      "hotspot_id": 4,
+      "lat": 18.5186,
+      "lon": 73.8496,
+      "priority_band": "high",
+      "arrived_at": null,
+      "completed_at": null
+    }
+  ],
+  "route_geojson": {
+    "type": "LineString",
+    "coordinates": [
+      [
+        73.8572,
+        18.5124
+      ],
+      [
+        73.8618,
+        18.5162
+      ],
+      [
+        73.8496,
+        18.5186
+      ],
+      [
+        73.8572,
+        18.5124
+      ]
+    ]
+  },
+  "route_source": "greedy"
+}

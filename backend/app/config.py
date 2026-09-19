@@ -23,6 +23,9 @@ class Settings(BaseSettings):
 
     # --- Database -----------------------------------------------------------
     DATABASE_URL: str = "postgresql+psycopg://plasticwatch:plasticwatch@db:5432/plasticwatch"
+    # Bounds every connect. Without it an unreachable DB hangs startup and /health
+    # indefinitely instead of failing. libpq treats values below 2 as 2.
+    DB_CONNECT_TIMEOUT_S: int = 5
 
     # --- Detector (SPEC §6) -------------------------------------------------
     # "stub" returns the frozen fake contract; "real" loads weights/best.pt.
@@ -47,6 +50,12 @@ class Settings(BaseSettings):
 
     # --- Local disk storage (CLAUDE.md §3) ----------------------------------
     UPLOAD_DIR: str = "uploads"
+
+    # --- Demo auth (CLAUDE.md §8: seeded demo users + role switcher) --------
+    # Signs the demo role token. This is NOT real authentication and guards
+    # nothing sensitive — it exists so role violations return 403.
+    DEMO_TOKEN_SECRET: str = "plasticwatch-demo-secret-change-me"
+    DEMO_TOKEN_TTL_HOURS: int = 24
 
 
 @lru_cache
