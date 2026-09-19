@@ -91,14 +91,57 @@ areas / image area, **capped at 1.0**. `detector.py` is **stub-first**: fixed fa
 `weights/best.pt` exists, chosen by `DETECTOR_MODE` env.
 
 ## §7 Database schema (10 tables)
-Geometry SRID 4326, GiST indexes, distances via `::geography`. **There is deliberately no column for a
-responsible party.** Tables (see original spec for full column lists — reproduce verbatim in
-`sql/schema.sql`): `users, wards, geo_features, reports, detections, hotspots, hotspot_events (audit log),
-cleanup_tasks, task_stops, before_after`.
-Key columns to preserve exactly: `reports.is_simulated bool default false`,
-`reports.location_source ('browser'|'exif'|'pin')`, `reports.image_phash text`,
-`hotspots.score_breakdown jsonb`, `hotspots.priority_band text`, `hotspots.status text`,
-`hotspot_events(from_status,to_status,reason,note,actor_id)`.
+
+Ten tables. Geometry uses SRID 4326 with GiST indexes; distances use `::geography` casts. **There is deliberately no column for a responsible party.**
+
+```sql
+users(id uuid PK, name, role CHECK in ('citizen','authority','team'),
+      ward_id FK→wards null, reliability real default 0.5, created_at)
+
+wards(id serial PK, name, geom geometry(MultiPolygon,4326))
+
+geo_features(id serial PK, kind CHECK in ('drain','water','school','hospital','market'),
+             name, source ('osm'|'manual'), geom geometry(Geometry,4326))
+
+reports(id uuid PK, reporter_id FK→users, hotspot_id FK→hotspots null,
+        duplicate_of FK→reports null, image_path, image_phash text,
+        geom geometry(Point,4326), gps_accuracy_m real,
+        location_source ('browser'|'exif'|'pin'), captured_at, created_at, note,
+        ai_status ('detected'|'not_detected'|'error'), report_confidence real,
+        plastic_count int, plastic_area_frac real, severity real,
+        is_simulated bool default false)
+
+detections(id serial PK, report_id FK→reports, class_name, confidence real,
+           x1,y1,x2,y2 real, area_frac real)
+
+hotspots(id serial PK, geom geometry(Point,4326), radius_m real, ward_id FK,
+         status text, first_reported_at, last_reported_at,
+         report_count int, unique_reporters int, recurrence_returns int,
+         d_drain_m, d_water_m, d_school_m, d_hospital_m, d_market_m real,
+         severity, recurrence, sensitivity, persistence real,
+         impact_score real, evidence_score real, priority_band text,
+         score_breakdown jsonb, scored_at)
+
+hotspot_events(id serial PK, hotspot_id FK, actor_id FK→users null,
+               from_status, to_status, reason, note, created_at)   -- audit log
+
+cleanup_tasks(id serial PK, created_by FK→users, assigned_team FK→users,
+              status ('planned'|'in_progress'|'done'), depot geometry(Point,4326),
+              route_geojson jsonb, route_distance_m, route_duration_s, created_at)
+
+task_stops(id serial PK, task_id FK, hotspot_id FK, seq int,
+           arrived_at, completed_at)
+
+before_after(id serial PK, task_stop_id FK, before_report_id FK→reports,
+             after_image_paths text[], before_count int, before_area real,
+             after_count int, after_area real, reduction_ratio real,
+             quality_flags jsonb, viewpoint_match real,
+             verdict ('likely_cleaned'|'partial'|'not_cleaned'|'inconclusive'),
+             reviewed_by FK→users null, review_decision text null, created_at)
+```
+
+Relationships: a hotspot has many reports and events; a report has many detections; a task has many stops; each stop points to one hotspot and has at most one before/after record.
+
 
 ## §8 API (REST, FastAPI)
 | Method + path | Role | Purpose |
