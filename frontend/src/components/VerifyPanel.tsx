@@ -73,7 +73,7 @@ export function VerifyPanel({
 
   if (!decisions.length) {
     return (
-      <Card className="p-5">
+      <Card pad="roomy">
         <h2 className="font-semibold">Human decision</h2>
         <p className="mt-2 text-sm text-muted">
           No verification decision applies while this hotspot is{" "}
@@ -89,7 +89,7 @@ export function VerifyPanel({
   }
 
   return (
-    <Card className="p-5">
+    <Card pad="roomy">
       <div className="flex items-center gap-2">
         <Icon name="shield" size={18} className="text-accent" />
         <h2 className="font-semibold">Human decision</h2>
@@ -124,7 +124,7 @@ export function VerifyPanel({
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value as RejectReason)}
-              className="min-h-11 w-full rounded-[10px] border border-line bg-surface px-3 text-sm"
+              className="min-h-11 w-full rounded-field border border-line bg-surface px-3 text-sm"
               autoFocus
             >
               <option value="" disabled>
@@ -144,7 +144,7 @@ export function VerifyPanel({
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               maxLength={500}
-              className="w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-sm"
+              className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm"
               placeholder="What did you see?"
             />
           </label>
@@ -165,7 +165,7 @@ export function VerifyPanel({
         </div>
       )}
       {session ? (
-        <p className="mt-3 text-[11px] text-faint">Recorded as {session.user.name}.</p>
+        <p className="mt-3 text-micro text-faint">Recorded as {session.user.name}.</p>
       ) : null}
     </Card>
   );

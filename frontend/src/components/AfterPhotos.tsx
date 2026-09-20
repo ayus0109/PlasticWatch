@@ -49,7 +49,7 @@ function Slot({
   return (
     <label
       className={cx(
-        "group relative flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition-colors",
+        "group relative flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-field border-2 border-dashed text-center transition-colors",
         file ? "border-transparent" : "border-line hover:border-accent hover:bg-accent-soft/40",
       )}
     >
@@ -63,7 +63,7 @@ function Slot({
       {url ? (
         <>
           <img src={url} alt={`${label} preview`} className="absolute inset-0 h-full w-full object-cover" />
-          <span className="absolute left-2 top-2 rounded-md bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="absolute left-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-micro font-semibold text-white">
             {label} · tap to change
           </span>
         </>
@@ -120,7 +120,7 @@ export function AfterPhotos({
   if (result) {
     const reasons = (result.quality_flags.reasons as string[] | undefined) ?? [];
     return (
-      <div className="mt-3 space-y-2 rounded-xl bg-surface-2 p-3 animate-rise" role="status">
+      <div className="mt-3 space-y-2 rounded-field bg-surface-2 p-3 animate-rise" role="status">
         <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
           Suggested verdict <VerdictChip verdict={result.verdict} />
         </div>
@@ -171,7 +171,7 @@ export function AfterPhotos({
       >
         {busy ? "Checking photos…" : "Send after-photos"}
       </Button>
-      <p className="text-[11px] text-faint">Even a “likely cleaned” verdict never closes a hotspot by itself.</p>
+      <p className="text-micro text-faint">Even a “likely cleaned” verdict never closes a hotspot by itself.</p>
     </div>
   );
 }

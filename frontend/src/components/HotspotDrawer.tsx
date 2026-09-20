@@ -68,7 +68,7 @@ function Stage({ status }: { status: HotspotDetail["status"] }) {
         <li key={s.key} className="flex flex-1 items-center gap-1.5">
           <span
             className={cx(
-              "flex h-6 flex-1 items-center justify-center rounded-full px-2 text-[11px] font-semibold",
+              "flex h-6 flex-1 items-center justify-center rounded-full px-2 text-micro font-semibold",
               i < at && "bg-ok-soft text-ok",
               i === at && "bg-accent text-accent-fg",
               i > at && "bg-surface-2 text-muted",
@@ -106,7 +106,7 @@ function Dispatch({ hotspot, onDone }: { hotspot: HotspotDetail; onDone: () => v
   };
 
   return (
-    <Card className="p-5">
+    <Card pad="roomy">
       <div className="flex items-center gap-2">
         <Icon name="truck" size={18} className="text-accent" />
         <h2 className="font-semibold">Dispatch cleanup</h2>
@@ -134,7 +134,7 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
   const current = reports[selectedIdx] ?? reports[0];
   if (!current) {
     return (
-      <Card className="p-4 text-center text-sm text-muted">
+      <Card className="text-center text-body text-muted">
         No citizen photo attached yet.
       </Card>
     );
@@ -143,7 +143,7 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
   const img = mediaUrl(current.annotated_jpg_path ?? current.image_path);
 
   return (
-    <Card className="overflow-hidden p-0 border border-accent/40 bg-surface shadow-raised">
+    <Card pad="none" className="overflow-hidden border-accent/40 shadow-raised">
       <div className="flex items-center justify-between border-b border-line bg-surface-2 px-3.5 py-2.5">
         <div className="flex items-center gap-2">
           <span className="grid h-6 w-6 place-items-center rounded-full bg-accent/20 text-accent font-bold">
@@ -158,7 +158,7 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
             <button
               disabled={selectedIdx <= 0}
               onClick={() => setSelectedIdx((i) => Math.max(0, i - 1))}
-              className="rounded p-1 hover:bg-surface disabled:opacity-30"
+              className="rounded-field p-1 hover:bg-surface disabled:opacity-30"
               title="Previous report"
             >
               <Icon name="chevronLeft" size={14} />
@@ -169,7 +169,7 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
             <button
               disabled={selectedIdx >= reports.length - 1}
               onClick={() => setSelectedIdx((i) => Math.min(reports.length - 1, i + 1))}
-              className="rounded p-1 hover:bg-surface disabled:opacity-30"
+              className="rounded-field p-1 hover:bg-surface disabled:opacity-30"
               title="Next report"
             >
               <Icon name="chevronRight" size={14} />
@@ -186,7 +186,7 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
             className="h-full w-full object-cover"
           />
           <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
-            <span className="rounded-md bg-black/75 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+            <span className="rounded-full bg-black/75 px-2 py-0.5 text-micro font-semibold text-white backdrop-blur-sm">
               {current.plastic_count ?? 0} likely-plastic items
             </span>
             {current.is_simulated ? <SimulatedBadge /> : null}
@@ -195,19 +195,19 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
             href={img}
             target="_blank"
             rel="noreferrer"
-            className="absolute top-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80"
+            className="absolute top-2 right-2 rounded-field bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80"
           >
             Full photo ↗
           </a>
         </div>
       ) : null}
 
-      <div className="space-y-2.5 p-3.5">
+      <div className="space-y-3 p-3">
         {/* Reporter contact & proof box */}
-        <div className="rounded-xl border border-line bg-surface-2 p-3">
+        <div className="rounded-field border border-line bg-surface-2 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <div className="text-micro font-semibold uppercase tracking-wider text-muted">
                 Reported by Citizen
               </div>
               <div className="font-display text-base font-bold text-ink">
@@ -217,26 +217,27 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
             {current.reporter_phone ? (
               <a
                 href={`tel:${current.reporter_phone}`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-accent-fg shadow-sm transition hover:opacity-90 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-field bg-accent px-3 py-1.5 text-xs font-bold text-accent-fg shadow-card transition hover:opacity-90 active:scale-95"
               >
-                <span>📞 Call {current.reporter_phone}</span>
+                <Icon name="phone" size={13} />
+                <span>Call {current.reporter_phone}</span>
               </a>
             ) : (
-              <span className="rounded bg-surface px-2 py-1 text-[11px] text-muted">
+              <span className="rounded-full bg-surface px-2 py-1 text-micro text-muted">
                 No phone recorded
               </span>
             )}
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line/60 pt-2 text-xs text-muted">
-            <span>📅 {timeAgo(current.created_at)}</span>
+            <span className="inline-flex items-center gap-1"><Icon name="clock" size={12} /> {timeAgo(current.created_at)}</span>
             <span>·</span>
-            <span>📍 via {current.location_source === "browser" ? "Phone GPS" : current.location_source === "exif" ? "Photo EXIF" : "Map Pin"}</span>
+            <span className="inline-flex items-center gap-1"><Icon name="pin" size={12} /> via {current.location_source === "browser" ? "Phone GPS" : current.location_source === "exif" ? "Photo EXIF" : "Map Pin"}</span>
           </div>
         </div>
 
         {current.note ? (
-          <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs">
+          <div className="rounded-field border border-line bg-surface px-3 py-2 text-xs">
             <strong className="text-muted">Landmark / Note: </strong>
             <span className="italic text-ink font-medium">“{current.note}”</span>
           </div>
@@ -334,7 +335,7 @@ export function HotspotDrawer({
             ) : null}
 
             {h.status === "cleanup_scheduled" && h.cleanup_task_id && h.cleanup_stop_id ? (
-              <Card className="p-5">
+              <Card pad="roomy">
                 <div className="flex items-center gap-2">
                   <Icon name="camera" size={18} className="text-accent" />
                   <h2 className="font-semibold">Cleanup photos</h2>
@@ -358,7 +359,7 @@ export function HotspotDrawer({
                     Before / after <VerdictChip verdict={ba.verdict} />
                   </span>
                 </SectionTitle>
-                <Card className="space-y-4 p-4">
+                <Card className="space-y-4">
                   <BeforeAfterCompare record={ba} />
                   <BeforeAfterFacts record={ba} />
                   {awaitingApproval ? (
@@ -369,16 +370,16 @@ export function HotspotDrawer({
             ) : null}
 
             {/* 3. TECHNICAL GIS, SCORING & AUDIT DETAILS (COLLAPSIBLE FOR CLEAN EASY UI) */}
-            <div className="rounded-2xl border border-line bg-surface-2 overflow-hidden">
+            <div className="rounded-card border border-line bg-surface-2 overflow-hidden">
               <button
                 onClick={() => setShowGis((v) => !v)}
-                className="flex w-full items-center justify-between p-3.5 text-left text-xs font-semibold text-muted hover:text-ink transition-colors"
+                className="flex w-full items-center justify-between p-3 text-left text-xs font-semibold text-muted hover:text-ink transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Icon name="chart" size={15} className="text-accent" />
                   <span>GIS & Impact Breakdown (Score: {Math.round(h.score_breakdown.impact_score)}/100)</span>
                 </span>
-                <span className="flex items-center gap-1 text-[11px] font-medium text-accent">
+                <span className="flex items-center gap-1 text-micro font-medium text-accent">
                   {showGis ? "Hide details" : "View equations & context"}
                   <Icon name="chevronRight" size={14} className={cx("transition-transform", showGis && "rotate-90")} />
                 </span>
@@ -387,23 +388,23 @@ export function HotspotDrawer({
               {showGis ? (
                 <div className="border-t border-line p-4 space-y-4 bg-surface animate-rise">
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl bg-surface-2 p-2.5">
+                    <div className="rounded-field bg-surface-2 p-3">
                       <div className="tabular text-xl font-bold">{h.report_count}</div>
-                      <div className="text-[11px] text-muted">{plural(h.unique_reporters, "reporter")}</div>
+                      <div className="text-micro text-muted">{plural(h.unique_reporters, "reporter")}</div>
                     </div>
-                    <div className="rounded-xl bg-surface-2 p-2.5">
+                    <div className="rounded-field bg-surface-2 p-3">
                       <div className="tabular text-xl font-bold">{metres(h.geo_context.d_drain_m)}</div>
-                      <div className="text-[11px] text-muted">to nearest drain</div>
+                      <div className="text-micro text-muted">to nearest drain</div>
                     </div>
-                    <div className="rounded-xl bg-surface-2 p-2.5">
+                    <div className="rounded-field bg-surface-2 p-3">
                       <div className="tabular text-xl font-bold">{h.recurrence_returns}×</div>
-                      <div className="text-[11px] text-muted">came back</div>
+                      <div className="text-micro text-muted">came back</div>
                     </div>
                   </div>
 
                   <ScoreBars key={`${h.status}-${h.score_breakdown.scored_at}`} breakdown={h.score_breakdown} />
 
-                  <Card className="p-3 bg-surface-2/60">
+                  <Card pad="compact" className="bg-surface-2/60">
                     <SectionTitle hint="spatial proximity">Nearby Amenities</SectionTitle>
                     <ul className="space-y-1 text-xs">
                       {PLACES.map((p) => (
@@ -436,7 +437,7 @@ export function HotspotDrawer({
                 </span>
               </button>
               {showLedger ? (
-                <Card className="mt-2 p-3">
+                <Card pad="compact" className="mt-2">
                   <EvidenceLedger events={h.events} reports={h.reports} freshEventId={freshEvent} />
                 </Card>
               ) : null}

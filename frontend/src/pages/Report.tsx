@@ -32,7 +32,7 @@ function Step({
   aside?: React.ReactNode;
 }) {
   return (
-    <Card className="p-5">
+    <Card pad="roomy">
       <div className="mb-4 flex items-center gap-3">
         <span
           className={cx(
@@ -184,7 +184,7 @@ export default function Report() {
               <img
                 src={preview}
                 alt="Selected photo"
-                className="max-h-[45dvh] w-full rounded-xl bg-surface-2 object-contain"
+                className="max-h-[45dvh] w-full rounded-field bg-surface-2 object-contain"
               />
               <div className="flex gap-2">
                 <Button icon="camera" onClick={() => cameraInput.current?.click()} className="flex-1">
@@ -199,14 +199,14 @@ export default function Report() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => cameraInput.current?.click()}
-                className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line-strong text-sm font-semibold transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
+                className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-field border-2 border-dashed border-line-strong text-sm font-semibold transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
               >
                 <Icon name="camera" size={26} />
                 Take a photo
               </button>
               <button
                 onClick={() => galleryInput.current?.click()}
-                className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line-strong text-sm font-semibold transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
+                className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-field border-2 border-dashed border-line-strong text-sm font-semibold transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
               >
                 <Icon name="image" size={26} />
                 From gallery
@@ -214,7 +214,7 @@ export default function Report() {
             </div>
           )}
           {error?.step === "photo" ? (
-            <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-danger-soft p-3 text-sm text-danger">
+            <p role="alert" className="mt-3 flex items-start gap-2 rounded-field bg-danger-soft p-3 text-sm text-danger">
               <Icon name="alert" size={16} className="mt-0.5" /> {error.text}
             </p>
           ) : null}
@@ -228,7 +228,7 @@ export default function Report() {
             loc.mode !== "pin" ? (
               <button
                 onClick={() => setLoc({ mode: "pin", lat: gpsNear?.lat ?? null, lon: gpsNear?.lon ?? null })}
-                className="min-h-11 rounded-lg px-2 text-xs font-semibold text-accent hover:underline"
+                className="min-h-11 rounded-field px-2 text-xs font-semibold text-accent hover:underline"
               >
                 Drop a pin instead
               </button>
@@ -296,7 +296,7 @@ export default function Report() {
                 onChange={(e) => setReporterName(e.target.value)}
                 maxLength={100}
                 placeholder="e.g. Rahul Sharma"
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
               />
             </div>
 
@@ -310,9 +310,9 @@ export default function Report() {
                 onChange={(e) => setReporterPhone(e.target.value)}
                 maxLength={15}
                 placeholder="e.g. +91 98765 43210"
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
               />
-              <p className="mt-1 text-[11px] text-faint">
+              <p className="mt-1 text-micro text-faint">
                 Used by the municipal team as proof to verify citizen reports before dispatch.
               </p>
             </div>
@@ -327,14 +327,14 @@ export default function Report() {
                 maxLength={1000}
                 rows={2}
                 placeholder="e.g. Near community drain behind the market"
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
               />
             </div>
           </div>
         </Step>
 
         {error && !error.step ? (
-          <p role="alert" className="flex items-start gap-2 rounded-xl bg-danger-soft p-3 text-sm text-danger">
+          <p role="alert" className="flex items-start gap-2 rounded-field bg-danger-soft p-3 text-sm text-danger">
             <Icon name="alert" size={16} className="mt-0.5" /> {error.text}
           </p>
         ) : null}

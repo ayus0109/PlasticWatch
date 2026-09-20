@@ -42,8 +42,8 @@ export function Button({
       {...rest}
       disabled={rest.disabled || loading}
       className={cx(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold",
-        "transition-all duration-200 ease-out active:scale-[0.98] active:duration-75",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-field px-4 text-label font-semibold",
+        "transition-all duration-200 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] active:duration-75",
         "disabled:cursor-not-allowed disabled:opacity-50",
         BUTTON[variant],
         className,
@@ -70,24 +70,40 @@ export function Spinner({ className = "" }: { className?: string }) {
 
 // -------------------------------------------------------------------- cards ----
 
+/** Padding is a CARD decision, not a caller decision — four steps, nothing between. */
+type CardPad = "none" | "compact" | "default" | "roomy";
+const CARD_PAD: Record<CardPad, string> = {
+  none: "",
+  compact: "p-3",
+  default: "p-4",
+  roomy: "p-6",
+};
+
 export function Card({
   children,
   className,
   as: Tag = "section",
   interactive = false,
+  pad = "default",
 }: {
   children: ReactNode;
   className?: string;
   as?: "section" | "div" | "article" | "aside";
   /** Adds the hover lift / press feedback. Only for cards that do something. */
   interactive?: boolean;
+  /** Use the scale — never pass a p-* through className. */
+  pad?: CardPad;
 }) {
   return (
     <Tag
       className={cx(
-        "rounded-card border border-line bg-surface shadow-card",
-        interactive &&
-          "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-line-strong hover:shadow-raised active:translate-y-0 active:scale-[0.995]",
+        "rounded-card border border-line bg-surface",
+        CARD_PAD[pad],
+        /* Elevation carries meaning: flat = information you read, raised = a surface
+           you can act on. Floating chrome (map panels, sheets) uses shadow-pop directly. */
+        interactive
+          ? "shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-line-strong hover:shadow-raised active:translate-y-0 active:scale-[0.995]"
+          : "shadow-none",
         className,
       )}
     >
@@ -99,10 +115,8 @@ export function Card({
 export function SectionTitle({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-3">
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
-        {children}
-      </h2>
-      {hint ? <span className="text-xs text-faint">{hint}</span> : null}
+      <h2 className="text-eyebrow font-semibold uppercase text-muted">{children}</h2>
+      {hint ? <span className="text-micro text-faint">{hint}</span> : null}
     </div>
   );
 }
@@ -305,11 +319,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center animate-fade">
-      <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-surface-2 text-muted">
+      <div className="mb-4 grid h-12 w-12 place-items-center rounded-card bg-surface-2 text-muted">
         <Icon name={icon} size={22} />
       </div>
-      <h3 className="text-base font-semibold">{title}</h3>
-      {children ? <p className="mt-1.5 max-w-sm text-sm text-muted">{children}</p> : null}
+      <h3 className="text-heading font-semibold">{title}</h3>
+      {children ? <p className="mt-1.5 max-w-sm text-body text-muted">{children}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
@@ -343,9 +357,9 @@ export function Stat({
 }) {
   return (
     <div>
-      <div className="text-xs font-medium text-muted">{label}</div>
-      <div className="tabular mt-0.5 text-lg font-semibold tracking-tight">{value}</div>
-      {hint ? <div className="text-xs text-faint">{hint}</div> : null}
+      <div className="text-micro font-medium text-muted">{label}</div>
+      <div className="tabular mt-1 text-heading font-semibold">{value}</div>
+      {hint ? <div className="text-micro text-faint">{hint}</div> : null}
     </div>
   );
 }

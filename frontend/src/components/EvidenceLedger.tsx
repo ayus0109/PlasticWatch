@@ -29,7 +29,7 @@ function EventRow({ e, fresh }: { e: HotspotEvent; fresh: boolean }) {
       >
         <Icon name={statusChanged ? to.icon : "pin"} size={14} />
       </span>
-      <div className={cx("min-w-0 flex-1 rounded-xl px-3 py-2", fresh && "bg-accent-soft")}>
+      <div className={cx("min-w-0 flex-1 rounded-field px-3 py-2", fresh && "bg-accent-soft")}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           {statusChanged ? (
             <>
@@ -64,11 +64,11 @@ function ReportRow({ r }: { r: ReportSummary }) {
       <span className="z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-surface bg-surface-2 text-muted">
         <Icon name="camera" size={14} />
       </span>
-      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line">
-        <div className="flex gap-3 p-2.5">
+      <div className="min-w-0 flex-1 overflow-hidden rounded-field border border-line">
+        <div className="flex gap-3 p-3">
           {img ? (
             <a href={img} target="_blank" rel="noreferrer" className="shrink-0" aria-label="Open photo">
-              <img src={img} alt="" loading="lazy" className="h-20 w-28 rounded-lg object-cover transition-opacity hover:opacity-90" />
+              <img src={img} alt="" loading="lazy" className="h-20 w-28 rounded-field object-cover transition-opacity hover:opacity-90" />
             </a>
           ) : null}
           <div className="min-w-0 flex-1">
@@ -79,10 +79,12 @@ function ReportRow({ r }: { r: ReportSummary }) {
             </div>
             {r.reporter_phone ? (
               <div className="mt-1 flex items-center gap-2 text-xs">
-                <span className="font-semibold text-accent">📞 {r.reporter_phone}</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                  <Icon name="phone" size={13} /> {r.reporter_phone}
+                </span>
                 <a
                   href={`tel:${r.reporter_phone}`}
-                  className="rounded-md bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent hover:bg-accent hover:text-accent-fg transition-colors"
+                  className="rounded-full bg-accent-soft px-2 py-0.5 text-micro font-semibold text-accent hover:bg-accent hover:text-accent-fg transition-colors"
                 >
                   Call Citizen
                 </a>

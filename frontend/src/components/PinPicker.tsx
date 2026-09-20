@@ -67,7 +67,7 @@ export function PinPicker({
   }, [value]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line">
+    <div className="overflow-hidden rounded-card border border-line">
       <div
         ref={el}
         className="h-[45dvh] max-h-[420px] min-h-[16rem] w-full md:h-64"

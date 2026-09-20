@@ -96,7 +96,7 @@ function FactorRow({
     <div className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 py-1.5">
       <div className="min-w-0">
         <div className="truncate text-sm font-medium">{FACTOR_LABEL[f.factor] ?? f.factor}</div>
-        <div className="tabular text-[11px] text-faint">
+        <div className="tabular text-micro text-faint">
           {f.value.toFixed(2)} × {f.weight.toFixed(2)}
         </div>
       </div>
@@ -124,7 +124,7 @@ export function ScoreBars({ breakdown: b }: { breakdown: ScoreBreakdown }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-      <Card className="p-5">
+      <Card pad="roomy">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -142,7 +142,7 @@ export function ScoreBars({ breakdown: b }: { breakdown: ScoreBreakdown }) {
 
         {/* Stacked: segments = contributions, 2px surface gaps; sums to Impact. */}
         <div
-          className="relative mt-4 flex h-7 w-full overflow-hidden rounded-lg bg-surface-2"
+          className="relative mt-4 flex h-7 w-full overflow-hidden rounded-field bg-surface-2"
           role="img"
           aria-label={`Impact ${b.impact_score.toFixed(1)} of 100: ${impactF
             .map((f, i) => `${FACTOR_LABEL[f.factor]} ${impactShown[i].toFixed(1)}`)
@@ -151,7 +151,7 @@ export function ScoreBars({ breakdown: b }: { breakdown: ScoreBreakdown }) {
           {impactF.map((f, i) => (
             <div
               key={f.factor}
-              className="flex h-full items-center justify-center overflow-hidden text-[11px] font-bold text-white transition-[width] duration-700 ease-out"
+              className="flex h-full items-center justify-center overflow-hidden text-micro font-bold text-white transition-[width] duration-700 ease-out"
               style={{
                 width: grown ? `${f.contribution}%` : "0%",
                 background: bandVar,
@@ -171,7 +171,7 @@ export function ScoreBars({ breakdown: b }: { breakdown: ScoreBreakdown }) {
           <span>100</span>
         </div>
 
-        <p className="mt-4 rounded-xl bg-surface-2 px-3.5 py-3 text-sm leading-relaxed">
+        <p className="mt-4 rounded-field bg-surface-2 px-3.5 py-3 text-sm leading-relaxed">
           <Icon name="info" size={15} className="mr-1.5 inline -translate-y-px text-accent" />
           {explain(b)}
         </p>
@@ -193,7 +193,7 @@ export function ScoreBars({ breakdown: b }: { breakdown: ScoreBreakdown }) {
         </ul>
       </Card>
 
-      <Card className="p-5">
+      <Card pad="roomy">
         <div className="text-xs font-semibold uppercase tracking-wider text-muted">
           Evidence · how sure we are
         </div>

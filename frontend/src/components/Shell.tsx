@@ -143,7 +143,7 @@ function MobileNav({ role }: { role: UserRole }) {
             to={i.to}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "relative flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold",
+              "relative flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-micro font-semibold",
               "transition-colors duration-200 active:scale-[0.97]",
               active ? "text-accent" : "text-muted",
             )}
@@ -214,16 +214,16 @@ function RoleSwitcher() {
             .join("")}
         </span>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-[13px] font-semibold">{session.user.name}</span>
-          <span className="block text-[11px] text-muted">{ROLE_LABEL[session.user.role]}</span>
+          <span className="block text-label font-semibold">{session.user.name}</span>
+          <span className="block text-micro text-muted">{ROLE_LABEL[session.user.role]}</span>
         </span>
       </button>
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-12 z-[1100] w-64 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-pop animate-rise"
+          className="absolute right-0 top-12 z-[1100] w-64 overflow-hidden rounded-card border border-line bg-surface p-1 shadow-pop animate-rise"
         >
-          <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-faint">
+          <p className="px-2.5 pb-1.5 pt-1 text-micro font-semibold uppercase tracking-wider text-faint">
             Switch demo role
           </p>
           {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
@@ -232,7 +232,7 @@ function RoleSwitcher() {
               role="menuitem"
               onClick={() => pick(u)}
               className={cx(
-                "flex min-h-11 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm hover:bg-surface-2",
+                "flex min-h-11 w-full items-center justify-between rounded-field px-2.5 text-left text-sm hover:bg-surface-2",
                 u.id === session.user.id && "bg-surface-2",
               )}
             >
@@ -250,7 +250,7 @@ function RoleSwitcher() {
               logout();
               navigate("/login");
             }}
-            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
+            className="flex min-h-11 w-full items-center gap-2 rounded-field px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
           >
             <Icon name="logout" size={16} /> Sign out
           </button>
@@ -311,7 +311,7 @@ export function Shell({
         </div>
         {banner}
         {role === "authority" ? (
-          <p className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-1 text-center text-[11px] text-muted">
+          <p className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-1 text-center text-micro text-muted">
             <Icon name="info" size={12} className="shrink-0 text-accent" />
             {NON_ATTRIBUTION_NOTE}
           </p>

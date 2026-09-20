@@ -41,7 +41,7 @@ export function StageTracker({ stage, status }: { stage: CitizenStage; status: H
                 >
                   {done ? <Icon name="check" size={14} /> : i + 1}
                 </span>
-                <span className={cx("whitespace-nowrap text-[11px] font-semibold", current || done ? "text-ink" : "text-faint")}>
+                <span className={cx("whitespace-nowrap text-micro font-semibold", current || done ? "text-ink" : "text-faint")}>
                   {label}
                 </span>
               </span>

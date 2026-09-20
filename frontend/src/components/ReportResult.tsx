@@ -20,7 +20,7 @@ export function ReportResult({
   const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
 
   return (
-    <Card className="overflow-hidden animate-rise">
+    <Card pad="none" className="overflow-hidden animate-rise">
       {img ? (
         <div className="relative bg-surface-2">
           <img src={img} alt="Your photo, annotated with likely-plastic detections" className="max-h-[420px] w-full object-contain" />
@@ -28,13 +28,13 @@ export function ReportResult({
         </div>
       ) : null}
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 p-6">
         <div className="flex items-start gap-3">
           <span
             className={
               detected
-                ? "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"
-                : "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"
+                ? "grid h-10 w-10 shrink-0 place-items-center rounded-field bg-accent-soft text-accent"
+                : "grid h-10 w-10 shrink-0 place-items-center rounded-field bg-surface-2 text-muted"
             }
           >
             <Icon name={detected ? "check" : "info"} size={20} />
@@ -72,7 +72,7 @@ export function ReportResult({
         ) : null}
 
         {result.hotspot ? (
-          <div className="rounded-xl bg-surface-2 p-4">
+          <div className="rounded-field bg-surface-2 p-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
               What happens next
             </div>
@@ -91,7 +91,7 @@ export function ReportResult({
           </Button>
           <Link
             to="/my-reports"
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] border border-line bg-surface px-4 text-sm font-semibold hover:bg-surface-2"
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-field border border-line bg-surface px-4 text-sm font-semibold hover:bg-surface-2"
           >
             <Icon name="list" size={17} /> My reports
           </Link>

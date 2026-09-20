@@ -66,17 +66,17 @@ function Photo({
 }) {
   return (
     <figure className="snap-item min-w-[78%] sm:min-w-0">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-field border border-line bg-surface-2">
         {src ? (
           <img src={src} alt={`${label} photo`} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="grid h-full place-items-center text-xs text-faint">No photo</div>
         )}
-        <span className="absolute left-2 top-2 rounded-md bg-black/65 px-2 py-0.5 text-[11px] font-semibold text-white">
+        <span className="absolute left-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-micro font-semibold text-white">
           {label}
         </span>
         {bad ? (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-micro font-semibold text-info">
             <Icon name="alert" size={12} /> {bad}
           </span>
         ) : null}
@@ -179,14 +179,14 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-surface-2 p-3">
+        <div className="rounded-field bg-surface-2 p-3">
           <div className="text-xs font-semibold text-muted">Likely-plastic area</div>
           <div className="tabular mt-0.5 text-xl font-bold">
             {r === null || r === undefined ? "—" : r >= 0 ? `−${pct(r)}` : `+${pct(-r)}`}
           </div>
           <div className="text-xs text-faint">worse after-photo vs before</div>
         </div>
-        <div className="rounded-xl bg-surface-2 p-3">
+        <div className="rounded-field bg-surface-2 p-3">
           <div className="text-xs font-semibold text-muted">Items detected</div>
           <div className="tabular mt-0.5 text-xl font-bold">
             {record.before_count ?? "—"} → {record.after_count ?? "—"}
@@ -194,7 +194,7 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
           <div className="text-xs text-faint">before → after (worse photo)</div>
         </div>
       </div>
-      <ul className="space-y-2.5">
+      <ul className="space-y-3">
         <Check
           ok={Boolean(f.blur_ok && f.brightness_ok)}
           label="Photo quality"
@@ -216,7 +216,7 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
         />
       </ul>
       {f.reasons?.length ? (
-        <div className="rounded-xl border border-line p-3 text-sm">
+        <div className="rounded-field border border-line p-3 text-sm">
           <div className="mb-1 flex items-center gap-2 font-semibold">
             Suggested verdict <VerdictChip verdict={record.verdict} />
           </div>
@@ -253,7 +253,7 @@ export function ReviewPanel({
 
   if (!pending) {
     return (
-      <Card className="p-5">
+      <Card pad="roomy">
         <h2 className="font-semibold">Authority review</h2>
         <p className="mt-2 text-sm text-muted">
           {record.review_decision === "confirm_resolved" ? (
@@ -300,7 +300,7 @@ export function ReviewPanel({
 
   const needNote = againstVerdict && !note.trim();
   return (
-    <Card className="p-5">
+    <Card pad="roomy">
       <div className="flex items-center gap-2">
         <Icon name="scale" size={18} className="text-accent" />
         <h2 className="font-semibold">Your decision</h2>
@@ -318,7 +318,7 @@ export function ReviewPanel({
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           maxLength={500}
-          className="w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-sm"
+          className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm"
           placeholder={againstVerdict ? "Why is it clean despite the verdict?" : "What did you see?"}
         />
       </label>
@@ -337,7 +337,7 @@ export function ReviewPanel({
           Reject — re-clean required
         </Button>
       </div>
-      <p className="mt-3 text-[11px] text-faint">
+      <p className="mt-3 text-micro text-faint">
         {session ? `Recorded as ${session.user.name}. ` : ""}Uploaded {timeAgo(record.created_at)}.
       </p>
     </Card>

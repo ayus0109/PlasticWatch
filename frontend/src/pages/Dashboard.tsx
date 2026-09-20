@@ -68,12 +68,12 @@ function HotspotRow({
         selected
           ? "border-accent bg-accent-soft/60"
           : isPending
-            ? "border-amber-500/80 bg-surface hover:bg-surface-2"
+            ? "border-info/80 bg-surface hover:bg-surface-2"
             : "border-transparent hover:bg-surface-2",
       )}
     >
       <span
-        className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-xs font-bold text-white shadow-sm"
+        className="tabular mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-field text-label font-bold text-white"
         style={{ background: `var(--pw-band-${p.priority_band ?? "low"})` }}
         aria-hidden
       >
@@ -89,17 +89,17 @@ function HotspotRow({
         </span>
         <span className="mt-1 flex items-center justify-between text-xs text-muted">
           <span>{p.ward_name ?? "Unmapped area"} · {p.report_count} citizen report(s)</span>
-          <span className="text-[11px] text-faint">{timeAgo(p.last_reported_at)}</span>
+          <span className="text-micro text-faint">{timeAgo(p.last_reported_at)}</span>
         </span>
         <span className="mt-2 flex flex-wrap items-center gap-1.5">
           <StatusChip status={p.status} />
           {isPending ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-500">
+            <span className="inline-flex items-center gap-1 rounded-full bg-info-soft px-2 py-0.5 text-micro font-semibold text-info">
               <Icon name="clock" size={12} />
               Needs Review
             </span>
           ) : p.status === "verified" ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/15 px-2 py-0.5 text-[11px] font-semibold text-blue-500">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-micro font-semibold text-accent">
               <Icon name="truck" size={12} />
               Ready to Dispatch
             </span>
@@ -204,48 +204,50 @@ export default function Dashboard() {
             Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-24 rounded-card" />)
           ) : (
             <>
-              <Card className="p-4 border-l-4 border-amber-500 shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+              {/* Static KPIs: flat by design — you read them, you cannot act on them.
+                  Accents come from theme tokens only; warm stays reserved for the ramp. */}
+              <Card className="border-l-4 border-l-info">
+                <div className="flex items-center gap-2 text-eyebrow font-semibold uppercase text-info">
                   <Icon name="clock" size={15} />
                   Needs Your Review
                 </div>
-                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                <div className="font-display tabular mt-1.5 text-display font-bold text-ink">
                   {stages.pending}
                 </div>
-                <div className="mt-0.5 text-xs text-muted">Awaiting government verification</div>
+                <div className="mt-1 text-micro text-muted">Awaiting government verification</div>
               </Card>
 
-              <Card className="p-4 border-l-4 border-blue-500 shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-500">
+              <Card className="border-l-4 border-l-accent">
+                <div className="flex items-center gap-2 text-eyebrow font-semibold uppercase text-accent">
                   <Icon name="truck" size={15} />
                   Work In Progress
                 </div>
-                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                <div className="font-display tabular mt-1.5 text-display font-bold text-ink">
                   {stages.in_progress}
                 </div>
-                <div className="mt-0.5 text-xs text-muted">Cleanup teams dispatched</div>
+                <div className="mt-1 text-micro text-muted">Cleanup teams dispatched</div>
               </Card>
 
-              <Card className="p-4 border-l-4 border-teal-500 shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-teal-500">
+              <Card className="border-l-4 border-l-ok">
+                <div className="flex items-center gap-2 text-eyebrow font-semibold uppercase text-ok">
                   <Icon name="check" size={15} />
                   Cleaned & Resolved
                 </div>
-                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                <div className="font-display tabular mt-1.5 text-display font-bold text-ink">
                   {stages.completed}
                 </div>
-                <div className="mt-0.5 text-xs text-muted">Verified & approved closed</div>
+                <div className="mt-1 text-micro text-muted">Verified & approved closed</div>
               </Card>
 
-              <Card className="p-4 border-l-4 border-accent shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-muted">
+              <Card className="border-l-4 border-l-line-strong">
+                <div className="flex items-center gap-2 text-eyebrow font-semibold uppercase text-muted">
                   <Icon name="pin" size={15} />
                   Total Hotspots
                 </div>
-                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                <div className="font-display tabular mt-1.5 text-display font-bold text-ink">
                   {features.length}
                 </div>
-                <div className="mt-0.5 text-xs text-muted">From {k.total_reports.toLocaleString()} citizen reports</div>
+                <div className="mt-1 text-micro text-muted">From {k.total_reports.toLocaleString()} citizen reports</div>
               </Card>
             </>
           )}
@@ -254,7 +256,7 @@ export default function Dashboard() {
 
       {/* 2 + 3. Map and the Impact-ranked list */}
       <div className="mt-0 grid gap-4 md:mt-5 lg:grid-cols-[1fr_380px]">
-        <Card className={cx("relative overflow-hidden p-0", onlyOn("map"))}>
+        <Card pad="none" className={cx("relative overflow-hidden", onlyOn("map"))}>
           <div className="h-[calc(100dvh-16rem)] min-h-[20rem] w-full md:h-[460px] lg:h-[560px]">
             <HotspotMap
               hotspots={hotspots.data}
@@ -276,7 +278,7 @@ export default function Dashboard() {
             {showLayers ? "Close" : "Layers"}
           </button>
           {showLayers ? (
-            <div className="absolute left-3 top-16 z-[960] w-[min(300px,80vw)] space-y-3 rounded-2xl border border-line bg-surface p-3 shadow-pop animate-rise">
+            <div className="absolute left-3 top-16 z-[960] w-[min(300px,80vw)] space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop animate-rise">
               <LayerPanel layers={layers} onChange={setLayers} />
               <div className="border-t border-line pt-3">
                 <Legend />
@@ -284,16 +286,16 @@ export default function Dashboard() {
             </div>
           ) : null}
           {tilesDown ? (
-            <div className="absolute bottom-3 left-3 z-[940] max-w-xs rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted shadow-raised">
+            <div className="absolute bottom-3 left-3 z-[940] max-w-xs rounded-card border border-line bg-surface px-3 py-2 text-xs text-muted shadow-raised">
               <strong className="text-ink">Map tiles unavailable</strong> (offline?). Hotspots and
               GIS layers still render; the basemap needs internet.
             </div>
           ) : null}
         </Card>
 
-        <Card className={cx("flex flex-col overflow-hidden p-0 md:max-h-[560px]", onlyOn("list"))}>
+        <Card pad="none" className={cx("flex flex-col overflow-hidden md:max-h-[560px]", onlyOn("list"))}>
           <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3 bg-surface">
-            <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-ink">
+            <h2 className="text-label font-bold uppercase tracking-[0.06em] text-ink">
               Hotspot Triage List
             </h2>
             <span className="text-xs text-muted font-medium">{filtered.length} shown</span>
@@ -302,25 +304,26 @@ export default function Dashboard() {
           {/* Quick status filter tabs */}
           <div className="flex gap-1 overflow-x-auto border-b border-line bg-surface-2/60 p-2">
             {[
-              { key: "all", label: "All", count: ranked.length },
-              { key: "pending", label: "🚨 Needs Action", count: stages.pending },
-              { key: "in_progress", label: "🚛 In Progress", count: stages.in_progress },
-              { key: "resolved", label: "✅ Resolved", count: stages.completed },
+              { key: "all", label: "All", icon: "list" as const, count: ranked.length },
+              { key: "pending", label: "Needs Action", icon: "alert" as const, count: stages.pending },
+              { key: "in_progress", label: "In Progress", icon: "truck" as const, count: stages.in_progress },
+              { key: "resolved", label: "Resolved", icon: "check" as const, count: stages.completed },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setFilter(tab.key as FilterMode)}
                 className={cx(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
+                  "flex items-center gap-1.5 rounded-field px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
                   filter === tab.key
-                    ? "bg-accent text-accent-fg shadow-sm"
+                    ? "bg-accent text-accent-fg shadow-card"
                     : "text-muted hover:bg-surface hover:text-ink",
                 )}
               >
+                <Icon name={tab.icon} size={13} />
                 <span>{tab.label}</span>
                 <span
                   className={cx(
-                    "rounded-full px-1.5 py-0.2 text-[10px]",
+                    "rounded-full px-1.5 py-0.5 text-micro",
                     filter === tab.key ? "bg-black/20 text-white" : "bg-surface text-muted",
                   )}
                 >
@@ -338,7 +341,7 @@ export default function Dashboard() {
             ) : !hotspots.data ? (
               <div className="space-y-2 p-3">
                 {[0, 1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-20 w-full rounded-field" />
                 ))}
               </div>
             ) : filtered.length === 0 ? (

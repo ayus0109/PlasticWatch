@@ -64,7 +64,7 @@ export default function Login() {
             <br />
             <span className="text-accent">Clean the worst first.</span>
           </h1>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-muted">
+          <p className="mt-5 max-w-md text-body leading-relaxed text-muted">
             Citizens report likely plastic waste with a photo. Duplicates merge into hotspots,
             ranked by impact near drains and water — then people, not the model, decide what
             happens.
@@ -72,7 +72,7 @@ export default function Login() {
           <ul className="mt-8 space-y-3">
             {PRINCIPLES.map((p) => (
               <li key={p.text} className="flex items-start gap-3 text-sm">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
                   <Icon name={p.icon} size={16} />
                 </span>
                 <span className="pt-1.5">{p.text}</span>
@@ -82,7 +82,7 @@ export default function Login() {
         </div>
 
         <div className="animate-rise [animation-delay:80ms]">
-          <div className="rounded-[20px] border border-line bg-surface p-5 shadow-raised sm:p-7">
+          <div className="rounded-card border border-line bg-surface p-6 shadow-raised sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Choose a demo role</h2>
@@ -99,7 +99,7 @@ export default function Login() {
               {users.error ? (
                 <ErrorState message={users.error.message} onRetry={users.refetch} />
               ) : !users.data ? (
-                [0, 1].map((i) => <Skeleton key={i} className="h-[76px] w-full rounded-xl" />)
+                [0, 1].map((i) => <Skeleton key={i} className="h-[76px] w-full rounded-card" />)
               ) : (
                 ROLES.map((r) => {
                   const u = users.data!.find((x) => x.role === r.role);
@@ -110,12 +110,12 @@ export default function Login() {
                       onClick={() => signIn(u)}
                       disabled={busy !== null}
                       className={cx(
-                        "group flex w-full items-center gap-4 rounded-xl border border-line bg-surface p-4 text-left",
+                        "group flex w-full items-center gap-4 rounded-card border border-line bg-surface p-4 text-left",
                         "transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-accent hover:shadow-raised",
                         "disabled:opacity-60",
                       )}
                     >
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-ink transition-colors group-hover:bg-accent group-hover:text-accent-fg">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-field bg-surface-2 text-ink transition-colors group-hover:bg-accent group-hover:text-accent-fg">
                         <Icon name={r.icon} size={20} />
                       </span>
                       <span className="min-w-0 flex-1">

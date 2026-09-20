@@ -47,7 +47,7 @@ function NotFound() {
 function PageLoading() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6" aria-busy="true" aria-label="Loading">
-      <Skeleton className="h-8 w-56 rounded-lg" />
+      <Skeleton className="h-8 w-56 rounded-field" />
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {Array.from({ length: 5 }, (_, i) => (
           <Skeleton key={i} className="h-24 rounded-card" />

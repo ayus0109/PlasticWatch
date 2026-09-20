@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             role={t.kind === "error" ? "alert" : "status"}
             className={cx(
-              "pointer-events-auto flex max-w-md items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium shadow-pop animate-rise",
+              "pointer-events-auto flex max-w-md items-start gap-2.5 rounded-card border px-4 py-3 text-sm font-medium shadow-pop animate-rise",
               t.kind === "error" && "border-danger/30 bg-surface text-ink",
               t.kind === "ok" && "border-line bg-surface text-ink",
               t.kind === "info" && "border-line bg-surface text-ink",
