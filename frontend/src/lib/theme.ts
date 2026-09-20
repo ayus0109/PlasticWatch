@@ -5,9 +5,12 @@
  * utilities onto the variables (bg-surface, text-muted, …) and the Leaflet map reads
  * the same values from here. So a chip, a marker and a chart can never disagree.
  *
- * Direction: neutral canvas, one confident accent (teal — water, SDG 14), data does
- * the talking. The 4-step priority ramp is fixed by CLAUDE.md §9 and is the ONLY
- * warm colour family in the UI, so a red thing always means "critical".
+ * Direction: an eco-GIS canvas — slate neutrals, deep ocean teal for actions and a
+ * river blue for links, data does the talking. The 4-step priority ramp is fixed by
+ * CLAUDE.md §9 and is the ONLY warm colour family in the UI, so a red thing always
+ * means "critical". `bandChip` below is a SURFACE treatment of that same ramp (tinted
+ * background + readable ink): chips read calmly at small sizes while markers, score
+ * bars and the heatmap keep the exact ramp hues.
  */
 
 export type ThemeMode = "light" | "dark";
@@ -20,6 +23,22 @@ export const band = {
   critical: "#ef4444",
 } as const;
 export type BandKey = keyof typeof band;
+
+/** Tinted chip surfaces derived from the ramp. Meaning still comes from the label. */
+export const bandChip: Record<ThemeMode, Record<BandKey, { bg: string; fg: string; line: string }>> = {
+  light: {
+    low: { bg: "#f1f5f9", fg: "#334155", line: "#cbd5e1" },
+    medium: { bg: "#fffbeb", fg: "#92400e", line: "#fde68a" },
+    high: { bg: "#fff7ed", fg: "#9a3412", line: "#fed7aa" },
+    critical: { bg: "#fff1f2", fg: "#9f1239", line: "#fecdd3" },
+  },
+  dark: {
+    low: { bg: "rgba(148, 163, 184, 0.14)", fg: "#cbd5e1", line: "rgba(148, 163, 184, 0.35)" },
+    medium: { bg: "rgba(245, 158, 11, 0.14)", fg: "#fcd34d", line: "rgba(245, 158, 11, 0.38)" },
+    high: { bg: "rgba(249, 115, 22, 0.15)", fg: "#fdba74", line: "rgba(249, 115, 22, 0.4)" },
+    critical: { bg: "rgba(239, 68, 68, 0.16)", fg: "#fca5a5", line: "rgba(239, 68, 68, 0.42)" },
+  },
+};
 
 interface Palette {
   bg: string;
@@ -34,6 +53,8 @@ interface Palette {
   accentHover: string;
   accentSoft: string;
   accentFg: string;
+  link: string;
+  linkSoft: string;
   simBg: string;
   simFg: string;
   simBorder: string;
@@ -50,56 +71,60 @@ interface Palette {
 
 export const palette: Record<ThemeMode, Palette> = {
   light: {
-    bg: "#f5f5f2",
+    bg: "#f8fafc",
     surface: "#ffffff",
-    surface2: "#efeee9",
-    border: "#e3e1db",
-    borderStrong: "#cfccc3",
-    text: "#1b1a17",
-    muted: "#65625b",
-    faint: "#9a968d",
-    accent: "#0f766e",
-    accentHover: "#0b5f58",
-    accentSoft: "#d5f2ee",
+    surface2: "#f1f5f9",
+    border: "#e2e8f0",
+    borderStrong: "#cbd5e1",
+    text: "#0f172a",
+    muted: "#475569",
+    faint: "#94a3b8",
+    accent: "#0d9488",
+    accentHover: "#0f766e",
+    accentSoft: "#ccfbf1",
     accentFg: "#ffffff",
-    simBg: "#fff7e0",
-    simFg: "#8a4b00",
-    simBorder: "#e0a400",
-    ok: "#15803d",
-    okSoft: "#dcf4e3",
-    danger: "#b91c1c",
-    dangerSoft: "#fde4e4",
-    info: "#1d4ed8",
-    infoSoft: "#e0e9ff",
-    mapWater: "#2563eb",
-    mapDrain: "#0ea5e9",
-    overlay: "rgba(20, 18, 14, 0.42)",
+    link: "#0284c7",
+    linkSoft: "#e0f2fe",
+    simBg: "#fffbeb",
+    simFg: "#92400e",
+    simBorder: "#fbbf24",
+    ok: "#059669",
+    okSoft: "#d1fae5",
+    danger: "#e11d48",
+    dangerSoft: "#ffe4e6",
+    info: "#0284c7",
+    infoSoft: "#e0f2fe",
+    mapWater: "#0284c7",
+    mapDrain: "#38bdf8",
+    overlay: "rgba(15, 23, 42, 0.45)",
   },
   dark: {
-    bg: "#0d0f12",
-    surface: "#15181d",
-    surface2: "#1c2027",
-    border: "#262b33",
-    borderStrong: "#363c46",
-    text: "#ecebe7",
-    muted: "#a3a19a",
-    faint: "#6f6d67",
+    bg: "#020617",
+    surface: "#0f172a",
+    surface2: "#1e293b",
+    border: "#243044",
+    borderStrong: "#334155",
+    text: "#e2e8f0",
+    muted: "#94a3b8",
+    faint: "#64748b",
     accent: "#2dd4bf",
     accentHover: "#5eead4",
-    accentSoft: "rgba(45, 212, 191, 0.14)",
-    accentFg: "#04221e",
-    simBg: "rgba(245, 158, 11, 0.12)",
+    accentSoft: "rgba(45, 212, 191, 0.15)",
+    accentFg: "#042f2e",
+    link: "#38bdf8",
+    linkSoft: "rgba(56, 189, 248, 0.15)",
+    simBg: "rgba(245, 158, 11, 0.13)",
     simFg: "#fcd34d",
-    simBorder: "#b98100",
-    ok: "#4ade80",
-    okSoft: "rgba(74, 222, 128, 0.12)",
-    danger: "#f87171",
-    dangerSoft: "rgba(248, 113, 113, 0.13)",
-    info: "#93b4ff",
-    infoSoft: "rgba(147, 180, 255, 0.13)",
-    mapWater: "#60a5fa",
-    mapDrain: "#38bdf8",
-    overlay: "rgba(0, 0, 0, 0.6)",
+    simBorder: "#b45309",
+    ok: "#34d399",
+    okSoft: "rgba(52, 211, 153, 0.14)",
+    danger: "#fb7185",
+    dangerSoft: "rgba(251, 113, 133, 0.14)",
+    info: "#38bdf8",
+    infoSoft: "rgba(56, 189, 248, 0.14)",
+    mapWater: "#38bdf8",
+    mapDrain: "#7dd3fc",
+    overlay: "rgba(2, 6, 23, 0.66)",
   },
 };
 
@@ -143,13 +168,13 @@ export const radius = { sm: 6, md: 10, lg: 14, xl: 20, pill: 999 } as const;
 
 /** Elevation. Kept soft: data, not chrome, should stand out. */
 export const shadow = {
-  card: "0 1px 2px rgba(16, 15, 12, 0.05), 0 1px 1px rgba(16, 15, 12, 0.03)",
-  raised: "0 6px 18px -6px rgba(16, 15, 12, 0.18), 0 2px 4px rgba(16, 15, 12, 0.05)",
-  pop: "0 18px 40px -12px rgba(16, 15, 12, 0.32)",
+  card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.04)",
+  raised: "0 8px 20px -8px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.05)",
+  pop: "0 20px 44px -14px rgba(15, 23, 42, 0.34)",
 } as const;
 
-/** Minimum hit target (CLAUDE.md §9 accessibility). */
-export const HIT_TARGET_PX = 40;
+/** Minimum hit target: 44 px, the iOS/Android touch standard (CLAUDE.md §9). */
+export const HIT_TARGET_PX = 44;
 
 const THEME_KEY = "pw-theme";
 
@@ -164,6 +189,11 @@ export function applyTheme(mode: ThemeMode): void {
   }
   for (const [key, value] of Object.entries(band)) {
     root.style.setProperty(`--pw-band-${key}`, value);
+  }
+  for (const [key, chip] of Object.entries(bandChip[mode])) {
+    root.style.setProperty(`--pw-band-${key}-bg`, chip.bg);
+    root.style.setProperty(`--pw-band-${key}-fg`, chip.fg);
+    root.style.setProperty(`--pw-band-${key}-line`, chip.line);
   }
   root.style.setProperty("--pw-shadow-card", shadow.card);
   root.style.setProperty("--pw-shadow-raised", shadow.raised);

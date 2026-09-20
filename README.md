@@ -69,6 +69,8 @@ is in [docs/demo-script.md](docs/demo-script.md).
 ```bash
 cd frontend && npm install
 npm run dev        # http://localhost:5173 — proxies /api to the API on :8000
+                   # also prints an http://192.168.x.x:5173 URL: open that on a phone
+                   # on the same Wi-Fi (allow Node.js through the firewall if asked)
 npm run build      # type-check + production build
 npm run preview    # serve the build on http://localhost:4173 (same proxy)
 npm run gen:api    # regenerate src/api/schema.d.ts from frontend/openapi.json

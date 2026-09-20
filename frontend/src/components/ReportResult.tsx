@@ -91,7 +91,7 @@ export function ReportResult({
           </Button>
           <Link
             to="/my-reports"
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-[10px] border border-line bg-surface px-4 text-sm font-semibold hover:bg-surface-2"
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] border border-line bg-surface px-4 text-sm font-semibold hover:bg-surface-2"
           >
             <Icon name="list" size={17} /> My reports
           </Link>

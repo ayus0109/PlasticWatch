@@ -174,7 +174,11 @@ export default function Report() {
           />
           {preview ? (
             <div className="space-y-3">
-              <img src={preview} alt="Selected photo" className="max-h-80 w-full rounded-xl object-cover" />
+              <img
+                src={preview}
+                alt="Selected photo"
+                className="max-h-[45dvh] w-full rounded-xl bg-surface-2 object-contain"
+              />
               <div className="flex gap-2">
                 <Button icon="camera" onClick={() => cameraInput.current?.click()} className="flex-1">
                   Retake
@@ -217,7 +221,7 @@ export default function Report() {
             loc.mode !== "pin" ? (
               <button
                 onClick={() => setLoc({ mode: "pin", lat: gpsNear?.lat ?? null, lon: gpsNear?.lon ?? null })}
-                className="min-h-10 rounded-lg px-2 text-xs font-semibold text-accent hover:underline"
+                className="min-h-11 rounded-lg px-2 text-xs font-semibold text-accent hover:underline"
               >
                 Drop a pin instead
               </button>
@@ -249,9 +253,9 @@ export default function Report() {
                   Location access isn't available here. If the photo has no location, you'll
                   be asked to drop a pin. The stored copy has that data removed.
                 </p>
-                <button onClick={locate} className="mt-1 min-h-10 text-xs font-semibold text-accent hover:underline">
-                  Try GPS again
-                </button>
+                <Button variant="primary" icon="crosshair" onClick={locate} className="mt-3 w-full sm:w-auto">
+                  Use my current location
+                </Button>
               </div>
             </div>
           ) : (
@@ -262,11 +266,9 @@ export default function Report() {
                 near={gpsNear}
                 onChange={(p) => setLoc({ mode: "pin", lat: p.lat, lon: p.lon })}
               />
-              {gpsNear ? (
-                <button onClick={locate} className="min-h-10 text-xs font-semibold text-accent hover:underline">
-                  Use GPS instead
-                </button>
-              ) : null}
+              <Button variant="primary" icon="crosshair" onClick={locate} className="w-full">
+                Use my current location
+              </Button>
             </div>
           )}
         </Step>

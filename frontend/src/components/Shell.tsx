@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router";
 import type { DemoUser, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { applyTheme, currentTheme, type ThemeMode } from "../lib/theme";
@@ -16,6 +16,23 @@ const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
   ],
   // The government portal is one page: no tabs to fragment it (PS-08).
   authority: [],
+  team: [],
+};
+
+/**
+ * Phones get a thumb-reachable bar instead of tabs. For the government that one page
+ * has three views, so the bar switches ?view= on the dashboard (see Dashboard.tsx).
+ */
+const MOBILE_NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
+  citizen: [
+    { to: "/report", label: "Report", icon: "camera" },
+    { to: "/my-reports", label: "My reports", icon: "list" },
+  ],
+  authority: [
+    { to: "/dashboard?view=map", label: "Map", icon: "map" },
+    { to: "/dashboard?view=list", label: "Priorities", icon: "list" },
+    { to: "/dashboard?view=kpi", label: "KPIs", icon: "chart" },
+  ],
   team: [],
 };
 
@@ -91,27 +108,48 @@ function Tabs({ role }: { role: UserRole }) {
 }
 
 function MobileNav({ role }: { role: UserRole }) {
-  if (NAV[role].length < 2) return null;
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const items = MOBILE_NAV[role];
+  if (items.length < 2) return null;
+
+  const view = params.get("view") ?? "map";
+  const isActive = (to: string) => {
+    const [path, query] = to.split("?");
+    if (location.pathname !== path) return false;
+    return query ? query === `view=${view}` : true;
+  };
+
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[1000] flex border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="pb-safe fixed inset-x-0 bottom-0 z-[1000] flex border-t border-line bg-surface/80 backdrop-blur-md md:hidden"
       aria-label="Main"
     >
-      {NAV[role].map((i) => (
-        <NavLink
-          key={i.to}
-          to={i.to}
-          className={({ isActive }) =>
-            cx(
-              "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold",
-              isActive ? "text-accent" : "text-muted",
-            )
-          }
-        >
-          <Icon name={i.icon} size={20} />
-          {i.label}
-        </NavLink>
-      ))}
+      {items.map((i) => {
+        const active = isActive(i.to);
+        return (
+          <NavLink
+            key={i.to}
+            to={i.to}
+            aria-current={active ? "page" : undefined}
+            className={cx(
+              "relative flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold",
+              "transition-colors duration-200 active:scale-[0.97]",
+              active ? "text-accent" : "text-muted",
+            )}
+          >
+            <span
+              aria-hidden
+              className={cx(
+                "absolute inset-x-6 top-0 h-[2.5px] rounded-full bg-accent transition-opacity duration-200",
+                active ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <Icon name={i.icon} size={20} />
+            {i.label}
+          </NavLink>
+        );
+      })}
     </nav>
   );
 }
@@ -156,7 +194,7 @@ function RoleSwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex min-h-10 items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-sm transition-colors hover:border-line-strong"
+        className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-sm transition-colors hover:border-line-strong"
       >
         <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent">
           {session.user.name
@@ -184,7 +222,7 @@ function RoleSwitcher() {
               role="menuitem"
               onClick={() => pick(u)}
               className={cx(
-                "flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm hover:bg-surface-2",
+                "flex min-h-11 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm hover:bg-surface-2",
                 u.id === session.user.id && "bg-surface-2",
               )}
             >
@@ -202,7 +240,7 @@ function RoleSwitcher() {
               logout();
               navigate("/login");
             }}
-            className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
+            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
           >
             <Icon name="logout" size={16} /> Sign out
           </button>
@@ -224,7 +262,7 @@ export function ThemeToggle() {
     <button
       onClick={flip}
       aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} theme`}
-      className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+      className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95"
     >
       <Icon name={mode === "dark" ? "sun" : "moon"} size={18} />
     </button>
@@ -250,9 +288,9 @@ export function Shell({
   const role = session?.user.role ?? "citizen";
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/90 backdrop-blur">
+      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 items-center gap-6 px-4 sm:px-6">
-          <NavLink to="/" aria-label="PlasticWatch home">
+          <NavLink to="/" aria-label="PlasticWatch home" className="-mx-2 flex min-h-11 items-center px-2">
             <Logo />
           </NavLink>
           <Tabs role={role} />
@@ -272,7 +310,7 @@ export function Shell({
       <main
         className={cx(
           "flex-1",
-          fullBleed ? "relative" : "mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 md:pb-16",
+          fullBleed ? "relative" : "pb-nav mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 sm:pt-6 md:pb-12",
         )}
       >
         {children}

@@ -65,7 +65,7 @@ function Photo({
   bad?: string | null;
 }) {
   return (
-    <figure className="min-w-0">
+    <figure className="snap-item min-w-[78%] sm:min-w-0">
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line bg-surface-2">
         {src ? (
           <img src={src} alt={`${label} photo`} className="h-full w-full object-cover" loading="lazy" />
@@ -106,12 +106,12 @@ export function BeforeAfterCompare({ record }: { record: BeforeAfterRecord }) {
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-xs text-muted">Compare the same spot before and after cleanup.</p>
-        <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-xs font-semibold text-muted">
-          <input type="checkbox" checked={boxes} onChange={(e) => setBoxes(e.target.checked)} className="h-4 w-4 accent-[var(--pw-accent)]" />
+        <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-xs font-semibold text-muted">
+          <input type="checkbox" checked={boxes} onChange={(e) => setBoxes(e.target.checked)} className="h-5 w-5 accent-[var(--pw-accent)]" />
           Show AI boxes
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="snap-row -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
         <Photo
           src={pick(record.before_image_path, record.before_annotated_path)}
           label="Before"

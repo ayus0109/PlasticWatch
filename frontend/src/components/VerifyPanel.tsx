@@ -124,7 +124,7 @@ export function VerifyPanel({
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value as RejectReason)}
-              className="min-h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-sm"
+              className="min-h-11 w-full rounded-[10px] border border-line bg-surface px-3 text-sm"
               autoFocus
             >
               <option value="" disabled>

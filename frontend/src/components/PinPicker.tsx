@@ -68,7 +68,12 @@ export function PinPicker({
 
   return (
     <div className="overflow-hidden rounded-xl border border-line">
-      <div ref={el} className="h-64 w-full" role="application" aria-label="Tap the map to drop a pin" />
+      <div
+        ref={el}
+        className="h-[45dvh] max-h-[420px] min-h-[16rem] w-full md:h-64"
+        role="application"
+        aria-label="Tap the map to drop a pin"
+      />
       <p className="border-t border-line bg-surface-2 px-3 py-2 text-xs text-muted">
         {value
           ? `Pin at ${value.lat.toFixed(5)}, ${value.lon.toFixed(5)} — drag it to adjust.`

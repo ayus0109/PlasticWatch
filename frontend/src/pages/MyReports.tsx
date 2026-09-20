@@ -19,7 +19,7 @@ function ReportCard({ r }: { r: ReportSummary }) {
   const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
   const detected = r.ai_status === "detected";
   return (
-    <Card as="article" className="overflow-hidden animate-rise">
+    <Card as="article" interactive className="overflow-hidden animate-rise">
       <div className="flex flex-col sm:flex-row">
         <div className="relative h-44 shrink-0 bg-surface-2 sm:h-auto sm:w-48">
           {img ? <img src={img} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
@@ -71,7 +71,7 @@ export default function MyReports() {
           </div>
           <Link
             to="/report"
-            className="inline-flex min-h-10 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+            className="inline-flex min-h-11 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
           >
             New report
           </Link>
@@ -92,7 +92,7 @@ export default function MyReports() {
               action={
                 <Link
                   to="/report"
-                  className="inline-flex min-h-10 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg"
+                  className="inline-flex min-h-11 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg"
                 >
                   Report waste
                 </Link>

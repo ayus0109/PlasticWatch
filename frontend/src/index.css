@@ -27,6 +27,8 @@
   --color-danger-soft: var(--pw-danger-soft);
   --color-info: var(--pw-info);
   --color-info-soft: var(--pw-info-soft);
+  --color-link: var(--pw-link);
+  --color-link-soft: var(--pw-link-soft);
   --color-band-low: var(--pw-band-low);
   --color-band-medium: var(--pw-band-medium);
   --color-band-high: var(--pw-band-high);
@@ -47,6 +49,8 @@
   --animate-rise: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade: fade 0.25s ease-out both;
   --animate-slide-in: slide-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet-up: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-ping-soft: ping-soft 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @keyframes shimmer {
@@ -65,6 +69,16 @@
   from { opacity: 0; transform: translateX(24px); }
   to { opacity: 1; transform: translateX(0); }
 }
+/* Mobile bottom sheet: glides up, never bounces. */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* One gentle ring, for Critical only. */
+@keyframes ping-soft {
+  0% { transform: scale(1); opacity: 0.55; }
+  70%, 100% { transform: scale(2.1); opacity: 0; }
+}
 
 @layer base {
   html,
@@ -76,6 +90,15 @@
     @apply bg-bg text-ink font-sans antialiased;
     font-feature-settings: "cv11", "ss01";
     -webkit-tap-highlight-color: transparent;
+    /* Phones: never scroll sideways, whatever a map or a wide table does. */
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+  /* Comfortable reading size on small screens without reflowing the desktop scale. */
+  @media (max-width: 767px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
   }
   :focus-visible {
     outline: 2px solid var(--pw-accent);
@@ -90,8 +113,34 @@
     *::before,
     *::after {
       animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
     }
+  }
+}
+
+@layer utilities {
+  /* Home-indicator / notch safe areas (iOS + Android gesture bars). */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  /* Bottom bar height + safe area: what scrollable content must clear on phones. */
+  .pb-nav {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  .snap-row {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .snap-row::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-item {
+    scroll-snap-align: center;
   }
 }
 
@@ -106,6 +155,12 @@
     background-size: 800px 100%;
     @apply animate-shimmer rounded-md;
   }
+}
+
+/* Leaflet's own controls sit under our floating chrome on phones. */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 800 !important;
 }
 
 /* ---------------------------------------------------------------- Leaflet ---- */

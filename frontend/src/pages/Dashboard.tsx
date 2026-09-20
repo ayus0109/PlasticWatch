@@ -8,6 +8,7 @@
  * the approval gate does (CLAUDE.md §2.5).
  */
 import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   api,
   type AnalyticsSummary,
@@ -112,6 +113,11 @@ function HotspotRow({
 }
 
 export default function Dashboard() {
+  // Phones show one view at a time, switched by the bottom bar (Shell MOBILE_NAV).
+  // Desktop ignores this and keeps KPIs + map + list on screen together.
+  const [params] = useSearchParams();
+  const view = (params.get("view") ?? "map") as "map" | "list" | "kpi";
+  const onlyOn = (v: typeof view) => (view === v ? "" : "max-md:hidden");
   const summary = useApi<AnalyticsSummary>("/analytics/summary");
   const hotspots = useApi<HotspotFeatureCollection>("/hotspots");
   const geo = useApi<GeoFeatureCollection>("/geo/layers");
@@ -165,9 +171,11 @@ export default function Dashboard() {
   const k = summary.data?.kpis;
   return (
     <Shell banner={simulated || summary.data?.simulated_data ? <SimulatedBanner /> : null}>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className={cx("mb-4 flex flex-wrap items-end justify-between gap-3", onlyOn("kpi"))}>
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Plastic waste hotspots</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+            Plastic waste hotspots
+          </h1>
           <p className="mt-1 text-sm text-muted">
             Ranked by Impact: severity, recurrence, sensitivity to drains and water, and how long
             they have stayed open.
@@ -182,7 +190,7 @@ export default function Dashboard() {
       {summary.error ? (
         <ErrorState message={summary.error.message} onRetry={summary.refetch} />
       ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className={cx("grid grid-cols-2 gap-3 lg:grid-cols-5", onlyOn("kpi"))}>
           {!k ? (
             Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-24 rounded-card" />)
           ) : (
@@ -218,9 +226,9 @@ export default function Dashboard() {
       )}
 
       {/* 2 + 3. Map and the Impact-ranked list */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_380px]">
-        <Card className="relative overflow-hidden p-0">
-          <div className="h-[420px] w-full lg:h-[560px]">
+      <div className="mt-0 grid gap-4 md:mt-5 lg:grid-cols-[1fr_380px]">
+        <Card className={cx("relative overflow-hidden p-0", onlyOn("map"))}>
+          <div className="h-[calc(100dvh-16rem)] min-h-[20rem] w-full md:h-[460px] lg:h-[560px]">
             <HotspotMap
               hotspots={hotspots.data}
               geo={geo.data}
@@ -235,7 +243,7 @@ export default function Dashboard() {
           <button
             onClick={() => setShowLayers((v) => !v)}
             aria-expanded={showLayers}
-            className="absolute left-3 top-3 z-[960] flex min-h-10 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold shadow-raised"
+            className="absolute left-3 top-3 z-[960] flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold shadow-raised"
           >
             <Icon name={showLayers ? "x" : "layers"} size={16} />
             {showLayers ? "Close" : "Layers"}
@@ -256,14 +264,14 @@ export default function Dashboard() {
           ) : null}
         </Card>
 
-        <Card className="flex max-h-[560px] flex-col overflow-hidden p-0">
+        <Card className={cx("flex flex-col overflow-hidden p-0 md:max-h-[560px]", onlyOn("list"))}>
           <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
             <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
               Priority list
             </h2>
             <span className="text-xs text-faint">{ranked.length} hotspots · highest Impact first</span>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto max-md:max-h-[calc(100dvh-16rem)]">
             {hotspots.error ? (
               <div className="p-4">
                 <ErrorState message={hotspots.error.message} onRetry={hotspots.refetch} />
@@ -295,7 +303,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
+      <p className={cx("mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted", onlyOn("kpi"))}>
         <Icon name="info" size={13} className="shrink-0 text-accent" />
         {NON_ATTRIBUTION_NOTE}
       </p>
@@ -304,11 +312,17 @@ export default function Dashboard() {
       {selected !== null ? (
         <>
           <div
-            className="fixed inset-0 z-[1040] bg-black/30 backdrop-blur-[1px]"
+            className="fixed inset-0 z-[1040] animate-fade bg-[var(--pw-overlay)] backdrop-blur-[2px]"
             onClick={() => setSelected(null)}
             aria-hidden
           />
-          <div className="fixed inset-y-0 right-0 z-[1050] w-[min(560px,100vw)] animate-slide-in">
+          <div
+            className={cx(
+              "fixed z-[1050] animate-sheet-up",
+              "inset-x-0 bottom-0 h-[92dvh]",
+              "md:inset-y-0 md:right-0 md:left-auto md:h-full md:w-[min(560px,100vw)] md:animate-slide-in",
+            )}
+          >
             <HotspotDrawer
               key={selected}
               hotspotId={selected}

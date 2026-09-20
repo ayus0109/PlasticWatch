@@ -158,11 +158,15 @@ export function HotspotDrawer({
 
   return (
     <aside
-      className="flex h-full w-full flex-col overflow-y-auto border-l border-line bg-surface shadow-pop"
+      className="flex h-full w-full flex-col overflow-y-auto rounded-t-2xl border-line bg-surface shadow-pop md:rounded-none md:border-l"
       role="dialog"
       aria-label={`Hotspot ${hotspotId} details`}
     >
-      <header className="sticky top-0 z-10 flex items-start gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur">
+      {/* Grab handle: tells a thumb this sheet can be dismissed. */}
+      <div className="sticky top-0 z-20 flex justify-center bg-surface pt-2 md:hidden" aria-hidden>
+        <span className="h-1.5 w-10 rounded-full bg-line-strong" />
+      </div>
+      <header className="sticky top-0 z-10 flex items-start gap-3 border-b border-line bg-surface/85 px-4 py-3 backdrop-blur-md max-md:top-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-display text-xl font-bold tracking-tight">Hotspot #{hotspotId}</h2>
@@ -179,13 +183,13 @@ export function HotspotDrawer({
         <button
           onClick={onClose}
           aria-label="Close hotspot details"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95"
         >
           <Icon name="x" size={18} />
         </button>
       </header>
 
-      <div className="space-y-5 p-4">
+      <div className="pb-safe space-y-5 p-4">
         {detail.error ? (
           <ErrorState message={detail.error.message} onRetry={detail.refetch} />
         ) : !h ? (
@@ -280,7 +284,7 @@ export function HotspotDrawer({
               <button
                 onClick={() => setShowLedger((v) => !v)}
                 aria-expanded={showLedger}
-                className="flex min-h-10 w-full items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted hover:text-ink"
+                className="flex min-h-11 w-full items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted hover:text-ink"
               >
                 <Icon name="clipboard" size={14} />
                 Evidence ledger

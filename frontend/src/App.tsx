@@ -2,7 +2,7 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router";
 import type { UserRole } from "./api/client";
 import { Shell } from "./components/Shell";
-import { Card, EmptyState, Spinner } from "./components/ui";
+import { Card, EmptyState, Skeleton } from "./components/ui";
 import { homeFor, useSession } from "./store/auth";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -29,7 +29,7 @@ function RequireRole({ role, children }: { role: UserRole; children: ReactNode }
             action={
               <Link
                 to={homeFor(session.user.role)}
-                className="inline-flex min-h-10 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg"
+                className="inline-flex min-h-11 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg"
               >
                 Go to my home
               </Link>
@@ -62,8 +62,17 @@ function NotFound() {
 
 function PageLoading() {
   return (
-    <div className="grid min-h-[60vh] place-items-center text-accent">
-      <Spinner className="h-6 w-6" />
+    <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6" aria-busy="true" aria-label="Loading">
+      <Skeleton className="h-8 w-56 rounded-lg" />
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-24 rounded-card" />
+        ))}
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_380px]">
+        <Skeleton className="h-[42dvh] rounded-card md:h-[460px]" />
+        <Skeleton className="hidden h-[460px] rounded-card lg:block" />
+      </div>
     </div>
   );
 }

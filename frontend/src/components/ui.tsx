@@ -42,8 +42,8 @@ export function Button({
       {...rest}
       disabled={rest.disabled || loading}
       className={cx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold",
-        "transition-[background-color,border-color,transform,opacity] duration-150 active:scale-[0.98]",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold",
+        "transition-all duration-200 ease-out active:scale-[0.98] active:duration-75",
         "disabled:cursor-not-allowed disabled:opacity-50",
         BUTTON[variant],
         className,
@@ -74,13 +74,23 @@ export function Card({
   children,
   className,
   as: Tag = "section",
+  interactive = false,
 }: {
   children: ReactNode;
   className?: string;
   as?: "section" | "div" | "article" | "aside";
+  /** Adds the hover lift / press feedback. Only for cards that do something. */
+  interactive?: boolean;
 }) {
   return (
-    <Tag className={cx("rounded-card border border-line bg-surface shadow-card", className)}>
+    <Tag
+      className={cx(
+        "rounded-card border border-line bg-surface shadow-card",
+        interactive &&
+          "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-line-strong hover:shadow-raised active:translate-y-0 active:scale-[0.995]",
+        className,
+      )}
+    >
       {children}
     </Tag>
   );
@@ -126,7 +136,7 @@ export function Chip({
     <span
       title={title}
       className={cx(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "inline-flex min-h-7 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
         TONE[tone],
         className,
       )}
@@ -152,14 +162,25 @@ export function BandChip({ band, score }: { band: PriorityBand | null | undefine
   return (
     <span
       title={`${m.label} priority — ${m.range}`}
-      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-semibold"
+      className="inline-flex min-h-7 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold"
+      style={{
+        background: `var(--pw-band-${band}-bg)`,
+        color: `var(--pw-band-${band}-fg)`,
+        borderColor: `var(--pw-band-${band}-line)`,
+      }}
     >
       <span
         aria-hidden
-        className="grid h-4 w-4 place-items-center rounded-full text-[9px] font-bold text-white"
+        className="relative grid h-4 w-4 place-items-center rounded-full text-[9px] font-bold text-white"
         style={{ background: `var(--pw-band-${band})` }}
       >
-        {m.letter}
+        {band === "critical" ? (
+          <span
+            className="absolute inset-0 rounded-full animate-ping-soft"
+            style={{ background: `var(--pw-band-${band})` }}
+          />
+        ) : null}
+        <span className="relative">{m.letter}</span>
       </span>
       {m.label}
       {score !== undefined && score !== null ? (

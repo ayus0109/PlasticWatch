@@ -23,7 +23,7 @@ export function LayerPanel({
       {LAYER_ITEMS.map((item) => (
         <label
           key={item.key}
-          className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm hover:bg-surface-2"
+          className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm hover:bg-surface-2"
         >
           <Icon name={item.icon} size={16} className="text-muted" />
           <span className="flex-1">{item.label}</span>
