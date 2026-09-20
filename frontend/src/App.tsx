@@ -1,47 +1,27 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
-import type { UserRole } from "./api/client";
-import { Shell } from "./components/Shell";
-import { Card, EmptyState, Skeleton } from "./components/ui";
-import { homeFor, useSession } from "./store/auth";
+import { warmupApi, type UserRole } from "./api/client";
+import { EmptyState, Skeleton } from "./components/ui";
+import { homeFor, loginAs, useSession } from "./store/auth";
 
 const Login = lazy(() => import("./pages/Login"));
 const Report = lazy(() => import("./pages/Report"));
 const MyReports = lazy(() => import("./pages/MyReports"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 
-const ROLE_NAME: Record<UserRole, string> = {
-  citizen: "locals",
-  authority: "the government",
-  team: "cleanup crews",
-};
-
 function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const session = useSession();
-  if (!session) return <Navigate to="/login" replace />;
-  if (session.user.role !== role) {
-    return (
-      <Shell>
-        <Card className="mx-auto max-w-lg">
-          <EmptyState
-            icon="shield"
-            title={`This page is for ${ROLE_NAME[role]}`}
-            action={
-              <Link
-                to={homeFor(session.user.role)}
-                className="inline-flex min-h-11 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-accent-fg"
-              >
-                Go to my home
-              </Link>
-            }
-          >
-            You're signed in with a different demo role. Use the role switcher at the top right
-            to change roles.
-          </EmptyState>
-        </Card>
-      </Shell>
-    );
+
+  useEffect(() => {
+    if (!session || session.user.role !== role) {
+      loginAs({ role }).catch(() => {});
+    }
+  }, [session, role]);
+
+  if (!session || session.user.role !== role) {
+    return <PageLoading />;
   }
+
   return <>{children}</>;
 }
 
@@ -78,6 +58,10 @@ function PageLoading() {
 }
 
 export default function App() {
+  useEffect(() => {
+    warmupApi();
+  }, []);
+
   return (
     <HashRouter>
       <Suspense fallback={<PageLoading />}>

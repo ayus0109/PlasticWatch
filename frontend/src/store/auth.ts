@@ -56,6 +56,14 @@ export function useSession(): Session | null {
   );
 }
 
+export function setSessionToken(token: string, user: DemoUser, expiresAt: string): void {
+  emit({ token, user, expiresAt });
+}
+
+export function getCurrentUser(): DemoUser | null {
+  return session?.user ?? null;
+}
+
 export async function loginAs(pick: { role?: UserRole; user_id?: string }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/demo-login", pick);
   const next = { token: res.token, user: res.user, expiresAt: res.expires_at };

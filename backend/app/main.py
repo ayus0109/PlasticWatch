@@ -76,12 +76,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_list = [o.strip() for o in get_settings().CORS_ORIGINS.split(",") if o.strip()]
+if "*" not in cors_list:
+    cors_list.append("*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in get_settings().CORS_ORIGINS.split(",") if o.strip()],
+    allow_origins=cors_list,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+
+@app.get("/ping", tags=["system"])
+def ping() -> dict:
+    """Instantaneous keepalive endpoint that wakes or tests the service without DB overhead."""
+    return {"status": "ok", "pong": True}
+
 
 for module in (auth, reports, hotspots, geo, tasks, before_after, analytics, admin):
     app.include_router(module.router)

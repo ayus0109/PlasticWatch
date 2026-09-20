@@ -2,7 +2,7 @@
  * Typed API client. Every type comes from src/api/schema.d.ts, generated from the
  * backend's frozen OpenAPI contract (`npm run gen:api`) — never hand-written.
  */
-import { getToken, logout } from "../store/auth";
+import { getToken, logout, setSessionToken } from "../store/auth";
 import type { components } from "./schema";
 
 type S = components["schemas"];
@@ -48,11 +48,22 @@ export type Verdict = S["Verdict"];
 export type ResetDemoResponse = S["ResetDemoResponse"];
 
 /** Browser -> Vite proxy -> FastAPI (see vite.config.ts). Override for a hosted API. */
-export const API_BASE: string = import.meta.env.VITE_API_BASE ?? "/api";
+export const API_BASE: string = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/+$/, "");
+
+/** Build absolute or proxied URL safely without double slashes. */
+export function buildUrl(path: string): URL {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (/^https?:\/\//i.test(API_BASE)) {
+    return new URL(`${API_BASE}${cleanPath}`);
+  }
+  return new URL(`${API_BASE}${cleanPath}`, window.location.origin);
+}
 
 /** Absolute URL for a stored media path such as "uploads/reports/<id>.jpg". */
 export function mediaUrl(path: string | null | undefined): string | undefined {
-  return path ? `${API_BASE}/${path}` : undefined;
+  if (!path) return undefined;
+  const clean = path.replace(/^\/+/, "");
+  return `${API_BASE}/${clean}`;
 }
 
 export class ApiError extends Error {
@@ -83,7 +94,7 @@ function describe(status: number, body: unknown): { message: string; code?: stri
   }
   if (status === 403) return { message: "Your role is not allowed to do that." };
   if (status === 404) return { message: "Not found." };
-  if (status >= 500) return { message: "The server hit a problem. Please try again." };
+  if (status >= 500) return { message: "The server hit a temporary problem. Please try again." };
   return { message: `Request failed (${status}).` };
 }
 
@@ -94,14 +105,92 @@ interface RequestOptions {
   signal?: AbortSignal;
 }
 
-async function request<T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
-  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+const RETRYABLE_STATUSES = new Set([0, 502, 503, 504]);
+const MAX_NETWORK_RETRIES = 3;
+const RETRY_DELAYS_MS = [1200, 2500, 4000];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+let autoLoginPromise: Promise<string | null> | null = null;
+
+/** Seamless auto-login so demo views never fail due to missing or expired tokens. */
+async function autoAuthenticate(): Promise<string | null> {
+  if (autoLoginPromise) return autoLoginPromise;
+
+  autoLoginPromise = (async () => {
+    try {
+      const isCitizen = window.location.hash.includes("report");
+      const targetRole: UserRole = isCitizen ? "citizen" : "authority";
+      const loginUrl = buildUrl("/auth/demo-login");
+      const res = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: targetRole }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as TokenResponse;
+      if (data?.token) {
+        setSessionToken(data.token, data.user, data.expires_at);
+        return data.token;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      autoLoginPromise = null;
+    }
+  })();
+
+  return autoLoginPromise;
+}
+
+async function fetchWithRetry(
+  url: URL,
+  init: RequestInit,
+  attempt = 0
+): Promise<Response> {
+  try {
+    const res = await fetch(url, init);
+    // Render free-tier cold-start gateway 502/503/504
+    if (RETRYABLE_STATUSES.has(res.status) && attempt < MAX_NETWORK_RETRIES) {
+      await sleep(RETRY_DELAYS_MS[attempt] || 2000);
+      return fetchWithRetry(url, init, attempt + 1);
+    }
+    return res;
+  } catch (err) {
+    if ((err as Error).name === "AbortError") throw err;
+    if (attempt < MAX_NETWORK_RETRIES) {
+      await sleep(RETRY_DELAYS_MS[attempt] || 2000);
+      return fetchWithRetry(url, init, attempt + 1);
+    }
+    throw new ApiError(
+      0,
+      "PlasticWatch server is waking up or temporarily unreachable. Please retry in a moment."
+    );
+  }
+}
+
+async function request<T>(
+  method: string,
+  path: string,
+  opts: RequestOptions = {},
+  isAuthRetry = false
+): Promise<T> {
+  const url = buildUrl(path);
   for (const [k, v] of Object.entries(opts.query ?? {})) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
   }
+
+  let token = getToken();
+  if (!token && !path.startsWith("/auth") && !path.startsWith("/ping") && !path.startsWith("/health")) {
+    token = await autoAuthenticate();
+  }
+
   const headers: Record<string, string> = {};
-  const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+
   let body: BodyInit | undefined;
   if (opts.form) body = opts.form;
   else if (opts.json !== undefined) {
@@ -109,18 +198,20 @@ async function request<T>(method: string, path: string, opts: RequestOptions = {
     body = JSON.stringify(opts.json);
   }
 
-  let res: Response;
-  try {
-    res = await fetch(url, { method, headers, body, signal: opts.signal });
-  } catch (err) {
-    if ((err as Error).name === "AbortError") throw err;
-    throw new ApiError(0, "Can't reach the PlasticWatch server. Is the API running?");
+  const res = await fetchWithRetry(url, { method, headers, body, signal: opts.signal });
+
+  // If token was rejected (401), auto-renew session and retry once transparently
+  if (res.status === 401 && !isAuthRetry && !path.startsWith("/auth")) {
+    const refreshed = await autoAuthenticate();
+    if (refreshed) {
+      return request<T>(method, path, opts, true);
+    }
+    logout();
   }
 
   const text = await res.text();
   const data = text ? safeJson(text) : null;
   if (!res.ok) {
-    if (res.status === 401 && token) logout(); // expired or invalid demo token
     const { message, code } = describe(res.status, data);
     throw new ApiError(res.status, message, code, data);
   }
@@ -132,6 +223,16 @@ function safeJson(text: string): unknown {
     return JSON.parse(text);
   } catch {
     return text;
+  }
+}
+
+/** Keepalive warmup so Render free-tier starts spinning up in the background early. */
+export function warmupApi(): void {
+  try {
+    const pingUrl = buildUrl("/ping");
+    fetch(pingUrl, { method: "GET" }).catch(() => {});
+  } catch {
+    /* ignore */
   }
 }
 

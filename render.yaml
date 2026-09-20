@@ -8,7 +8,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: DETECTOR_MODE
-        value: stub
+        value: real
       - key: CORS_ORIGINS
         value: "*"
 

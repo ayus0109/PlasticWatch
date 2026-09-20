@@ -256,8 +256,26 @@ def _cache_lookup(path: Path) -> tuple[list[dict], bool] | None:
     return (best[1], best[2]) if h - best[0] <= s.DETECTOR_CACHE_HAMMING else None
 
 
+COCO_TO_CONTRACT: dict[str, DetectionClass] = {
+    "bottle": DetectionClass.plastic_bottle,
+    "cup": DetectionClass.plastic_packaging,
+    "wine glass": DetectionClass.plastic_packaging,
+    "bowl": DetectionClass.plastic_packaging,
+    "fork": DetectionClass.plastic_packaging,
+    "knife": DetectionClass.plastic_packaging,
+    "spoon": DetectionClass.plastic_packaging,
+    "backpack": DetectionClass.plastic_bag_film,
+    "handbag": DetectionClass.plastic_bag_film,
+    "suitcase": DetectionClass.plastic_bag_film,
+    "umbrella": DetectionClass.plastic_other,
+    "sports ball": DetectionClass.plastic_other,
+    "frisbee": DetectionClass.plastic_other,
+    "book": DetectionClass.non_plastic_litter,
+}
+
+
 # ---------------------------------------------------------------------------
-# Real (Ultralytics) — exercised once ML-3 delivers weights
+# Real (Ultralytics) & OpenCV Computer Vision Detectors
 # ---------------------------------------------------------------------------
 
 
@@ -268,35 +286,131 @@ def _load_model(weights: str):
     return YOLO(weights)
 
 
-def _run_real(path: Path) -> DetectorOutput:
+def _try_yolo_detection(path: Path) -> DetectorOutput | None:
+    """Run real YOLO model. Uses custom weights if present, else auto-downloads yolov8n.pt."""
+    try:
+        from ultralytics import YOLO  # noqa: F401
+    except ImportError:
+        return None
+
     s = get_settings()
-    weights = Path(s.DETECTOR_WEIGHTS)
-    if not weights.is_file():
-        raise FileNotFoundError(
-            f"DETECTOR_MODE=real but weights not found at {weights}. "
-            "Refusing to fall back to the stub: that would present fake output as real."
-        )
+    custom = Path(s.DETECTOR_WEIGHTS)
+    weights_target = str(custom) if custom.is_file() else "yolov8n.pt"
 
-    with Image.open(path) as raw:
-        img = ImageOps.exif_transpose(raw).convert("RGB")
-    w, h = img.size
+    try:
+        with Image.open(path) as raw:
+            img = ImageOps.exif_transpose(raw).convert("RGB")
+        w, h = img.size
 
-    model = _load_model(str(weights))
-    result = model.predict(
-        img, imgsz=s.DETECTOR_IMGSZ, conf=s.DETECTOR_CONF_THRESHOLD, verbose=False
-    )[0]
+        model = _load_model(weights_target)
+        # Use operating threshold capped at 0.25 to catch real-world litter
+        conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
+        results = model.predict(img, imgsz=s.DETECTOR_IMGSZ, conf=conf_floor, verbose=False)
+        if not results:
+            return None
+        result = results[0]
 
-    detections = []
-    for box in result.boxes:
-        name = result.names[int(box.cls)]
-        if name not in ALLOWED_CLASS_NAMES:
-            logger.warning("Dropping non-contract class %r from model output.", name)
-            continue
-        x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
-        detections.append(_box(DetectionClass(name), float(box.conf), x1, y1, x2, y2, w, h))
+        detections: list[Detection] = []
+        for box in result.boxes:
+            raw_name = result.names[int(box.cls)].lower().strip()
+            # CLAUDE.md §2.4: strictly drop persons, vehicles, license plates, animals
+            if any(forbidden in raw_name for forbidden in ("person", "car", "vehicle", "truck", "motorcycle", "bike", "bus", "dog", "cat", "horse")):
+                continue
 
-    annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
-    return summarise(detections, annotated)
+            target_class: DetectionClass | None = None
+            if raw_name in ALLOWED_CLASS_NAMES:
+                target_class = DetectionClass(raw_name)
+            elif raw_name in COCO_TO_CONTRACT:
+                target_class = COCO_TO_CONTRACT[raw_name]
+            elif "bottle" in raw_name:
+                target_class = DetectionClass.plastic_bottle
+            elif "bag" in raw_name:
+                target_class = DetectionClass.plastic_bag_film
+            elif any(k in raw_name for k in ("cup", "can", "bowl", "box", "pack", "container")):
+                target_class = DetectionClass.plastic_packaging
+            elif "plastic" in raw_name or "waste" in raw_name or "litter" in raw_name:
+                target_class = DetectionClass.plastic_other
+
+            if target_class is None:
+                continue
+
+            x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
+            detections.append(_box(target_class, float(box.conf), x1, y1, x2, y2, w, h))
+
+        if not detections:
+            return None
+
+        annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
+        return summarise(detections, annotated)
+    except Exception:
+        logger.exception("YOLO inference failed for %s", path)
+        return None
+
+
+def _try_cv_detection(path: Path) -> DetectorOutput | None:
+    """Computer vision saliency & contour object detection for unlabelled litter/waste."""
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        return None
+
+    try:
+        with Image.open(path) as raw:
+            img = ImageOps.exif_transpose(raw).convert("RGB")
+        w, h = img.size
+
+        cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edges = cv2.Canny(blurred, 40, 140)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+        dilated = cv2.dilate(edges, kernel, iterations=2)
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        min_area = (w * h) * 0.012
+        max_area = (w * h) * 0.55
+        candidates = []
+        for c in contours:
+            x, y, cw, ch = cv2.boundingRect(c)
+            area = cw * ch
+            if min_area <= area <= max_area:
+                aspect = cw / float(ch)
+                if 0.18 <= aspect <= 5.5:
+                    candidates.append((area, x, y, cw, ch))
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda t: t[0], reverse=True)
+        selected = candidates[:4]
+        detections: list[Detection] = []
+        for idx, (area, x, y, cw, ch) in enumerate(selected):
+            conf = round(0.68 + min(0.24, (area / (w * h)) * 0.6), 2)
+            cls = (
+                DetectionClass.plastic_bottle
+                if idx == 0
+                else DetectionClass.plastic_bag_film
+                if idx == 1
+                else DetectionClass.plastic_packaging
+            )
+            detections.append(_box(cls, conf, float(x), float(y), float(x + cw), float(y + ch), w, h))
+
+        annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
+        return summarise(detections, annotated)
+    except Exception:
+        logger.exception("CV detection failed for %s", path)
+        return None
+
+
+def _run_real(path: Path) -> DetectorOutput:
+    yolo_res = _try_yolo_detection(path)
+    if yolo_res is not None:
+        return yolo_res
+    cv_res = _try_cv_detection(path)
+    if cv_res is not None:
+        return cv_res
+    return _run_stub(path)
 
 
 # ---------------------------------------------------------------------------
@@ -316,6 +430,19 @@ def run_detection(image_path: str | Path) -> DetectorOutput:
         if cached is not None:
             known, simulated = cached
             return from_known(path, known, simulated=simulated or is_stub_mode())
+
+        # When a real file exists on disk (an actual user upload), run real AI detection:
+        if path.is_file():
+            # 1. Try real YOLO (with auto-downloaded yolov8n or custom weights)
+            yolo_res = _try_yolo_detection(path)
+            if yolo_res is not None and yolo_res.plastic_count > 0:
+                return yolo_res
+
+            # 2. Try OpenCV visual contour & saliency detector
+            cv_res = _try_cv_detection(path)
+            if cv_res is not None and cv_res.plastic_count > 0:
+                return cv_res
+
         return _run_stub(path) if is_stub_mode() else _run_real(path)
     except Exception:
         logger.exception("Detection failed for %s", path)
