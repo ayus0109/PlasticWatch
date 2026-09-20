@@ -72,8 +72,7 @@ export function homeFor(role: UserRole): string {
     case "citizen":
       return "/report";
     case "authority":
-      return "/map";
     case "team":
-      return "/team/tasks";
+      return "/dashboard";
   }
 }

@@ -1666,7 +1666,7 @@
               }
             ],
             "title": "Lat",
-            "description": "Team GPS at upload; else EXIF, else check-in."
+            "description": "GPS at upload; else photo EXIF, else check-in."
           },
           "lon": {
             "anyOf": [
@@ -2222,6 +2222,30 @@
             ],
             "description": "Latest before/after record for this hotspot (SPEC \u00a714), if any."
           },
+          "cleanup_task_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cleanup Task Id",
+            "description": "Cleanup task this hotspot is on."
+          },
+          "cleanup_stop_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cleanup Stop Id",
+            "description": "Its stop, for the after-photo upload."
+          },
           "is_simulated": {
             "type": "boolean",
             "title": "Is Simulated",
@@ -2498,6 +2522,30 @@
             ],
             "title": "Last Reported At"
           },
+          "d_drain_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Drain M",
+            "description": "Stored distance to the nearest drain."
+          },
+          "d_water_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Water M",
+            "description": "Stored distance to the nearest water body."
+          },
           "is_simulated": {
             "type": "boolean",
             "title": "Is Simulated",
@@ -2514,7 +2562,7 @@
           "recurrence_returns"
         ],
         "title": "HotspotProperties",
-        "description": "FROZEN \u2014 the property set every map marker styles itself from."
+        "description": "FROZEN \u2014 the property set every map marker styles itself from.\n\nd_drain_m / d_water_m were added for the PS-08 dashboard, which shows proximity to\ndrains and water on the marker popup and in the priority list. Additive only: the\nfrozen properties above keep their names and meaning."
       },
       "HotspotStatus": {
         "type": "string",

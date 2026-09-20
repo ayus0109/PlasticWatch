@@ -335,7 +335,12 @@ class PointGeometry(BaseModel):
 
 
 class HotspotProperties(BaseModel):
-    """FROZEN — the property set every map marker styles itself from."""
+    """FROZEN — the property set every map marker styles itself from.
+
+    d_drain_m / d_water_m were added for the PS-08 dashboard, which shows proximity to
+    drains and water on the marker popup and in the priority list. Additive only: the
+    frozen properties above keep their names and meaning.
+    """
 
     id: int
     status: HotspotStatus
@@ -351,6 +356,8 @@ class HotspotProperties(BaseModel):
     ward_name: str | None = None
     first_reported_at: datetime | None = None
     last_reported_at: datetime | None = None
+    d_drain_m: float | None = Field(None, description="Stored distance to the nearest drain.")
+    d_water_m: float | None = Field(None, description="Stored distance to the nearest water body.")
     is_simulated: bool = Field(
         False, description="True when any member report has a fabricated geotag (CLAUDE.md §2.2)."
     )
@@ -447,6 +454,8 @@ class HotspotDetail(BaseModel):
     before_after: BeforeAfterRecord | None = Field(
         None, description="Latest before/after record for this hotspot (SPEC §14), if any."
     )
+    cleanup_task_id: int | None = Field(None, description="Cleanup task this hotspot is on.")
+    cleanup_stop_id: int | None = Field(None, description="Its stop, for the after-photo upload.")
     is_simulated: bool = False
     non_attribution_note: str = Field(
         NON_ATTRIBUTION_NOTE, description="Persistent note required on authority views."

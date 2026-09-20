@@ -10,21 +10,15 @@ import { homeFor, loginAs, useSession } from "../store/auth";
 const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] = [
   {
     role: "citizen",
-    title: "Citizen",
+    title: "Locals",
     blurb: "Photograph waste, pin where it is, and follow what happens next.",
     icon: "camera",
   },
   {
     role: "authority",
-    title: "Authority",
-    blurb: "See ranked hotspots on the map, verify evidence, confirm cleanups.",
+    title: "Government",
+    blurb: "Ranked hotspots on the map, verify evidence, approve cleanups.",
     icon: "shield",
-  },
-  {
-    role: "team",
-    title: "Cleanup team",
-    blurb: "Follow the route, clean up, and upload before/after photos.",
-    icon: "truck",
   },
 ];
 
@@ -105,7 +99,7 @@ export default function Login() {
               {users.error ? (
                 <ErrorState message={users.error.message} onRetry={users.refetch} />
               ) : !users.data ? (
-                [0, 1, 2].map((i) => <Skeleton key={i} className="h-[76px] w-full rounded-xl" />)
+                [0, 1].map((i) => <Skeleton key={i} className="h-[76px] w-full rounded-xl" />)
               ) : (
                 ROLES.map((r) => {
                   const u = users.data!.find((x) => x.role === r.role);

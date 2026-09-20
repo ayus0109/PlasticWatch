@@ -676,7 +676,7 @@ export interface components {
             close: string;
             /**
              * Lat
-             * @description Team GPS at upload; else EXIF, else check-in.
+             * @description GPS at upload; else photo EXIF, else check-in.
              */
             lat?: number | null;
             /** Lon */
@@ -928,6 +928,16 @@ export interface components {
             /** @description Latest before/after record for this hotspot (SPEC §14), if any. */
             before_after?: components["schemas"]["BeforeAfterRecord"] | null;
             /**
+             * Cleanup Task Id
+             * @description Cleanup task this hotspot is on.
+             */
+            cleanup_task_id?: number | null;
+            /**
+             * Cleanup Stop Id
+             * @description Its stop, for the after-photo upload.
+             */
+            cleanup_stop_id?: number | null;
+            /**
              * Is Simulated
              * @default false
              */
@@ -988,6 +998,10 @@ export interface components {
         /**
          * HotspotProperties
          * @description FROZEN — the property set every map marker styles itself from.
+         *
+         *     d_drain_m / d_water_m were added for the PS-08 dashboard, which shows proximity to
+         *     drains and water on the marker popup and in the priority list. Additive only: the
+         *     frozen properties above keep their names and meaning.
          */
         HotspotProperties: {
             /** Id */
@@ -1015,6 +1029,16 @@ export interface components {
             first_reported_at?: string | null;
             /** Last Reported At */
             last_reported_at?: string | null;
+            /**
+             * D Drain M
+             * @description Stored distance to the nearest drain.
+             */
+            d_drain_m?: number | null;
+            /**
+             * D Water M
+             * @description Stored distance to the nearest water body.
+             */
+            d_water_m?: number | null;
             /**
              * Is Simulated
              * @description True when any member report has a fabricated geotag (CLAUDE.md §2.2).

@@ -84,9 +84,9 @@ def upload_after_photos(
     stop_id: int,
     wide: UploadFile = File(..., description="Wide after-photo."),
     close: UploadFile = File(..., description="Close-up after-photo."),
-    lat: float | None = Form(None, description="Team GPS at upload; else EXIF, else check-in."),
+    lat: float | None = Form(None, description="GPS at upload; else photo EXIF, else check-in."),
     lon: float | None = Form(None),
-    user: DemoUser = Depends(team_only),
+    user: DemoUser = Depends(authority_or_team),
     conn: Connection = Depends(get_conn),
 ) -> BeforeAfterRecord:
     """Two after-photos -> before/after record + SUGGESTED verdict (SPEC §14).

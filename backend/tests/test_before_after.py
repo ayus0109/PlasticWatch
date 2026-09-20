@@ -110,6 +110,16 @@ def test_any_failed_check_is_inconclusive_even_when_it_looks_clean(failed):
     assert verdict(**({"reduction": 1.0, "after_count": 0} | failed)) == Verdict.inconclusive
 
 
+def test_unverified_location_is_a_caution_not_a_failure():
+    """An authority uploading a crew's photos has no on-site GPS. The viewpoint match
+    still has to place the photos at the hotspot; the gap is stated, not hidden."""
+    v, reasons = before_after.decide_verdict(
+        quality_ok=True, location_ok=None, viewpoint_ok=True, reduction=1.0, after_count=0
+    )
+    assert v == Verdict.likely_cleaned
+    assert any("Location unverified" in r for r in reasons)
+
+
 def test_reduction_ratio():
     assert before_after.reduction_ratio(0.2, 0.05) == 0.75
     assert before_after.reduction_ratio(0.0, 0.05) is None
@@ -240,12 +250,29 @@ def test_gps_near_the_hotspot_passes_location(site, db_engine):
     assert rec.verdict == Verdict.likely_cleaned
 
 
-def test_upload_needs_a_check_in_first(site, db_engine):
+def test_the_crew_must_check_in_before_uploading(site, db_engine):
     with db_engine.begin() as c:
         c.execute(text("UPDATE task_stops SET arrived_at = NULL"))
     with pytest.raises(TaskError) as err:
         submit(db_engine, site)
     assert err.value.status_code == 409
+
+
+def test_an_authority_may_upload_without_a_check_in_but_location_stays_unverified(site, db_engine):
+    """The two-role flow: government uploads the crew's photos. No GPS, no check-in —
+    so the location check is recorded as unverified rather than quietly passed."""
+    with db_engine.begin() as c:
+        c.execute(text("UPDATE task_stops SET arrived_at = NULL"))
+    with db_engine.begin() as conn:
+        rec = before_after.submit_after(
+            conn, site["task"], site["stop"], after_photos(), site["authority"],
+            known_detections={"wide": [], "close": []},
+        )
+    assert rec.verdict == Verdict.likely_cleaned
+    assert rec.quality_flags["location_ok"] is None
+    assert rec.quality_flags["location_source"] == "unverified"
+    assert any("Location unverified" in r for r in rec.quality_flags["reasons"])
+    assert hotspot_status(db_engine, site["hotspot"]) == "cleanup_completed", "still not resolved"
 
 
 def test_retake_replaces_the_record_until_reviewed(site, db_engine):
@@ -285,8 +312,7 @@ def clean_detector(monkeypatch):
     monkeypatch.setattr(detector, "run_detection", lambda p: detector.summarise([], None))
 
 
-def test_only_the_team_uploads_and_only_an_authority_reviews(api, site, clean_detector):
-    assert upload(api, site, role="authority").status_code == 403
+def test_citizens_cannot_upload_and_only_an_authority_reviews(api, site, clean_detector):
     assert upload(api, site, role="citizen").status_code == 403
     res = upload(api, site)
     assert res.status_code == 201, res.text

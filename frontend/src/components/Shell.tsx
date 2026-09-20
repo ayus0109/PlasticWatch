@@ -14,21 +14,19 @@ const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
     { to: "/report", label: "Report", icon: "camera" },
     { to: "/my-reports", label: "My reports", icon: "list" },
   ],
-  authority: [
-    { to: "/map", label: "Map", icon: "map" },
-    { to: "/queue", label: "Queue", icon: "eye" },
-    { to: "/dashboard", label: "Dashboard", icon: "chart" },
-    { to: "/tasks", label: "Tasks", icon: "route" },
-    { to: "/reviews", label: "Reviews", icon: "scale" },
-  ],
-  team: [{ to: "/team/tasks", label: "My tasks", icon: "truck" }],
+  // The government portal is one page: no tabs to fragment it (PS-08).
+  authority: [],
+  team: [],
 };
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  citizen: "Citizen",
-  authority: "Authority",
-  team: "Cleanup team",
+  citizen: "Local",
+  authority: "Government",
+  team: "Cleanup crew",
 };
+
+/** Only the two PS-08 roles are offered anywhere in the UI. */
+const UI_ROLES: ReadonlySet<UserRole> = new Set(["citizen", "authority"]);
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
@@ -55,12 +53,14 @@ function Tabs({ role }: { role: UserRole }) {
   const [bar, setBar] = useState<{ left: number; width: number } | null>(null);
   const items = NAV[role];
   const active = items.find((i) => location.pathname.startsWith(i.to))?.to;
+  const hidden = items.length < 2;
 
   useLayoutEffect(() => {
     const el = active ? refs.current[active] : null;
     setBar(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
   }, [active, role]);
 
+  if (hidden) return null;
   return (
     <nav className="relative hidden h-full items-stretch gap-1 md:flex" aria-label="Main">
       {items.map((i) => (
@@ -91,6 +91,7 @@ function Tabs({ role }: { role: UserRole }) {
 }
 
 function MobileNav({ role }: { role: UserRole }) {
+  if (NAV[role].length < 2) return null;
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-[1000] flex border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
@@ -177,7 +178,7 @@ function RoleSwitcher() {
           <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-faint">
             Switch demo role
           </p>
-          {(users.data ?? []).map((u) => (
+          {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
             <button
               key={u.id}
               role="menuitem"
@@ -271,7 +272,7 @@ export function Shell({
       <main
         className={cx(
           "flex-1",
-          fullBleed ? "relative" : "mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 md:pb-16",
+          fullBleed ? "relative" : "mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 md:pb-16",
         )}
       >
         {children}

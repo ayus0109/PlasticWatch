@@ -180,6 +180,18 @@ upload, verdict).
 Design: neutral bg, 4-step priority ramp, dashed outline for unverified/weak-evidence, "simulated demo
 data" badge, persistent non-attribution note. (UI polish direction in CLAUDE.md §9 + Stage 8/9.)
 
+**SCOPE UPDATE (owner's PS-08 streamlining directive) — the shipped UI is two roles, three pages.**
+**Locals:** `/report`, `/my-reports` (unchanged). **Government:** `/dashboard` only — KPIs + work
+progress, the GIS map with layer toggles, the Impact-ranked priority list, and a per-hotspot drawer
+that carries triage (verify / rule out), dispatch, the after-photo upload and the before/after
+approval gate. `/map`, `/queue`, `/tasks`, `/reviews`, `/hotspots/:id` and the whole `/team/*`
+section were removed and now redirect to `/dashboard`; the 45-day time slider was removed. The
+cleanup-team ROLE is gone from the UI: the government uploads the crew's after-photos, so
+`POST /tasks/{id}/stops/{sid}/after` accepts an authority as well as a team. The P1-A/P1-B backend
+(tasks, routing, stops, before/after) is unchanged and still tested — "Dispatch cleanup" calls
+`POST /tasks` under the hood. `HotspotProperties` additively gained `d_drain_m` / `d_water_m`, and
+`HotspotDetail` gained `cleanup_task_id` / `cleanup_stop_id`, for the dashboard.
+
 ## §10 GIS
 Prep once: Overpass → GeoJSON → QGIS sanity → `load_geo.py` into PostGIS. Distances at hotspot
 create/update: nearest-feature per kind with `ST_Distance(a::geography,b::geography)` + KNN `<->`; store

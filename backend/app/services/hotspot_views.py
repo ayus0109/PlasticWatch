@@ -66,6 +66,8 @@ def _feature(row, **overrides) -> HotspotFeature:
         "ward_name": row.ward_name,
         "first_reported_at": row.first_reported_at,
         "last_reported_at": row.last_reported_at,
+        "d_drain_m": row.d_drain_m,
+        "d_water_m": row.d_water_m,
         "is_simulated": row.is_simulated,
     }
     props.update(overrides)
@@ -178,10 +180,19 @@ def hotspot_events(conn: Connection, hotspot_id: int) -> list[HotspotEvent]:
     ]
 
 
+_CLEANUP_STOP = text(
+    """
+    SELECT s.id, s.task_id FROM task_stops s
+    WHERE s.hotspot_id = :id ORDER BY (s.completed_at IS NULL) DESC, s.id DESC LIMIT 1
+    """
+)
+
+
 def hotspot_detail(conn: Connection, hotspot_id: int) -> HotspotDetail | None:
     row = conn.execute(text(_BASE + " WHERE h.id = :id"), {"id": hotspot_id}).first()
     if row is None:
         return None
+    stop = conn.execute(_CLEANUP_STOP, {"id": hotspot_id}).first()
     return HotspotDetail(
         id=row.id,
         status=row.status,
@@ -206,5 +217,7 @@ def hotspot_detail(conn: Connection, hotspot_id: int) -> HotspotDetail | None:
         reports=hotspot_reports(conn, hotspot_id),
         events=hotspot_events(conn, hotspot_id),
         before_after=latest_for_hotspot(conn, hotspot_id),
+        cleanup_task_id=stop.task_id if stop else None,
+        cleanup_stop_id=stop.id if stop else None,
         is_simulated=row.is_simulated,
     )

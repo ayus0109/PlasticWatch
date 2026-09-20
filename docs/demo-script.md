@@ -20,8 +20,9 @@ different, reset again.
    (or `npm run dev` → <http://localhost:5173>).
 5. Health: `curl -s localhost:8000/health` → `{"status":"ok","postgis":true}`.
 6. Open **two browser windows** side by side:
-   - Window 1 (citizen): sign in as **Citizen — Demo Citizen A**.
-   - Window 2 (authority): sign in as **Authority — Demo Ward Authority**, open **Map**.
+   - Window 1 (Locals): sign in as **Locals — Demo Citizen A**.
+   - Window 2 (Government): sign in as **Government — Demo Ward Authority**; the dashboard is
+     the whole portal (no tabs).
 7. Have `seed/demo_images/` open in a file picker. The photos you'll use:
    `demo_01_bottles_by_drain.jpg` and `demo_02_bags_on_kerb.jpg` (plus `demo_05_…` and
    `demo_06_…` if you run the extended cleanup segment).
@@ -56,12 +57,13 @@ by impact, grades the evidence separately, and lets **people, not the model**, d
 3. Result says **"Joined a nearby hotspot"** — *"reports within 30 m merge; a second
    independent reporter is what queues it for a human."*
 
-### 2:15 — The authority's view (60 s) · Window 2
-1. Refresh the **Map**. The new hotspot is there, dashed (not yet human-verified).
-   - Toggle **Heatmap** — heat is weighted by Impact.
-   - Point out the **drain line**: *"distance to drains and water drives Sensitivity."*
-   - Drag the **time slider** back to around day 10 — the city 5 weeks ago — then **Back to live**.
-2. Click the new marker → **Open evidence ledger**.
+### 2:15 — The government's view (60 s) · Window 2
+1. Refresh the **dashboard**. One screen: KPIs and work progress on top, the GIS map, and the
+   priority list ranked by Impact. The new hotspot is on both, dashed (not yet human-verified).
+   - **Layers** → toggle **Heatmap** (weighted by Impact), **Drains & nalas**, **Water bodies**,
+     **Schools, hospitals, markets**: *"distance to drains and water drives Sensitivity."*
+   - The list shows Impact, priority band, ward, reports and metres to the nearest drain.
+2. Click the new marker (or its row) → the hotspot drawer opens.
    - **Impact 50.4 / High** vs **Evidence 0.72** — *"two separate axes: Impact ranks, Evidence
      says how sure we are. A confident but wrong model can't make a pile look worse."*
    - The explanation: *"High mainly because a lot of likely plastic is visible and it's
@@ -69,37 +71,34 @@ by impact, grades the evidence separately, and lets **people, not the model**, d
    - The ledger: every step, who did it, when.
 
 ### 3:15 — The human gate (45 s) · Window 2
-1. On the new hotspot: **Verify — waste is present**. Status flips to **Verified**,
-   Evidence becomes **1.00 Human-verified**, and a ledger entry names you.
-2. **Queue** tab → find **#14** (Ward B, the photo is mostly cans and paper) → **Reject** →
+1. In the drawer: **Verify — waste is present**. Status flips to **Verified**, Evidence becomes
+   **1.00 Human-verified**, and a ledger entry names you. **Dispatch cleanup** then moves it to
+   **Work in progress** — the counter at the top changes as you click.
+2. Open **#14** from the list (Ward B, the photo is mostly cans and paper) → **Reject** →
    reason **Not plastic** → Reject. *"The model flagged it; a person ruled it out. That's the point."*
 
 ### 4:00 — Outcomes (30 s) · Window 2
-1. **Dashboard**: 6 KPIs, reports per day over 45 days, opened vs resolved, open hotspots by
-   priority, wards. *"Every number is computed from the database — nothing hard-coded."*
-2. The median time to resolve comes from real (simulated) resolve events.
+1. Top row: hotspots detected, citizen reports merged, and work progress as
+   **Pending / Work in progress / Completed**. *"Every number is computed from the database —
+   nothing hard-coded."*
+2. The list re-ranks itself as decisions land; the non-attribution note sits under it, always.
 
-### Extended (+2 min, P1) — Cleanup and closure · both windows
+### Extended (+2 min) — Cleanup and closure · Window 2
 Run this between *Outcomes* and *The honest slide* when you have the time.
-1. **Window 2 → Tasks.** Task **#6** (planned) routes the team to hotspot **#5**. The line is
-   **dashed**: *"no OpenRouteService key here, so it's a straight-line nearest-first order —
-   and it says so."* Only **verified** hotspots can be scheduled; anything else is refused.
-2. **Window 1 → role switcher → Cleanup team → My tasks → Task #6.** At stop 1:
-   **Use a pin** → tap the middle of the map (it opens on the stop) → **Check in at this pin**.
-   *"Arrival only counts within 50 m of the hotspot."*
-3. Two after-photos: **Wide shot** = `demo_05_after_cleanup_wide.jpg`, **Close-up** =
+1. Open hotspot **#5** (already **Cleanup scheduled**) from the priority list.
+2. **Cleanup photos** → **Wide shot** = `demo_05_after_cleanup_wide.jpg`, **Close-up** =
    `demo_06_after_cleanup_close.jpg` → **Send after-photos**. Suggested verdict: **Likely
    cleaned** — *"a suggestion; nothing is closed yet."*
-4. **Window 2 → Reviews.** Two cleanups wait:
-   - **#5** (just uploaded): before and after side by side. Point at **Same place** — *"street
-     features match the before photo, so it's the same spot"* — and **−100%** likely-plastic
-     area. **Confirm resolved.** The toast: it stays on the map and reopens if waste is
-     reported again.
-   - **#8** (seeded, **Partial**, 3 items left): **Confirm** is disabled until you write a
-     note — *"to overrule the verdict you have to say why."* **Reject — send the team back.**
-5. Open hotspot **#5**: the ledger ends with *"Confirmed resolved from before/after …"*
-   under your name. Key line: *"No detections isn't proof a place is clean — that's why a
-   person looks at both photos."*
+3. The before/after section: the report photo beside both after-photos, **−100%** likely-plastic
+   area, and three checks. Point at **Same place** — *"street features match the before photo,
+   so it is the same spot"* — and at **Location unverified** when you uploaded from the office:
+   *"we say what we cannot prove."*
+4. **Approve & mark completed.** The toast: it stays on the map and reopens if waste is reported
+   there again. The ledger ends with *"Confirmed resolved from before/after …"* under your name.
+5. Open hotspot **#8** (seeded, **Partial**, 3 items left): **Approve** stays disabled until you
+   write a note — *"to overrule the verdict you have to say why."* Use **Reject — re-clean
+   required**. Key line: *"No detections isn't proof a place is clean — that's why a person looks
+   at both photos."*
 
 ### 4:30 — The honest slide (30 s)
 - Detection runs on a stub in this demo; the real YOLO11s model and its measured
@@ -124,13 +123,13 @@ Run this between *Outcomes* and *The honest slide* when you have the time.
 | Upload hangs | The detector cache answers the demo photos instantly; check `docker compose logs api`. |
 | Routing / OpenRouteService unavailable | Routes fall back to the built-in greedy route automatically. |
 | A 403 / "Only an authority can…" toast | You're signed in as the wrong role — use the role switcher (top right). |
-| Check-in refused ("You're … m from the hotspot") | Tap closer to the numbered stop marker; arrival needs ≤ 50 m. |
-| After-photo verdict **Inconclusive — Same place** fails | `demo_05`/`demo_06` show hotspot **#5**'s street only; upload them at task #6's stop. |
-| Uploaded the wrong photos | Before the authority reviews, the team can **Retake photos** on the stop card. |
+| After-photo verdict **Inconclusive — Same place** fails | `demo_05`/`demo_06` show hotspot **#5**'s street only; upload them on hotspot #5. |
+| Uploaded the wrong photos | Before you approve, upload again on the same hotspot — it replaces them. |
+| An old link (`/map`, `/queue`, `/tasks`, `/reviews`) | Everything is on `/dashboard` now; those redirect there. |
 
 ## Reference: a fresh reset contains
 
 16 hotspots over 45 days in 3 wards · 61 reports (all simulated) · 5 in the verification queue ·
 2 resolved · 2 ruled out · 2 hotspots that came back after cleanup (recurrence) · 1 duplicate
 photo · 3 reports rejected as "no likely plastic" · 6 cleanup tasks with cached routes ·
-5 before/after records: 4 confirmed by the authority, 1 (**#8**, partial) awaiting review.
+5 before/after records: 4 confirmed by the government, 1 (**#8**, partial) awaiting approval.

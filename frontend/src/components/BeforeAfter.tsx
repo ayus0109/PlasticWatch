@@ -135,17 +135,18 @@ export function BeforeAfterCompare({ record }: { record: BeforeAfterRecord }) {
 
 // ---------------------------------------------------------------------- facts --
 
-function Check({ ok, label, detail }: { ok: boolean; label: string; detail: string }) {
+/** ok=null means "unverified": we have no evidence either way, and say so. */
+function Check({ ok, label, detail }: { ok: boolean | null; label: string; detail: string }) {
   return (
     <li className="flex items-start gap-2.5">
       <span
         className={cx(
           "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full",
-          ok ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger",
+          ok === null ? "bg-surface-2 text-muted" : ok ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger",
         )}
-        aria-label={ok ? "passed" : "failed"}
+        aria-label={ok === null ? "unverified" : ok ? "passed" : "failed"}
       >
-        <Icon name={ok ? "check" : "x"} size={12} />
+        <Icon name={ok === null ? "info" : ok ? "check" : "x"} size={12} />
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-semibold">{label}</span>
@@ -159,7 +160,7 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
   const f = record.quality_flags as {
     blur_ok?: boolean;
     brightness_ok?: boolean;
-    location_ok?: boolean;
+    location_ok?: boolean | null;
     viewpoint_ok?: boolean;
     location_source?: string;
     location_distance_m?: number | null;
@@ -168,10 +169,12 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
   const r = record.reduction_ratio;
   const where =
     f.location_source === "gps"
-      ? `Team GPS at upload: ${metres(f.location_distance_m)} from the hotspot.`
+      ? `GPS at upload: ${metres(f.location_distance_m)} from the hotspot.`
       : f.location_source === "exif"
         ? `Photo GPS: ${metres(f.location_distance_m)} from the hotspot.`
-        : "No GPS with the photos — relying on the team's on-site check-in.";
+        : f.location_source === "check_in"
+          ? "No GPS with the photos — relying on the crew's on-site check-in."
+          : "No GPS and no on-site check-in: the viewpoint match is the only place evidence.";
 
   return (
     <div className="space-y-4">
@@ -197,7 +200,11 @@ export function BeforeAfterFacts({ record }: { record: BeforeAfterRecord }) {
           label="Photo quality"
           detail={f.blur_ok && f.brightness_ok ? "Both photos are sharp and well lit." : "At least one photo is blurry, too dark or too bright."}
         />
-        <Check ok={Boolean(f.location_ok)} label="Location" detail={where} />
+        <Check
+          ok={f.location_ok === null || f.location_ok === undefined ? null : f.location_ok}
+          label={f.location_ok === null || f.location_ok === undefined ? "Location unverified" : "Location"}
+          detail={where}
+        />
         <Check
           ok={Boolean(f.viewpoint_ok)}
           label="Same place"
@@ -280,7 +287,7 @@ export function ReviewPanel({
         "ok",
         decision === "confirm_resolved"
           ? `Hotspot #${res.hotspot_id} is resolved. It stays on the map and reopens if waste is reported again.`
-          : `Hotspot #${res.hotspot_id} is back with the cleanup team.`,
+          : `Hotspot #${res.hotspot_id} sent back for re-cleaning.`,
       );
       setNote("");
       onDone(res);
@@ -299,8 +306,8 @@ export function ReviewPanel({
         <h2 className="font-semibold">Your decision</h2>
       </div>
       <p className="mt-1 text-sm text-muted">
-        Look at the photos yourself. Confirming resolves the hotspot with your name on the
-        record; rejecting sends the team back.
+        Look at the photos yourself. Approving resolves the hotspot with your name on the
+        record; rejecting sends it back for re-cleaning.
       </p>
       <label className="mt-4 block">
         <span className="mb-1.5 block text-xs font-semibold text-muted">
@@ -324,10 +331,10 @@ export function ReviewPanel({
           onClick={() => decide("confirm_resolved")}
           title={needNote ? "Add a note to confirm against the suggested verdict" : undefined}
         >
-          Confirm resolved
+          Approve &amp; mark completed
         </Button>
         <Button icon="x" loading={busy === "reject"} disabled={busy !== null} onClick={() => decide("reject")}>
-          Reject — send the team back
+          Reject — re-clean required
         </Button>
       </div>
       <p className="mt-3 text-[11px] text-faint">

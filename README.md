@@ -74,8 +74,11 @@ npm run preview    # serve the build on http://localhost:4173 (same proxy)
 npm run gen:api    # regenerate src/api/schema.d.ts from frontend/openapi.json
 ```
 
-Pages: login role picker · citizen `/report`, `/my-reports` · authority `/map`, `/queue`,
-`/hotspots/:id`, `/dashboard`, `/tasks`, `/reviews` · team `/team/tasks`, `/team/tasks/:id`.
+Pages (two roles, PS-08): login role picker · **Locals** `/report`, `/my-reports` · **Government**
+`/dashboard` — one screen with KPIs and work progress, the GIS map, the Impact-ranked priority list,
+and a hotspot drawer holding triage, dispatch, after-photo upload and the before/after approval gate.
+Older authority routes (`/map`, `/queue`, `/tasks`, `/reviews`, `/hotspots/:id`, `/team/*`) redirect
+there.
 
 ### Tests
 
@@ -129,13 +132,15 @@ status change writes a `hotspot_events` row whose `actor_id` records the human w
 
 ### Cleanup and closure (P1)
 
-An authority routes **verified** hotspots into a cleanup task (OpenRouteService when
-`ORS_API_KEY` is set, otherwise a greedy nearest-first order drawn as a dashed straight line).
-The team checks in within `ARRIVE_RADIUS_M` of a stop, then uploads two after-photos. The
+**Dispatch cleanup** puts a verified hotspot on a cleanup task (OpenRouteService when `ORS_API_KEY`
+is set, otherwise a greedy nearest-first order). The government then uploads the crew's two
+after-photos from the hotspot drawer; a crew account can still upload from the field after checking
+in within `ARRIVE_RADIUS_M` of the stop, in which case the location check is backed by that check-in
+rather than left unverified. The
 backend runs the quality gate, the detector and an ORB viewpoint match against the hotspot's
 latest before photo, and suggests a verdict — `likely_cleaned`, `partial`, `not_cleaned`, or
 `inconclusive` when a check fails. **The verdict never closes anything:** an authority compares
-the photos on `/reviews` and confirms (→ resolved) or rejects (→ back to the team). Confirming
+the photos in the drawer and approves (→ resolved) or rejects (→ re-clean required). Approving
 against the suggested verdict requires a written note. A resolved hotspot stays on the map and
 reopens, with recurrence raised, if waste is reported there again.
 

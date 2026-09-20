@@ -8,19 +8,12 @@ import { homeFor, useSession } from "./store/auth";
 const Login = lazy(() => import("./pages/Login"));
 const Report = lazy(() => import("./pages/Report"));
 const MyReports = lazy(() => import("./pages/MyReports"));
-const MapPage = lazy(() => import("./pages/MapPage"));
-const HotspotDetail = lazy(() => import("./pages/HotspotDetail"));
-const Queue = lazy(() => import("./pages/Queue"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Tasks = lazy(() => import("./pages/Tasks"));
-const Reviews = lazy(() => import("./pages/Reviews"));
-const TeamTasks = lazy(() => import("./pages/TeamTasks"));
-const TeamTask = lazy(() => import("./pages/TeamTask"));
 
 const ROLE_NAME: Record<UserRole, string> = {
-  citizen: "citizens",
-  authority: "the authority",
-  team: "cleanup teams",
+  citizen: "locals",
+  authority: "the government",
+  team: "cleanup crews",
 };
 
 function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
@@ -84,14 +77,13 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
           <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />
-          <Route path="/map" element={<RequireRole role="authority"><MapPage /></RequireRole>} />
-          <Route path="/hotspots/:id" element={<RequireRole role="authority"><HotspotDetail /></RequireRole>} />
-          <Route path="/queue" element={<RequireRole role="authority"><Queue /></RequireRole>} />
           <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
-          <Route path="/tasks" element={<RequireRole role="authority"><Tasks /></RequireRole>} />
-          <Route path="/reviews" element={<RequireRole role="authority"><Reviews /></RequireRole>} />
-          <Route path="/team/tasks" element={<RequireRole role="team"><TeamTasks /></RequireRole>} />
-          <Route path="/team/tasks/:id" element={<RequireRole role="team"><TeamTask /></RequireRole>} />
+          {/* The old fragmented authority tabs all live on the dashboard now. */}
+          {["/map", "/queue", "/tasks", "/reviews", "/hotspots/:id", "/team/tasks", "/team/tasks/:id"].map(
+            (path) => (
+              <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
+            ),
+          )}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

@@ -65,17 +65,23 @@ VERDICT_LABEL = {
 def decide_verdict(
     *,
     quality_ok: bool,
-    location_ok: bool,
+    location_ok: bool | None,
     viewpoint_ok: bool,
     reduction: float | None,
     after_count: int,
 ) -> tuple[Verdict, list[str]]:
-    """(verdict, plain-language reasons). Failed checks always win: inconclusive."""
+    """(verdict, plain-language reasons). Failed checks always win: inconclusive.
+
+    `location_ok=None` means unverified — no GPS came with the photos and nobody
+    checked in on site (an authority uploading a crew's photos). That is not a failed
+    check, so it does not force inconclusive; the viewpoint match still has to place
+    the photos at the hotspot, and the caution is recorded either way.
+    """
     s = get_settings()
     reasons = []
     if not quality_ok:
         reasons.append("An after-photo is too blurry, dark or bright to assess.")
-    if not location_ok:
+    if location_ok is False:
         reasons.append("The after-photos were not taken at the hotspot.")
     if not viewpoint_ok:
         reasons.append("Neither after-photo matches the before photo's viewpoint.")
@@ -84,6 +90,11 @@ def decide_verdict(
     if reasons:
         return Verdict.inconclusive, reasons
 
+    caution = (
+        []
+        if location_ok
+        else ["Location unverified: no GPS with the photos and no on-site check-in."]
+    )
     change = (
         f"likely-plastic area down {reduction:.0%}"
         if reduction >= 0
@@ -92,14 +103,16 @@ def decide_verdict(
     left = f"{after_count} likely-plastic detection(s) remain"
     if reduction + EPS >= s.VERDICT_CLEANED_MIN_REDUCTION:
         if after_count <= s.VERDICT_CLEANED_MAX_DETECTIONS:
-            return Verdict.likely_cleaned, [f"{change.capitalize()}; {left}."]
+            return Verdict.likely_cleaned, [f"{change.capitalize()}; {left}.", *caution]
         return Verdict.partial, [
             f"{change.capitalize()}, but {left} "
-            f"(likely cleaned needs at most {s.VERDICT_CLEANED_MAX_DETECTIONS})."
+            f"(likely cleaned needs at most {s.VERDICT_CLEANED_MAX_DETECTIONS}).",
+            *caution,
         ]
     if reduction + EPS >= s.VERDICT_PARTIAL_MIN_REDUCTION:
-        return Verdict.partial, [f"{change.capitalize()}; {left}."]
-    return Verdict.not_cleaned, [f"Only {change}; {left}." if reduction >= 0 else f"{change}."]
+        return Verdict.partial, [f"{change.capitalize()}; {left}.", *caution]
+    worse = f"Only {change}; {left}." if reduction >= 0 else f"{change}."
+    return Verdict.not_cleaned, [worse, *caution]
 
 
 def reduction_ratio(before_area: float | None, after_area: float) -> float | None:
@@ -268,7 +281,7 @@ def submit_after(
     stop = conn.execute(_STOP, {"sid": stop_id, "tid": task_id}).first()
     if stop is None or (actor.role == UserRole.team and stop.assigned_team != actor.id):
         raise TaskError(404, "Stop not found on this task.")
-    if stop.arrived_at is None:
+    if stop.arrived_at is None and actor.role == UserRole.team:
         raise TaskError(
             409,
             f"Check in within {s.ARRIVE_RADIUS_M:.0f} m of the stop before uploading "
@@ -307,8 +320,10 @@ def submit_after(
     except PipelineError as exc:
         raise TaskError(exc.status_code, exc.message) from exc
 
-    # Location: the team's GPS at upload, else a photo's EXIF, else the check-in.
-    fix, source = None, "check_in"
+    # Location: GPS at upload, else a photo's EXIF, else the on-site check-in. With
+    # none of those (an authority uploading a crew's photos) it stays UNVERIFIED — never
+    # silently "ok" (CLAUDE.md §2.6: we do not claim evidence we do not have).
+    fix, source = None, "check_in" if stop.arrived_at is not None else "unverified"
     if lat is not None and lon is not None:
         fix, source = (lat, lon), "gps"
     else:
@@ -316,7 +331,9 @@ def submit_after(
         if exif:
             fix, source = exif, "exif"
     distance = haversine_m((fix[1], fix[0]), (stop.lon, stop.lat)) if fix else None
-    location_ok = distance is None or distance <= s.ARRIVE_RADIUS_M
+    location_ok: bool | None = (
+        (distance <= s.ARRIVE_RADIUS_M) if distance is not None else (source == "check_in" or None)
+    )
 
     quality_ok = all(p.quality["blur_ok"] and p.quality["brightness_ok"] for p in shots)
     views = [p.view for p in shots if p.view is not None]
