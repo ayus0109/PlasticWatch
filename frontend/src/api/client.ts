@@ -183,10 +183,7 @@ async function request<T>(
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
   }
 
-  let token = getToken();
-  if (!token && !path.startsWith("/auth") && !path.startsWith("/ping") && !path.startsWith("/health")) {
-    token = await autoAuthenticate();
-  }
+  const token = getToken();
 
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -200,8 +197,8 @@ async function request<T>(
 
   const res = await fetchWithRetry(url, { method, headers, body, signal: opts.signal });
 
-  // If token was rejected (401), auto-renew session and retry once transparently
-  if (res.status === 401 && !isAuthRetry && !path.startsWith("/auth")) {
+  // If existing token was rejected (401), auto-renew session and retry once transparently
+  if (res.status === 401 && !isAuthRetry && !path.startsWith("/auth") && token) {
     const refreshed = await autoAuthenticate();
     if (refreshed) {
       return request<T>(method, path, opts, true);

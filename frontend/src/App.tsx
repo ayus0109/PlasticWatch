@@ -13,12 +13,16 @@ function RequireRole({ role, children }: { role: UserRole; children: ReactNode }
   const session = useSession();
 
   useEffect(() => {
-    if (!session || session.user.role !== role) {
+    if (session && session.user.role !== role) {
       loginAs({ role }).catch(() => {});
     }
   }, [session, role]);
 
-  if (!session || session.user.role !== role) {
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (session.user.role !== role) {
     return <PageLoading />;
   }
 

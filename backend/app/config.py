@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Operating threshold; pick from the F1-vs-confidence curve on validation
     # (SPEC §6: ~0.25-0.4). Below it a box is dropped.
     DETECTOR_CONF_THRESHOLD: float = 0.3
+    # In "real" mode with no weights on disk, allow the OpenCV contour heuristic as a
+    # last resort (hosts too small for PyTorch). Off by default: missing weights is an
+    # error, not a silent substitute. When on, its output is capped at
+    # detector.CV_MAX_CONFIDENCE and labelled HEURISTIC on the annotated image.
+    DETECTOR_CV_FALLBACK: bool = False
     # Precomputed detections for the committed demo photos, keyed by perceptual
     # hash, so the live demo never waits on inference (Stage 10). Empty = off.
     DETECTOR_CACHE_PATH: str = "../seed/demo_images/detections.json"

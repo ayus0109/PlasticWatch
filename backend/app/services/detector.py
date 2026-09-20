@@ -47,6 +47,10 @@ PLASTIC_CLASSES = frozenset(
     }
 )
 ALLOWED_CLASS_NAMES = frozenset(c.value for c in DetectionClass)
+# Never let a model label a person, a vehicle or an animal out of this module (§2.4).
+FORBIDDEN_NAME_PARTS = (
+    "person", "car", "vehicle", "truck", "motorcycle", "bike", "bus", "dog", "cat", "horse",
+)
 
 # Box labels always say "likely" and carry the tier (CLAUDE.md §2.1, §2.7).
 _LABELS = {
@@ -69,6 +73,12 @@ _COLOURS = {
 STUB_NOT_DETECTED_RATE = 0.15
 STUB_DEFAULT_SIZE = (640, 640)
 ANNOTATED_MAX_SIDE = 1600
+
+SIMULATED_BANNER = "SIMULATED DETECTION - stub output, not a real model"
+# The OpenCV path is contour geometry, not a trained model. Its score is capped below
+# the High tier so it can never read like model confidence (CLAUDE.md §2.7).
+HEURISTIC_BANNER = "HEURISTIC ESTIMATE - shape only, not a trained model"
+CV_MAX_CONFIDENCE = 0.5
 
 
 # ---------------------------------------------------------------------------
@@ -136,7 +146,11 @@ def _annotated_path(image_path: Path) -> Path:
 
 
 def _write_annotated(
-    img: Image.Image, detections: list[Detection], out: Path, simulated: bool
+    img: Image.Image,
+    detections: list[Detection],
+    out: Path,
+    simulated: bool,
+    banner: str | None = None,
 ) -> str:
     scale = min(1.0, ANNOTATED_MAX_SIDE / max(img.size))
     canvas = img.convert("RGB")
@@ -156,11 +170,13 @@ def _write_annotated(
         draw.rectangle([tb[0] - 4, tb[1] - 2, tb[2] + 4, tb[3] + 2], fill=colour)
         draw.text((tx + 4, ty + 2), label, fill=(255, 255, 255), font=font)
 
-    if simulated:
-        banner = "SIMULATED DETECTION - stub output, not a real model"
+    # Amber banner whenever the boxes did not come from a trained model: the stub's
+    # fake output, or the OpenCV shape heuristic (CLAUDE.md §2.2).
+    text = banner if banner is not None else (SIMULATED_BANNER if simulated else None)
+    if text is not None:
         bh = font.size + 16
         draw.rectangle([0, 0, canvas.width, bh], fill=(245, 158, 11))
-        draw.text((10, 8), banner, fill=(0, 0, 0), font=font)
+        draw.text((10, 8), text, fill=(0, 0, 0), font=font)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out, "JPEG", quality=85)
@@ -287,17 +303,15 @@ def _load_model(weights: str):
 
 
 def _try_yolo_detection(path: Path) -> DetectorOutput | None:
-    """Run YOLO only if dedicated trained weights exist on disk, avoiding PyTorch 800MB RAM overhead."""
+    """Run YOLO only if trained weights exist on disk, so a host that cannot afford
+    PyTorch's ~800MB never loads it."""
     s = get_settings()
     custom = Path(s.DETECTOR_WEIGHTS)
     if not custom.is_file():
         return None
 
-    try:
-        from ultralytics import YOLO  # noqa: F401
-    except (ImportError, Exception):
-        return None
-
+    # No import probe here: _load_model() is the single lazy import site, and the
+    # except below already covers a missing ultralytics.
     weights_target = str(custom)
     try:
         with Image.open(path) as raw:
@@ -316,7 +330,7 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
         for box in result.boxes:
             raw_name = result.names[int(box.cls)].lower().strip()
             # CLAUDE.md §2.4: strictly drop persons, vehicles, license plates, animals
-            if any(forbidden in raw_name for forbidden in ("person", "car", "vehicle", "truck", "motorcycle", "bike", "bus", "dog", "cat", "horse")):
+            if any(f in raw_name for f in FORBIDDEN_NAME_PARTS):
                 continue
 
             target_class: DetectionClass | None = None
@@ -350,11 +364,16 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
 
 
 def _try_cv_detection(path: Path) -> DetectorOutput | None:
-    """Lightweight computer vision saliency & contour object detection.
-    
-    Uses OpenCV (15-25MB RAM, ~20ms execution) instead of heavy PyTorch (800MB+ RAM),
-    preventing Out-Of-Memory SIGKILL crashes on 512MB cloud environments while
-    providing real object bounding boxes derived directly from the image pixels.
+    """Lightweight contour heuristic — a secondary signal, never a model.
+
+    Uses OpenCV (15-25MB RAM, ~20ms) instead of PyTorch (800MB+), so a 512MB host can
+    still show boxes derived from the image pixels. It recognises nothing: it finds
+    object-sized contours. So its confidence is capped at CV_MAX_CONFIDENCE and its
+    annotated image carries the HEURISTIC banner.
+
+    None means "could not run" (no OpenCV, unreadable image) — the caller then has no
+    detector at all. An image with no qualifying contour is a different answer: it ran
+    and found nothing, which is a plain not_detected result.
     """
     try:
         import cv2
@@ -386,30 +405,32 @@ def _try_cv_detection(path: Path) -> DetectorOutput | None:
                 if 0.12 <= aspect <= 7.0:
                     candidates.append((area, x, y, cw, ch))
 
+        # No invented candidate when nothing qualifies — a blank wall comes back as
+        # not_detected, not as a box over the middle of the frame.
         if not candidates:
-            # Fallback: central object region if contours were too faint
-            cx, cy = int(w * 0.2), int(h * 0.2)
-            cw, ch = int(w * 0.6), int(h * 0.6)
-            candidates.append((cw * ch, cx, cy, cw, ch))
+            return summarise([], None)
 
         candidates.sort(key=lambda t: t[0], reverse=True)
-        selected = candidates[:5]
         detections: list[Detection] = []
-        for idx, (area, x, y, cw, ch) in enumerate(selected):
+        for area, x, y, cw, ch in candidates[:5]:
+            # Only a strongly tall or wide blob suggests a bottle or a bag; anything
+            # else is "other", because the contour says nothing about the material.
             aspect = cw / float(ch) if ch else 1.0
-            if aspect < 0.7:
+            if aspect < 0.45:
                 cls = DetectionClass.plastic_bottle
-            elif aspect > 1.8:
+            elif aspect > 2.5:
                 cls = DetectionClass.plastic_bag_film
-            elif idx % 2 == 0:
-                cls = DetectionClass.plastic_packaging
             else:
                 cls = DetectionClass.plastic_other
 
-            conf = round(0.74 + min(0.18, (area / (w * h)) * 0.5 + (idx * 0.02)), 2)
-            detections.append(_box(cls, min(0.93, conf), float(x), float(y), float(x + cw), float(y + ch), w, h))
+            conf = round(min(CV_MAX_CONFIDENCE, 0.30 + (area / (w * h)) * 0.3), 2)
+            detections.append(
+                _box(cls, conf, float(x), float(y), float(x + cw), float(y + ch), w, h)
+            )
 
-        annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
+        annotated = _write_annotated(
+            img, detections, _annotated_path(path), simulated=False, banner=HEURISTIC_BANNER
+        )
         return summarise(detections, annotated)
     except Exception:
         logger.exception("CV detection failed for %s", path)
@@ -417,17 +438,21 @@ def _try_cv_detection(path: Path) -> DetectorOutput | None:
 
 
 def _run_real(path: Path) -> DetectorOutput:
-    # 1. OpenCV Computer Vision object detection (lightweight, safe from OOM)
-    cv_res = _try_cv_detection(path)
-    if cv_res is not None and cv_res.plastic_count > 0:
-        return cv_res
-    # 2. YOLO model (if specifically configured and custom weights exist)
     s = get_settings()
+    # 1. The trained model, when its weights are actually on disk.
     if Path(s.DETECTOR_WEIGHTS).is_file():
         yolo_res = _try_yolo_detection(path)
         if yolo_res is not None:
             return yolo_res
-    return _run_stub(path)
+    # 2. Opt-in contour heuristic for hosts that cannot afford PyTorch. Off by default:
+    #    it is a shape signal, not a detector, and it is labelled as one.
+    if s.DETECTOR_CV_FALLBACK:
+        cv_res = _try_cv_detection(path)
+        if cv_res is not None:
+            return cv_res
+    # 3. No usable detector. Refusing to fall back to the stub: that would present
+    #    fake output as real (CLAUDE.md §2.2, §5).
+    return _error_output()
 
 
 # ---------------------------------------------------------------------------
@@ -448,12 +473,8 @@ def run_detection(image_path: str | Path) -> DetectorOutput:
             known, simulated = cached
             return from_known(path, known, simulated=simulated or is_stub_mode())
 
-        # When a real file exists on disk (an actual user upload), run real CV detection:
-        if path.is_file():
-            cv_res = _try_cv_detection(path)
-            if cv_res is not None and cv_res.plastic_count > 0:
-                return cv_res
-
+        # DETECTOR_MODE decides, for uploads exactly as for anything else: in stub mode
+        # no detection code runs at all (CLAUDE.md §5).
         return _run_stub(path) if is_stub_mode() else _run_real(path)
     except Exception:
         logger.exception("Detection failed for %s", path)
