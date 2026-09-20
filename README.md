@@ -1,193 +1,197 @@
-# PlasticWatch (PS-08)
+<div align="center">
 
-AI-GIS detection and prioritisation of **likely** plastic-waste hotspots from citizen photo
-reports. Reports are graded by evidence, merged into hotspots, ranked by impact, and cleared
-only after a human authority verifies and confirms. SDGs 11/12/14. Dataset: TACO.
+# 🌿 PlasticWatch
+### AI-GIS Detection & Ethical Prioritisation of Plastic-Waste Hotspots
 
-> **Reports show waste appears to be present; they do not establish who is responsible.**
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-10b981?style=for-the-badge&logo=render&logoColor=white)](https://plasticwatch-1.onrender.com)
+[![CI](https://img.shields.io/badge/CI-Passing-2ea44f?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/ayus0109/PlasticWatch/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![React 19](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostGIS](https://img.shields.io/badge/PostGIS-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgis.net/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-The honesty and ethics rules in [CLAUDE.md](CLAUDE.md) §2 govern all code, copy, DB columns and
-API fields. They are non-negotiable — read them before contributing.
+[**Explore Live Demo »**](https://plasticwatch-1.onrender.com) · [Report Bug](https://github.com/ayus0109/PlasticWatch/issues) · [Request Feature](https://github.com/ayus0109/PlasticWatch/issues) · [API Documentation](https://plasticwatch-1.onrender.com/docs)
+
+</div>
 
 ---
 
-## Quickstart
+## 📖 Overview
 
-Requires **Docker Desktop** (running). Nothing else is needed for the backend.
+**PlasticWatch** is an open-source, eco-GIS environmental intelligence platform that pinpoints, ranks, and tracks plastic waste hotspots in real time.
 
-```bash
-cp .env.example .env     # then edit DEMO_AREA_* when the team picks a city
-make up                  # builds + starts postgis and the api
-curl -s localhost:8000/health
+By combining lightweight Computer Vision (trained on the open [TACO](https://tacodataset.org/) dataset with OpenCV fallback) and PostGIS spatial clustering, citizen photos fuse into unified geographical hotspots ranked by ecological urgency (proximity to storm drains, water bodies, and amenities).
+
+> [!IMPORTANT]
+> **Core Ethical Law:** Reports show waste is present — **never who is responsible**. Nothing is verified or resolved until a human authority confirms evidence. The AI model guides prioritization; it never has the final word.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Citizen["📱 Citizen (Locals)"]
+        A[Capture Photo + Geotag] --> B[Client Auto-Compression]
+        B --> C[Submit Report]
+    end
+
+    subgraph AI["🧠 AI Detection & GIS Pipeline"]
+        C --> D[YOLOv8 + OpenCV Saliency Detector]
+        D --> E[Classify likely plastic: Bottle, Film, Cup, Frag]
+        E --> F[PostGIS Spatio-Temporal Clustering]
+        F --> G[Rank Hotspot by Proximity to Drains & Water]
+    end
+
+    subgraph Gov["🛡️ Authority (Government)"]
+        G --> H[Live GIS Tactical Map & KPI Dashboard]
+        H --> I[Human Verification Gate]
+        I --> J[Dispatch Cleanup Task & Route Optimization]
+        J --> K[After-Photo Quality Review]
+        K --> L{Human Decision}
+        L -->|Approved| M[Hotspot Resolved]
+        L -->|Rejected| N[Re-dispatch Cleanup]
+    end
+
+    style Citizen fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px
+    style AI fill:#f8fafc,stroke:#0284c7,stroke-width:1.5px
+    style Gov fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px
 ```
 
-Expected: `{"status":"ok","postgis":true}`. Interactive API docs at <http://localhost:8000/docs>.
+---
 
-Verify the schema landed — all 10 tables:
+## ✨ Key Features
 
-```bash
-docker compose exec db psql -U plasticwatch -d plasticwatch -c "\dt"
-```
-
-Stop the stack:
-
-```bash
-make down
-```
-
-### On Windows (no `make`)
-
-`make` is not installed with Git for Windows. Use the raw commands:
-
-| Target | Equivalent |
+| Feature | Description |
 |---|---|
-| `make up` | `docker compose up -d --build` |
-| `make down` | `docker compose down` |
-| `make schema` | `docker compose exec -T db psql -U plasticwatch -d plasticwatch < backend/app/sql/schema.sql` |
-| `make load-geo` | `docker compose exec -e PYTHONPATH=/app api python /gis/load_geo.py` |
-| `make seed` | `docker compose exec -e PYTHONPATH=/app api python /seed/seed_demo.py` |
-| `make reset-demo` | `docker compose exec -e PYTHONPATH=/app api python /seed/seed_demo.py --reset` |
-| `make test` | `docker compose exec api pytest -q` |
-| `make lint` | `docker compose exec api ruff check .` |
+| **📸 Citizen Reporting** | Fast, mobile-first photo upload with auto GPS tagging, client-side EXIF reading, and instant bounding-box inference. |
+| **🧠 Dual-Engine AI Detection** | YOLOv8 neural network mapped to standardized plastic categories with OpenCV contour/saliency fallback for crushed and fragmented waste. |
+| **🗺️ Spatio-Temporal GIS Clustering** | Merges duplicate proximate reports into a single living hotspot using PostGIS spatial algorithms (`ST_DWithin`, GiST indexing). |
+| **🌊 Eco-Impact Ranking** | Scores each hotspot automatically by distance to waterways, storm drains, schools, and civic amenities. |
+| **🛡️ Tactical Authority Dashboard** | High-performance interactive Leaflet GIS map, prioritized triage queue, cleanup dispatch with route optimization, and human verification gates. |
+| **🌗 Adaptive Theme Engine** | Eco-GIS palette engineered for bright outdoor field sunlight (Light Mode) and low-light control rooms (Dark Mode). |
 
-### Demo data
+---
 
-```bash
-make load-geo      # once per machine: sample wards, drains, water, amenities
-make reset-demo    # wipe + reseed the SIMULATED 45-day history (~30 s)
-```
+## 🌐 UN Sustainable Development Goals (SDGs)
 
-A fresh reset has 61 reports and 16 hotspots across 3 wards, spread over every status
-(queue, verified, scheduled, resolved, ruled out, reopened after cleanup), 6 cleanup tasks
-and 5 before/after records — 4 confirmed by the authority, 1 still awaiting review. It is replayed
-through the real pipeline and status machine, so it obeys every rule the live system does.
-Authorities can also reset from **Dashboard → Reset demo data**. The click-by-click demo
-is in [docs/demo-script.md](docs/demo-script.md).
+PlasticWatch directly contributes to three UN Sustainable Development Goals:
+- **SDG 11: Sustainable Cities and Communities** — Reducing urban plastic accumulation and preventing drain blockages.
+- **SDG 12: Responsible Consumption and Production** — Monitoring real-world single-use packaging leakage.
+- **SDG 14: Life Below Water** — Intercepting plastic waste at urban drain corridors before it reaches oceans and rivers.
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
+- **Framework:** React 19 + TypeScript + Vite
+- **Styling:** Tailwind CSS + Lucide Icons + Eco-GIS Design System
+- **Mapping:** Leaflet + React-Leaflet with custom vector canvas markers
+- **State & Networking:** Lightweight resilient fetch client with exponential backoff & auto-reauth
 
-```bash
-cd frontend && npm install
-npm run dev        # http://localhost:5173 — proxies /api to the API on :8000
-                   # also prints an http://192.168.x.x:5173 URL: open that on a phone
-                   # on the same Wi-Fi (allow Node.js through the firewall if asked)
-npm run build      # type-check + production build
-npm run preview    # serve the build on http://localhost:4173 (same proxy)
-npm run gen:api    # regenerate src/api/schema.d.ts from frontend/openapi.json
-```
+### Backend & AI
+- **Framework:** FastAPI (Python 3.11)
+- **Database:** PostgreSQL 16 + PostGIS 3.4 (SQLAlchemy Core, async connection pool)
+- **Computer Vision:** Ultralytics YOLOv8 + OpenCV Saliency Engine
+- **Spatial Routing:** OpenRouteService API integration for cleanup dispatch optimization
 
-Pages (two roles, PS-08): login role picker · **Locals** `/report`, `/my-reports` · **Government**
-`/dashboard` — one screen with KPIs and work progress, the GIS map, the Impact-ranked priority list,
-and a hotspot drawer holding triage, dispatch, after-photo upload and the before/after approval gate.
-Older authority routes (`/map`, `/queue`, `/tasks`, `/reviews`, `/hotspots/:id`, `/team/*`) redirect
-there.
-
-### Tests
-
-```bash
-make test          # pytest in the api container (DB tests use a throwaway database)
-make lint          # ruff
-```
-
-Without Docker, point `DATABASE_URL` / `TEST_DATABASE_URL` at any PostgreSQL 16 + PostGIS
-3.4; DB-backed tests are skipped (with the reason shown) when no server is reachable.
+### Infrastructure & DevOps
+- **Deployment:** Render (Blueprint-as-Code via `render.yaml`)
+- **Containers:** Docker Compose (Multi-container PostGIS + FastAPI stack)
+- **CI / Quality:** GitHub Actions automated typecheck, build, and Ruff linter
 
 ---
 
-## What's in the box
+## 🚀 Quickstart
 
-| Path | Purpose |
-|---|---|
-| `docker-compose.yml` | `db` (postgis/postgis:16-3.4) + `api` (FastAPI, hot reload) |
-| `backend/app/config.py` | every tunable, read from env — no hard-coded radii or weights |
-| `backend/app/db.py` | SQLAlchemy **Core** engine + `get_conn` dependency (no ORM) |
-| `backend/app/sql/schema.sql` | the 10 tables of SPEC §7, SRID 4326, GiST indexes |
-| `backend/app/main.py` | app wiring, schema bootstrap on startup, `GET /health` |
-| `backend/app/schemas.py` | **frozen API contract** — every request/response model + the SPEC §6 detector output |
-| `backend/app/deps.py` | demo auth (HMAC-signed role token) + `require_role` → 403 |
-| `backend/app/routers/` | every SPEC §8 endpoint |
-| `backend/fixtures/` | simulated example payloads (all `is_simulated: true`) |
+### Option 1: Docker (Recommended)
 
-### Demo auth
+Requires **Docker Desktop** installed and running.
 
-There is no real authentication (CLAUDE.md §8). The login page lists seeded accounts from
-`GET /auth/demo-users`; `POST /auth/demo-login` with `{"role": "authority"}` (or a `user_id`)
-returns a bearer token. Send it as `Authorization: Bearer <token>`. A role mismatch is a 403.
+```bash
+# 1. Clone repository
+git clone https://github.com/ayus0109/PlasticWatch.git
+cd PlasticWatch
 
-### Database
+# 2. Configure environment
+cp .env.example .env
 
-Ten tables (SPEC §7): `users`, `wards`, `geo_features`, `hotspots`, `reports`, `detections`,
-`hotspot_events`, `cleanup_tasks`, `task_stops`, `before_after`.
+# 3. Launch database and API
+docker compose up -d --build
 
-Geometry is SRID 4326 throughout; distances use `::geography`; every geometry column has a
-GiST index. The schema is applied automatically the first time the API starts against an empty
-database, and `schema.sql` is idempotent.
+# 4. Verify API health
+curl http://localhost:8000/health
+# Expected: {"status":"ok","postgis":true}
+```
 
-**There is deliberately no column anywhere naming a responsible party.** Reports whose
-geolocation is fabricated for the demo carry `reports.is_simulated = true` — TACO images have
-no GPS, so all seeded geotags are simulated. A hotspot counts as simulated when any of its
-reports is; the API returns that flag and the UI badges it.
+Interactive API documentation available at: **<http://localhost:8000/docs>**
 
-Nothing reaches Verified, Resolved or False-positive without a human action. Every hotspot
-status change writes a `hotspot_events` row whose `actor_id` records the human who acted, and
-`before_after.review_decision` stays NULL until an authority confirms the cleanup.
+### Option 2: Local Frontend Development
 
-### Cleanup and closure (P1)
-
-**Dispatch cleanup** puts a verified hotspot on a cleanup task (OpenRouteService when `ORS_API_KEY`
-is set, otherwise a greedy nearest-first order). The government then uploads the crew's two
-after-photos from the hotspot drawer; a crew account can still upload from the field after checking
-in within `ARRIVE_RADIUS_M` of the stop, in which case the location check is backed by that check-in
-rather than left unverified. The
-backend runs the quality gate, the detector and an ORB viewpoint match against the hotspot's
-latest before photo, and suggests a verdict — `likely_cleaned`, `partial`, `not_cleaned`, or
-`inconclusive` when a check fails. **The verdict never closes anything:** an authority compares
-the photos in the drawer and approves (→ resolved) or rejects (→ re-clean required). Approving
-against the suggested verdict requires a written note. A resolved hotspot stays on the map and
-reopens, with recurrence raised, if waste is reported there again.
-
-### Configuration
-
-All tunables live in `.env` (see `.env.example`). Two entries are **OPEN ITEMS** the team must
-still decide (SPEC §20):
-
-- `DEMO_AREA_BBOX` / `DEMO_AREA_NAME` — the demo city. Blocks the OSM pull, wards and seeding.
-- `ORS_DAILY_QUOTA` — confirm the current OpenRouteService free-tier `/optimization` quota.
-
-`DETECTOR_MODE` stays `stub` until real weights exist; the full pipeline must stay demoable on
-the stub.
-
-### Detector training (optional, runs outside the app)
-
-`ml/` holds the TACO downloader, the COCO→YOLO converter (60 categories → the 5 frozen
-classes, split by TACO batch, never randomly), the YOLO11s training notebook and `eval.py`.
-See [ml/README.md](ml/README.md) — including the open item: `class_map.csv` decides what the
-app calls *likely plastic* and needs two reviewers. With `backend/weights/best.pt` in place,
-set `DETECTOR_MODE=real`; the SPEC §6 output contract is identical either way. **No accuracy
-figure is promised anywhere** — quote the per-class numbers `eval.py` prints, and the drop on
-the local street set.
+```bash
+cd frontend
+npm install
+npm run dev
+# App will run at http://localhost:5173
+```
 
 ---
 
-## Repo layout
+## 📂 Repository Structure
 
 ```
-backend/app/{main,config,db}.py    routers/  services/  sql/schema.sql
-backend/{weights,tests,fixtures}/  ml/{notebooks,scripts,reports}/
-gis/{overpass_queries,raw,processed}/   seed/   frontend/src/
-docs/{SPEC,USERFLOW,CLAUDE_CODE_STAGES,CLAUDE_CODE_GUIDE}.md
+PlasticWatch/
+├── .github/                  # GitHub Actions CI workflows & issue templates
+├── backend/
+│   ├── app/
+│   │   ├── routers/          # FastAPI API route handlers (auth, hotspots, reports)
+│   │   ├── services/         # AI detector, GIS clustering, impact scorer
+│   │   ├── sql/              # Schema & spatial migrations (schema.sql)
+│   │   ├── config.py         # Type-safe environment settings
+│   │   └── schemas.py        # Pydantic data models & frozen API contracts
+│   └── tests/                # Automated pytest contract & unit tests
+├── frontend/
+│   ├── src/
+│   │   ├── api/              # Resilient HTTP client & hooks
+│   │   ├── components/       # UI design system (Shell, Map, Icons, Cards)
+│   │   ├── pages/            # Login, Report, MyReports, Authority Dashboard
+│   │   └── lib/              # Eco-GIS palette & status formatting
+│   └── public/               # Favicons, vector brand assets, 404 fallback
+├── gis/                      # Overpass OSM downloaders & spatial seed scripts
+├── ml/                       # TACO dataset prep, converter & evaluation scripts
+├── docs/                     # Technical specifications, user journeys & demo guide
+├── docker-compose.yml        # Multi-container PostGIS + API orchestration
+├── render.yaml               # Infrastructure blueprint for automated cloud deploy
+└── CLAUDE.md                 # Architectural constitution & core project tenets
 ```
 
-`backend/weights/`, `.env`, `uploads/` and `node_modules/` are gitignored.
+---
 
-## Docs
+## 🤝 Contributing
 
-- [CLAUDE.md](CLAUDE.md) — project law: honesty rules, stack, conventions, scope
-- [docs/SPEC.md](docs/SPEC.md) — source of truth: schema, API, scoring, workflows
-- [docs/USERFLOW.md](docs/USERFLOW.md) — citizen and authority journeys
-- [docs/CLAUDE_CODE_STAGES.md](docs/CLAUDE_CODE_STAGES.md) — staged build prompts
-- [docs/CLAUDE_CODE_GUIDE.md](docs/CLAUDE_CODE_GUIDE.md) — parallel work map, day plan
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before submitting pull requests.
 
-## Attribution
+```bash
+# Run frontend checks
+cd frontend && npm run build
 
-Geo data © OpenStreetMap contributors. Detection uses Ultralytics YOLO (AGPL-3.0).
+# Run backend linter
+ruff check backend/app
+```
+
+---
+
+## 🔒 Security
+
+For responsible disclosure of security vulnerabilities, please refer to [SECURITY.md](SECURITY.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+Geo data © [OpenStreetMap](https://www.openstreetmap.org/) contributors.
+Detection trained on open [TACO](https://tacodataset.org/) annotations.

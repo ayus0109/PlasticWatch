@@ -5,7 +5,7 @@
  * utilities onto the variables (bg-surface, text-muted, …) and the Leaflet map reads
  * the same values from here. So a chip, a marker and a chart can never disagree.
  *
- * Direction: an eco-GIS canvas — slate neutrals, an environmental green for actions and a
+ * Direction: an eco-GIS canvas — slate neutrals, deep ocean teal for actions and a
  * river blue for links, data does the talking. The 4-step priority ramp is fixed by
  * CLAUDE.md §9 and is the ONLY warm colour family in the UI, so a red thing always
  * means "critical". `bandChip` below is a SURFACE treatment of that same ramp (tinted
@@ -79,9 +79,9 @@ export const palette: Record<ThemeMode, Palette> = {
     text: "#0f172a",
     muted: "#475569",
     faint: "#94a3b8",
-    accent: "#15803d",
-    accentHover: "#166534",
-    accentSoft: "#dcfce7",
+    accent: "#0d9488",
+    accentHover: "#0f766e",
+    accentSoft: "#ccfbf1",
     accentFg: "#ffffff",
     link: "#0284c7",
     linkSoft: "#e0f2fe",
@@ -107,10 +107,10 @@ export const palette: Record<ThemeMode, Palette> = {
     text: "#e2e8f0",
     muted: "#94a3b8",
     faint: "#64748b",
-    accent: "#4ade80",
-    accentHover: "#86efac",
-    accentSoft: "rgba(74, 222, 128, 0.15)",
-    accentFg: "#052e16",
+    accent: "#2dd4bf",
+    accentHover: "#5eead4",
+    accentSoft: "rgba(45, 212, 191, 0.15)",
+    accentFg: "#042f2e",
     link: "#38bdf8",
     linkSoft: "rgba(56, 189, 248, 0.15)",
     simBg: "rgba(245, 158, 11, 0.13)",
