@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PlasticWatch</title>
+    <script>
+      // Single Page Application fallback for static site hosts (Render / GitHub Pages).
+      // Automatically forwards direct URL paths (e.g. /dashboard or /report) to the client-side router.
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      window.location.replace('/#' + path + search + hash);
+    </script>
+  </head>
+  <body style="margin: 0; background: #0b1320; color: #94a3b8; font-family: system-ui, sans-serif; display: grid; min-height: 100vh; place-items: center; text-align: center;">
+    <div>
+      <p style="font-size: 16px; font-weight: 600; color: #14b8a6;">PlasticWatch</p>
+      <p style="font-size: 14px;">Loading page…</p>
+    </div>
+  </body>
+</html>

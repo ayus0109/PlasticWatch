@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router";
+import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
 import type { UserRole } from "./api/client";
 import { Shell } from "./components/Shell";
 import { Card, EmptyState, Skeleton } from "./components/ui";
@@ -79,7 +79,7 @@ function PageLoading() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -96,6 +96,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
