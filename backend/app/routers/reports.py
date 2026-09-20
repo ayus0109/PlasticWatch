@@ -84,6 +84,8 @@ def create_report(
     source: LocationSource | None = Form(None, description="browser | exif | pin"),
     accuracy: float | None = Form(None, description="GPS accuracy in metres."),
     note: str | None = Form(None, max_length=1000),
+    reporter_name: str | None = Form(None, max_length=120, description="Citizen reporter name."),
+    reporter_phone: str | None = Form(None, max_length=30, description="Citizen contact phone number."),
     user: DemoUser = Depends(citizen_only),
     conn: Connection = Depends(get_conn),
 ) -> ReportCreateResponse:
@@ -100,6 +102,8 @@ def create_report(
             source=source,
             accuracy_m=accuracy,
             note=note,
+            reporter_name=reporter_name or user.name,
+            reporter_phone=reporter_phone,
         )
     except PipelineError as exc:
         raise HTTPException(

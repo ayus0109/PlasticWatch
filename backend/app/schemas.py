@@ -282,6 +282,8 @@ class ReportSummary(BaseModel):
         False, description="Matched an existing image; attached as evidence but not counted twice."
     )
     is_simulated: bool = False
+    reporter_name: str | None = Field(None, description="Citizen reporter name for proof.")
+    reporter_phone: str | None = Field(None, description="Citizen contact phone for proof.")
 
 
 class ReportDetail(ReportSummary):

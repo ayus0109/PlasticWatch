@@ -17,8 +17,12 @@ _SELECT = """
            ST_Y(r.geom) AS lat, ST_X(r.geom) AS lon, r.location_source, r.gps_accuracy_m,
            r.ai_status, r.plastic_count, r.plastic_area_frac, r.report_confidence,
            r.hotspot_id, h.status AS hotspot_status, r.duplicate_of, r.is_simulated,
-           r.reporter_id
-    FROM reports r LEFT JOIN hotspots h ON h.id = r.hotspot_id
+           r.reporter_id,
+           COALESCE(r.reporter_name, u.name, 'Citizen') AS reporter_name,
+           r.reporter_phone
+    FROM reports r
+    LEFT JOIN hotspots h ON h.id = r.hotspot_id
+    LEFT JOIN users u ON u.id = r.reporter_id
 """
 
 
@@ -48,6 +52,8 @@ def summary_from_row(row) -> ReportSummary:
         hotspot_status=row.hotspot_status,
         is_duplicate=row.duplicate_of is not None,
         is_simulated=row.is_simulated,
+        reporter_name=getattr(row, "reporter_name", None),
+        reporter_phone=getattr(row, "reporter_phone", None),
     )
 
 

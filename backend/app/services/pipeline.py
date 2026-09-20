@@ -116,10 +116,12 @@ def _store_photo(img: Image.Image, report_id: UUID) -> str:
 _INSERT_REPORT = text(
     """
     INSERT INTO reports (id, reporter_id, image_path, image_phash, geom, gps_accuracy_m,
-                         location_source, created_at, note, ai_status, report_confidence,
+                         location_source, created_at, note, reporter_name, reporter_phone,
+                         ai_status, report_confidence,
                          plastic_count, plastic_area_frac, severity, is_simulated)
     VALUES (:id, :reporter, :image_path, :phash, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
-            :accuracy, :source, :created_at, :note, :ai_status, :confidence,
+            :accuracy, :source, :created_at, :note, :reporter_name, :reporter_phone,
+            :ai_status, :confidence,
             :count, :area, :severity, :simulated)
     """
 )
@@ -144,6 +146,8 @@ def process_report(
     source: LocationSource | None,
     accuracy_m: float | None = None,
     note: str | None = None,
+    reporter_name: str | None = None,
+    reporter_phone: str | None = None,
     created_at: datetime | None = None,
     simulated_location: bool = False,
     known_detections: list[dict] | None = None,
@@ -196,6 +200,7 @@ def process_report(
             "id": report_id, "reporter": reporter_id, "image_path": image_path,
             "phash": phash, "lon": lon, "lat": lat, "accuracy": accuracy_m,
             "source": source.value, "created_at": created_at, "note": note,
+            "reporter_name": reporter_name, "reporter_phone": reporter_phone,
             "ai_status": det.ai_status.value, "confidence": det.report_confidence,
             "count": det.plastic_count, "area": det.plastic_area_frac,
             "severity": report_severity(det.plastic_count, det.plastic_area_frac),

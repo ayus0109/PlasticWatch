@@ -163,6 +163,8 @@ CREATE TABLE IF NOT EXISTS reports (
     captured_at         timestamptz,
     created_at          timestamptz NOT NULL DEFAULT now(),
     note                text,
+    reporter_name       text,
+    reporter_phone      text,
 
     -- Frozen detector contract (SPEC §6). "likely plastic" counts, never "plastic".
     ai_status           text

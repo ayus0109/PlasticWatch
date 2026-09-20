@@ -187,6 +187,17 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
     tasks: dict[int, int] = {}  # scenario day -> cleanup_tasks.id
     reporter = people["reporter"]
 
+    CITIZEN_PROOFS = [
+        ("Priya Sharma", "+91 98765 43210"),
+        ("Aarav Patel", "+91 98123 45678"),
+        ("Rohan Verma", "+91 97654 32109"),
+        ("Ananya Iyer", "+91 99887 76655"),
+        ("Vikram Singh", "+91 98234 56789"),
+        ("Sneha Kulkarni", "+91 97123 98765"),
+        ("Mohammed Farooq", "+91 96543 21098"),
+        ("Pooja Nair", "+91 98321 65490"),
+    ]
+
     for when, _, kind, payload in steps:
         if when > now:
             continue
@@ -195,6 +206,7 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
             lon, lat = _jitter(*h["at"], h["key"], i)
             image, dets = _photo(h["key"], i, r["plastic"], r.get("other", 2), r.get("conf"))
             photos[(h["key"], i)] = (image, dets)
+            c_name, c_phone = CITIZEN_PROOFS[(i + len(h["key"])) % len(CITIZEN_PROOFS)]
             res = pipeline.process_report(
                 conn,
                 reporter_id=reporter[r["by"]],
@@ -204,6 +216,8 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
                 source=LocationSource.browser,
                 accuracy_m=r.get("acc", 6 + (i % 5) * 2),
                 note=r.get("note"),
+                reporter_name=c_name,
+                reporter_phone=c_phone,
                 created_at=when,
                 simulated_location=True,
                 known_detections=dets,

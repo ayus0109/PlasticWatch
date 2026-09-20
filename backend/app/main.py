@@ -56,6 +56,8 @@ async def lifespan(app: FastAPI):
     try:
         apply_schema_if_absent()
         with get_engine().begin() as conn:
+            conn.execute(text("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name text"))
+            conn.execute(text("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_phone text"))
             logger.info("Demo users ready: %d", ensure_demo_users(conn))
     except Exception:
         # Don't take the API down if the db is still settling — /health will report it.

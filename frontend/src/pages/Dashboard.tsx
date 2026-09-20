@@ -20,7 +20,7 @@ import {
 } from "../api/client";
 import { useApi } from "../api/hooks";
 import { HotspotDrawer } from "../components/HotspotDrawer";
-import { Icon, type IconName } from "../components/Icon";
+import { Icon } from "../components/Icon";
 import HotspotMap, { type LayerToggles } from "../components/map/HotspotMap";
 import { LayerPanel } from "../components/map/LayerPanel";
 import { Legend } from "../components/map/Legend";
@@ -37,8 +37,8 @@ import {
   StatusChip,
   cx,
 } from "../components/ui";
-import { impact, metres, timeAgo } from "../lib/format";
-import { citizenStage, NON_ATTRIBUTION_NOTE, type CitizenStage } from "../lib/status";
+import { impact, timeAgo } from "../lib/format";
+import { citizenStage, NON_ATTRIBUTION_NOTE } from "../lib/status";
 
 const DEFAULT_LAYERS: LayerToggles = {
   heat: false,
@@ -49,25 +49,6 @@ const DEFAULT_LAYERS: LayerToggles = {
   wards: true,
 };
 
-const STAGE_META: { key: Exclude<CitizenStage, "closed">; label: string; icon: IconName; tone: string }[] = [
-  { key: "pending", label: "Pending", icon: "clock", tone: "text-warn" },
-  { key: "in_progress", label: "Work in progress", icon: "truck", tone: "text-info" },
-  { key: "completed", label: "Completed", icon: "check", tone: "text-ok" },
-];
-
-function Kpi({ icon, label, value, hint }: { icon: IconName; label: string; value: string | number; hint: string }) {
-  return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted">
-        <Icon name={icon} size={15} />
-        {label}
-      </div>
-      <div className="font-display mt-1.5 text-3xl font-bold tracking-tight">{value}</div>
-      <div className="mt-0.5 text-xs text-faint">{hint}</div>
-    </Card>
-  );
-}
-
 function HotspotRow({
   p,
   selected,
@@ -77,35 +58,52 @@ function HotspotRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const isPending = citizenStage(p.status) === "pending";
   return (
     <button
       onClick={onSelect}
       aria-current={selected}
       className={cx(
-        "flex w-full items-start gap-3 border-l-2 px-3 py-3 text-left transition-colors",
-        selected ? "border-accent bg-accent-soft/50" : "border-transparent hover:bg-surface-2",
+        "flex w-full items-start gap-3 border-l-4 px-3.5 py-3 text-left transition-all",
+        selected
+          ? "border-accent bg-accent-soft/60"
+          : isPending
+            ? "border-amber-500/80 bg-surface hover:bg-surface-2"
+            : "border-transparent hover:bg-surface-2",
       )}
     >
       <span
-        className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
+        className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-xs font-bold text-white shadow-sm"
         style={{ background: `var(--pw-band-${p.priority_band ?? "low"})` }}
         aria-hidden
       >
         {impact(p.impact_score)}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-1.5">
-          <span className="font-semibold">Hotspot #{p.id}</span>
+        <span className="flex flex-wrap items-center justify-between gap-1">
+          <span className="flex items-center gap-1.5 font-bold text-sm text-ink">
+            Hotspot #{p.id}
+            {p.is_simulated ? <SimulatedBadge /> : null}
+          </span>
           <BandChip band={p.priority_band} />
-          {p.is_simulated ? <SimulatedBadge /> : null}
         </span>
-        <span className="mt-0.5 block text-xs text-muted">
-          {p.ward_name ?? "Outside mapped wards"} · {p.report_count} report(s) ·{" "}
-          {metres(p.d_drain_m)} to drain
-        </span>
-        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <StatusChip status={p.status} />
+        <span className="mt-1 flex items-center justify-between text-xs text-muted">
+          <span>{p.ward_name ?? "Unmapped area"} · {p.report_count} citizen report(s)</span>
           <span className="text-[11px] text-faint">{timeAgo(p.last_reported_at)}</span>
+        </span>
+        <span className="mt-2 flex flex-wrap items-center gap-1.5">
+          <StatusChip status={p.status} />
+          {isPending ? (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-500">
+              <Icon name="clock" size={12} />
+              Needs Review
+            </span>
+          ) : p.status === "verified" ? (
+            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/15 px-2 py-0.5 text-[11px] font-semibold text-blue-500">
+              <Icon name="truck" size={12} />
+              Ready to Dispatch
+            </span>
+          ) : null}
         </span>
       </span>
     </button>
@@ -153,6 +151,17 @@ export default function Dashboard() {
     [features],
   );
 
+  type FilterMode = "all" | "pending" | "in_progress" | "resolved";
+  const [filter, setFilter] = useState<FilterMode>("all");
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return ranked;
+    if (filter === "pending") return ranked.filter((f) => citizenStage(f.properties.status) === "pending");
+    if (filter === "in_progress") return ranked.filter((f) => citizenStage(f.properties.status) === "in_progress");
+    if (filter === "resolved") return ranked.filter((f) => f.properties.status === "resolved" || citizenStage(f.properties.status) === "completed");
+    return ranked;
+  }, [ranked, filter]);
+
   const resetDemo = async () => {
     if (!window.confirm("Wipe all demo data and reseed the simulated history? (~30 s)")) return;
     setResetting(true);
@@ -190,36 +199,54 @@ export default function Dashboard() {
       {summary.error ? (
         <ErrorState message={summary.error.message} onRetry={summary.refetch} />
       ) : (
-        <div className={cx("grid grid-cols-2 gap-3 lg:grid-cols-5", onlyOn("kpi"))}>
+        <div className={cx("grid grid-cols-2 gap-3 lg:grid-cols-4", onlyOn("kpi"))}>
           {!k ? (
-            Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-24 rounded-card" />)
+            Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-24 rounded-card" />)
           ) : (
             <>
-              <Kpi icon="pin" label="Hotspots detected" value={features.length} hint="on the map now" />
-              <Kpi
-                icon="camera"
-                label="Citizen reports merged"
-                value={k.total_reports.toLocaleString()}
-                hint="grouped into hotspots"
-              />
-              {STAGE_META.map((s) => (
-                <Card key={s.key} className="p-4">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted">
-                    <Icon name={s.icon} size={15} className={s.tone} />
-                    {s.label}
-                  </div>
-                  <div className="font-display mt-1.5 text-3xl font-bold tracking-tight">
-                    {stages[s.key]}
-                  </div>
-                  <div className="mt-0.5 text-xs text-faint">
-                    {s.key === "pending"
-                      ? "awaiting your triage"
-                      : s.key === "in_progress"
-                        ? "cleanup dispatched"
-                        : "approved by you"}
-                  </div>
-                </Card>
-              ))}
+              <Card className="p-4 border-l-4 border-amber-500 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+                  <Icon name="clock" size={15} />
+                  Needs Your Review
+                </div>
+                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                  {stages.pending}
+                </div>
+                <div className="mt-0.5 text-xs text-muted">Awaiting government verification</div>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-blue-500 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-500">
+                  <Icon name="truck" size={15} />
+                  Work In Progress
+                </div>
+                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                  {stages.in_progress}
+                </div>
+                <div className="mt-0.5 text-xs text-muted">Cleanup teams dispatched</div>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-teal-500 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-bold text-teal-500">
+                  <Icon name="check" size={15} />
+                  Cleaned & Resolved
+                </div>
+                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                  {stages.completed}
+                </div>
+                <div className="mt-0.5 text-xs text-muted">Verified & approved closed</div>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-accent shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-bold text-muted">
+                  <Icon name="pin" size={15} />
+                  Total Hotspots
+                </div>
+                <div className="font-display mt-1.5 text-3xl font-bold tracking-tight text-ink">
+                  {features.length}
+                </div>
+                <div className="mt-0.5 text-xs text-muted">From {k.total_reports.toLocaleString()} citizen reports</div>
+              </Card>
             </>
           )}
         </div>
@@ -265,12 +292,44 @@ export default function Dashboard() {
         </Card>
 
         <Card className={cx("flex flex-col overflow-hidden p-0 md:max-h-[560px]", onlyOn("list"))}>
-          <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-            <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
-              Priority list
+          <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3 bg-surface">
+            <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-ink">
+              Hotspot Triage List
             </h2>
-            <span className="text-xs text-faint">{ranked.length} hotspots · highest Impact first</span>
+            <span className="text-xs text-muted font-medium">{filtered.length} shown</span>
           </div>
+
+          {/* Quick status filter tabs */}
+          <div className="flex gap-1 overflow-x-auto border-b border-line bg-surface-2/60 p-2">
+            {[
+              { key: "all", label: "All", count: ranked.length },
+              { key: "pending", label: "🚨 Needs Action", count: stages.pending },
+              { key: "in_progress", label: "🚛 In Progress", count: stages.in_progress },
+              { key: "resolved", label: "✅ Resolved", count: stages.completed },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key as FilterMode)}
+                className={cx(
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
+                  filter === tab.key
+                    ? "bg-accent text-accent-fg shadow-sm"
+                    : "text-muted hover:bg-surface hover:text-ink",
+                )}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={cx(
+                    "rounded-full px-1.5 py-0.2 text-[10px]",
+                    filter === tab.key ? "bg-black/20 text-white" : "bg-surface text-muted",
+                  )}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="min-h-0 flex-1 overflow-y-auto max-md:max-h-[calc(100dvh-16rem)]">
             {hotspots.error ? (
               <div className="p-4">
@@ -282,13 +341,15 @@ export default function Dashboard() {
                   <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
-            ) : ranked.length === 0 ? (
-              <EmptyState icon="map" title="No hotspots yet">
-                They appear as soon as locals report waste.
+            ) : filtered.length === 0 ? (
+              <EmptyState icon="map" title="No hotspots in this view">
+                {filter === "pending"
+                  ? "Great job! No hotspots are currently waiting for your review."
+                  : "Select another status tab above to view other hotspots."}
               </EmptyState>
             ) : (
               <ul className="divide-y divide-line">
-                {ranked.map((f) => (
+                {filtered.map((f) => (
                   <li key={f.properties.id}>
                     <HotspotRow
                       p={f.properties}

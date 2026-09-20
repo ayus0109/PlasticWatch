@@ -1281,6 +1281,10 @@ export interface components {
              * @default false
              */
             is_simulated: boolean;
+            /** Reporter Name */
+            reporter_name?: string | null;
+            /** Reporter Phone */
+            reporter_phone?: string | null;
         };
         /**
          * ResetDemoResponse

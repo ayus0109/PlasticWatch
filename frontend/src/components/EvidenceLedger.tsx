@@ -73,11 +73,22 @@ function ReportRow({ r }: { r: ReportSummary }) {
           ) : null}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-              Citizen report
+              <span>{r.reporter_name ? `Report by ${r.reporter_name}` : "Citizen report"}</span>
               {r.is_simulated ? <SimulatedBadge /> : null}
               {r.is_duplicate ? <Chip tone="info">Duplicate photo</Chip> : null}
             </div>
-            <div className="mt-0.5 text-xs text-muted">
+            {r.reporter_phone ? (
+              <div className="mt-1 flex items-center gap-2 text-xs">
+                <span className="font-semibold text-accent">📞 {r.reporter_phone}</span>
+                <a
+                  href={`tel:${r.reporter_phone}`}
+                  className="rounded-md bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent hover:bg-accent hover:text-accent-fg transition-colors"
+                >
+                  Call Citizen
+                </a>
+              </div>
+            ) : null}
+            <div className="mt-1 text-xs text-muted">
               <span title={dateTime(r.created_at)}>{timeAgo(r.created_at)}</span> ·{" "}
               {r.ai_status === "detected"
                 ? `${r.plastic_count ?? 0} likely-plastic items`

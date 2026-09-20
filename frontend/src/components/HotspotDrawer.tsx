@@ -8,8 +8,10 @@
 import { useEffect, useState } from "react";
 import {
   api,
+  mediaUrl,
   type DemoUser,
   type HotspotDetail,
+  type ReportSummary,
   type ReviewResponse,
   type VerifyResponse,
   type WardFeatureCollection,
@@ -127,6 +129,123 @@ function Dispatch({ hotspot, onDone }: { hotspot: HotspotDetail; onDone: () => v
   );
 }
 
+function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const current = reports[selectedIdx] ?? reports[0];
+  if (!current) {
+    return (
+      <Card className="p-4 text-center text-sm text-muted">
+        No citizen photo attached yet.
+      </Card>
+    );
+  }
+
+  const img = mediaUrl(current.annotated_jpg_path ?? current.image_path);
+
+  return (
+    <Card className="overflow-hidden p-0 border border-accent/40 bg-surface shadow-raised">
+      <div className="flex items-center justify-between border-b border-line bg-surface-2 px-3.5 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-accent/20 text-accent font-bold">
+            <Icon name="camera" size={13} />
+          </span>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-accent">
+            Citizen Proof & Evidence
+          </h3>
+        </div>
+        {reports.length > 1 ? (
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            <button
+              disabled={selectedIdx <= 0}
+              onClick={() => setSelectedIdx((i) => Math.max(0, i - 1))}
+              className="rounded p-1 hover:bg-surface disabled:opacity-30"
+              title="Previous report"
+            >
+              <Icon name="chevronLeft" size={14} />
+            </button>
+            <span className="font-semibold text-ink">
+              {selectedIdx + 1} / {reports.length}
+            </span>
+            <button
+              disabled={selectedIdx >= reports.length - 1}
+              onClick={() => setSelectedIdx((i) => Math.min(reports.length - 1, i + 1))}
+              className="rounded p-1 hover:bg-surface disabled:opacity-30"
+              title="Next report"
+            >
+              <Icon name="chevronRight" size={14} />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {img ? (
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/40">
+          <img
+            src={img}
+            alt="Reported waste"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
+            <span className="rounded-md bg-black/75 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+              {current.plastic_count ?? 0} likely-plastic items
+            </span>
+            {current.is_simulated ? <SimulatedBadge /> : null}
+          </div>
+          <a
+            href={img}
+            target="_blank"
+            rel="noreferrer"
+            className="absolute top-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80"
+          >
+            Full photo ↗
+          </a>
+        </div>
+      ) : null}
+
+      <div className="space-y-2.5 p-3.5">
+        {/* Reporter contact & proof box */}
+        <div className="rounded-xl border border-line bg-surface-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Reported by Citizen
+              </div>
+              <div className="font-display text-base font-bold text-ink">
+                {current.reporter_name || "Local Resident"}
+              </div>
+            </div>
+            {current.reporter_phone ? (
+              <a
+                href={`tel:${current.reporter_phone}`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-accent-fg shadow-sm transition hover:opacity-90 active:scale-95"
+              >
+                <span>📞 Call {current.reporter_phone}</span>
+              </a>
+            ) : (
+              <span className="rounded bg-surface px-2 py-1 text-[11px] text-muted">
+                No phone recorded
+              </span>
+            )}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line/60 pt-2 text-xs text-muted">
+            <span>📅 {timeAgo(current.created_at)}</span>
+            <span>·</span>
+            <span>📍 via {current.location_source === "browser" ? "Phone GPS" : current.location_source === "exif" ? "Photo EXIF" : "Map Pin"}</span>
+          </div>
+        </div>
+
+        {current.note ? (
+          <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs">
+            <strong className="text-muted">Landmark / Note: </strong>
+            <span className="italic text-ink font-medium">“{current.note}”</span>
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
 export function HotspotDrawer({
   hotspotId,
   onClose,
@@ -140,6 +259,7 @@ export function HotspotDrawer({
   const h = detail.data;
   const [freshEvent, setFreshEvent] = useState<number | null>(null);
   const [showLedger, setShowLedger] = useState(false);
+  const [showGis, setShowGis] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -201,24 +321,14 @@ export function HotspotDrawer({
           <>
             <Stage status={h.status} />
 
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-surface-2 p-2.5">
-                <div className="tabular text-xl font-bold">{h.report_count}</div>
-                <div className="text-[11px] text-muted">{plural(h.unique_reporters, "reporter")}</div>
-              </div>
-              <div className="rounded-xl bg-surface-2 p-2.5">
-                <div className="tabular text-xl font-bold">{metres(h.geo_context.d_drain_m)}</div>
-                <div className="text-[11px] text-muted">to nearest drain</div>
-              </div>
-              <div className="rounded-xl bg-surface-2 p-2.5">
-                <div className="tabular text-xl font-bold">{h.recurrence_returns}×</div>
-                <div className="text-[11px] text-muted">came back</div>
-              </div>
-            </div>
+            {/* 1. CITIZEN PROOF & PHOTO (FIRST THING AN OFFICIAL SEES) */}
+            <CitizenProofCard reports={h.reports} />
 
-            <ScoreBars key={`${h.status}-${h.score_breakdown.scored_at}`} breakdown={h.score_breakdown} />
+            {/* 2. ACTIONS FOR GOVERNMENT — THE ONE THING TO DO NEXT */}
+            {allowedDecisions(h.status).length ? (
+              <VerifyPanel hotspotId={h.id} status={h.status} onDone={afterDecision} />
+            ) : null}
 
-            {/* The action that applies right now — never more than one. */}
             {h.status === "verified" ? (
               <Dispatch hotspot={h} onDone={() => { detail.refetch(); onChanged(); }} />
             ) : null}
@@ -258,43 +368,75 @@ export function HotspotDrawer({
               </section>
             ) : null}
 
-            {allowedDecisions(h.status).length ? (
-              <VerifyPanel hotspotId={h.id} status={h.status} onDone={afterDecision} />
-            ) : null}
+            {/* 3. TECHNICAL GIS, SCORING & AUDIT DETAILS (COLLAPSIBLE FOR CLEAN EASY UI) */}
+            <div className="rounded-2xl border border-line bg-surface-2 overflow-hidden">
+              <button
+                onClick={() => setShowGis((v) => !v)}
+                className="flex w-full items-center justify-between p-3.5 text-left text-xs font-semibold text-muted hover:text-ink transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Icon name="chart" size={15} className="text-accent" />
+                  <span>GIS & Impact Breakdown (Score: {Math.round(h.score_breakdown.impact_score)}/100)</span>
+                </span>
+                <span className="flex items-center gap-1 text-[11px] font-medium text-accent">
+                  {showGis ? "Hide details" : "View equations & context"}
+                  <Icon name="chevronRight" size={14} className={cx("transition-transform", showGis && "rotate-90")} />
+                </span>
+              </button>
 
-            <Card className="p-4">
-              <SectionTitle hint="stored at capture, never recomputed">Nearby</SectionTitle>
-              <ul className="space-y-1.5 text-sm">
-                {PLACES.map((p) => (
-                  <li key={p.key} className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-2 text-muted">
-                      <Icon name={p.water ? "droplet" : "users"} size={15} />
-                      {p.label}
-                    </span>
-                    <span className="tabular font-semibold">{metres(h.geo_context[p.key])}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-[11px] text-faint">
-                Within 50 m counts fully toward Sensitivity; beyond 300 m doesn't count.
-              </p>
-            </Card>
+              {showGis ? (
+                <div className="border-t border-line p-4 space-y-4 bg-surface animate-rise">
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl bg-surface-2 p-2.5">
+                      <div className="tabular text-xl font-bold">{h.report_count}</div>
+                      <div className="text-[11px] text-muted">{plural(h.unique_reporters, "reporter")}</div>
+                    </div>
+                    <div className="rounded-xl bg-surface-2 p-2.5">
+                      <div className="tabular text-xl font-bold">{metres(h.geo_context.d_drain_m)}</div>
+                      <div className="text-[11px] text-muted">to nearest drain</div>
+                    </div>
+                    <div className="rounded-xl bg-surface-2 p-2.5">
+                      <div className="tabular text-xl font-bold">{h.recurrence_returns}×</div>
+                      <div className="text-[11px] text-muted">came back</div>
+                    </div>
+                  </div>
 
+                  <ScoreBars key={`${h.status}-${h.score_breakdown.scored_at}`} breakdown={h.score_breakdown} />
+
+                  <Card className="p-3 bg-surface-2/60">
+                    <SectionTitle hint="spatial proximity">Nearby Amenities</SectionTitle>
+                    <ul className="space-y-1 text-xs">
+                      {PLACES.map((p) => (
+                        <li key={p.key} className="flex items-center justify-between gap-3">
+                          <span className="flex items-center gap-1.5 text-muted">
+                            <Icon name={p.water ? "droplet" : "users"} size={13} />
+                            {p.label}
+                          </span>
+                          <span className="tabular font-semibold">{metres(h.geo_context[p.key])}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
+              ) : null}
+            </div>
+
+            {/* 4. AUDIT & DECISION LEDGER */}
             <div>
               <button
                 onClick={() => setShowLedger((v) => !v)}
                 aria-expanded={showLedger}
-                className="flex min-h-11 w-full items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted hover:text-ink"
+                className="flex min-h-10 w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted hover:text-ink"
               >
                 <Icon name="clipboard" size={14} />
-                Evidence ledger
+                Audit History
                 <span className="ml-auto flex items-center gap-1 text-xs font-medium normal-case tracking-normal">
                   {h.events.length} decisions · {h.reports.length} reports
                   <Icon name="chevronRight" size={14} className={cx("transition-transform", showLedger && "rotate-90")} />
                 </span>
               </button>
               {showLedger ? (
-                <Card className="mt-2 p-4">
+                <Card className="mt-2 p-3">
                   <EvidenceLedger events={h.events} reports={h.reports} freshEventId={freshEvent} />
                 </Card>
               ) : null}

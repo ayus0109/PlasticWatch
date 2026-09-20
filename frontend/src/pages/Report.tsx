@@ -10,6 +10,7 @@ import { ReportResult } from "../components/ReportResult";
 import { Shell } from "../components/Shell";
 import { Button, Card, cx } from "../components/ui";
 import { metres } from "../lib/format";
+import { useSession } from "../store/auth";
 
 type Loc =
   | { mode: "locating" }
@@ -50,10 +51,13 @@ function Step({
 }
 
 export default function Report() {
+  const session = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loc, setLoc] = useState<Loc>({ mode: "locating" });
   const [gpsNear, setGpsNear] = useState<LatLon | null>(null);
+  const [reporterName, setReporterName] = useState(session?.user?.name ?? "");
+  const [reporterPhone, setReporterPhone] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ text: string; step?: "photo" | "location" } | null>(null);
@@ -89,6 +93,7 @@ export default function Report() {
   const reset = () => {
     setFile(null);
     setNote("");
+    setReporterPhone("");
     setResult(null);
     setError(null);
     locate();
@@ -104,6 +109,8 @@ export default function Report() {
     setError(null);
     const form = new FormData();
     form.append("image", file);
+    if (reporterName.trim()) form.append("reporter_name", reporterName.trim());
+    if (reporterPhone.trim()) form.append("reporter_phone", reporterPhone.trim());
     if (note.trim()) form.append("note", note.trim());
     if (loc.mode === "gps") {
       form.append("lat", String(loc.lat));
@@ -273,18 +280,57 @@ export default function Report() {
           )}
         </Step>
 
-        <Step n={3} title="Note (optional)" done={note.trim().length > 0}>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={1000}
-            rows={3}
-            placeholder="e.g. Bags piling up beside the drain cover"
-            className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm placeholder:text-faint focus:border-accent"
-          />
-          <p className="mt-1.5 text-xs text-faint">
-            Describe the waste and the place. Please don't name or describe people.
-          </p>
+        <Step
+          n={3}
+          title="Citizen Verification & Details"
+          done={reporterName.trim().length > 0 && reporterPhone.trim().length > 0}
+        >
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted">
+                Your Name <span className="text-accent">*</span>
+              </label>
+              <input
+                type="text"
+                value={reporterName}
+                onChange={(e) => setReporterName(e.target.value)}
+                maxLength={100}
+                placeholder="e.g. Rahul Sharma"
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted">
+                Phone Number (Proof for Verification) <span className="text-accent">*</span>
+              </label>
+              <input
+                type="tel"
+                value={reporterPhone}
+                onChange={(e) => setReporterPhone(e.target.value)}
+                maxLength={15}
+                placeholder="e.g. +91 98765 43210"
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+              />
+              <p className="mt-1 text-[11px] text-faint">
+                Used by the municipal team as proof to verify citizen reports before dispatch.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted">
+                Landmark / Note (optional)
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={1000}
+                rows={2}
+                placeholder="e.g. Near community drain behind the market"
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+              />
+            </div>
+          </div>
         </Step>
 
         {error && !error.step ? (
