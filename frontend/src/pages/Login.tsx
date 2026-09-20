@@ -50,8 +50,8 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-full">
-      <div className="relative z-10 mx-auto grid min-h-full max-w-6xl gap-10 px-5 py-8 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16 md:py-16">
+    <div className="min-h-full">
+      <div className="mx-auto grid min-h-full max-w-6xl gap-10 px-5 py-8 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16 md:py-16">
         <div className="animate-rise">
           <div className="flex items-center justify-between">
             <Logo />
@@ -59,14 +59,7 @@ export default function Login() {
               <ThemeToggle />
             </div>
           </div>
-          <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft/50 px-3 py-1 text-xs font-semibold text-accent backdrop-blur-md shadow-xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-            </span>
-            <span>Live AI-GIS Sensor Network</span>
-          </div>
-          <h1 className="font-display mt-4 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
+          <h1 className="font-display mt-10 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
             Find plastic hotspots.
             <br />
             <span className="text-accent">Clean the worst first.</span>
@@ -89,7 +82,7 @@ export default function Login() {
         </div>
 
         <div className="animate-rise [animation-delay:80ms]">
-          <div className="rounded-[24px] border border-line/80 bg-surface/85 backdrop-blur-xl p-5 shadow-raised sm:p-7 transition-all">
+          <div className="rounded-[20px] border border-line bg-surface p-5 shadow-raised sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Choose a demo role</h2>
@@ -117,8 +110,8 @@ export default function Login() {
                       onClick={() => signIn(u)}
                       disabled={busy !== null}
                       className={cx(
-                        "group flex w-full items-center gap-4 rounded-xl border border-line/70 bg-surface/75 backdrop-blur-md p-4 text-left",
-                        "transition-[border-color,transform,box-shadow,background-color] duration-150 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-raised",
+                        "group flex w-full items-center gap-4 rounded-xl border border-line bg-surface p-4 text-left",
+                        "transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-accent hover:shadow-raised",
                         "disabled:opacity-60",
                       )}
                     >

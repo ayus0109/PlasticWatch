@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
 import { warmupApi, type UserRole } from "./api/client";
-import { AnimatedBackground } from "./components/AnimatedBackground";
 import { EmptyState, Skeleton } from "./components/ui";
 import { homeFor, loginAs, useSession } from "./store/auth";
 
@@ -69,7 +68,6 @@ export default function App() {
 
   return (
     <HashRouter>
-      <AnimatedBackground />
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
