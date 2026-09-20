@@ -245,10 +245,15 @@ def test_simulated_fixtures_are_flagged():
     assert load_fixture("hotspot_detail")["is_simulated"] is True
 
 
-def test_stub_detection_is_flagged_simulated_with_a_tier():
+def test_stub_detection_is_flagged_simulated_with_a_tier(set_env):
     """The stub detector's output is fabricated, so the API must say so (§2.2),
     and its confidence must travel with a tier (§2.7).
+
+    Pins DETECTOR_MODE: this module's TestClient is built at import time and does
+    not use the `api` fixture, so without this it would inherit whatever mode the
+    developer's .env happens to set.
     """
+    set_env(DETECTOR_MODE="stub")
     files = {"image": ("x.jpg", b"not-a-real-image", "image/jpeg")}
     res = client.post("/detect", files=files, headers=token_for(CITIZEN))
     assert res.status_code == 200, res.text

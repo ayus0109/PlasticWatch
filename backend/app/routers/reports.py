@@ -1,20 +1,17 @@
-"""Citizen reporting (SPEC §8, F1/F2): detect -> dedupe -> context -> score.
+"""Citizen reporting (SPEC §8, F1/F2): detect -> dedupe -> context -> score."""
 
-POST /detect is P1 and still returns a fixture.
-"""
-
+import tempfile
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.engine import Connection
 
 from app.db import get_conn
-from app.deps import citizen_only, citizen_or_authority, load_fixture
+from app.deps import citizen_only, citizen_or_authority
 from app.schemas import (
     AiStatus,
-    ConfidenceTier,
     DemoUser,
-    DetectorOutput,
     DetectPreview,
     LocationSource,
     ReportCreateResponse,
@@ -23,7 +20,7 @@ from app.schemas import (
     UserRole,
 )
 from app.services.confidence import confidence_tier
-from app.services.detector import is_stub_mode
+from app.services.detector import is_stub_mode, run_detection
 from app.services.hotspot_views import hotspot_summary
 from app.services.pipeline import PipelineError, PipelineResult, process_report
 from app.services.report_views import my_reports, report_detail
@@ -36,12 +33,32 @@ def detect_preview(
     image: UploadFile = File(..., description="Photo to preview. Not saved."),
     _user: DemoUser = Depends(citizen_only),
 ) -> DetectPreview:
-    """P1: preview likely-plastic detection without saving a report."""
-    # Stub: fixed tier for the fixed fixture (P1 — not wired to the detector yet).
+    """Preview likely-plastic detection without saving a report.
+
+    Runs the SAME detector as POST /reports, on a temp copy that is deleted before
+    this returns — so a preview can never disagree with what submitting would say.
+    Nothing is persisted, so `annotated_jpg_path` is always null here: handing back
+    a path under a deleted temp dir would only 404.
+    """
+    raw = image.file.read()
+    if not raw:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "empty_image", "message": "No image was uploaded."},
+        )
+
+    suffix = Path(image.filename or "upload.jpg").suffix or ".jpg"
+    with tempfile.TemporaryDirectory() as tmp:
+        preview_path = Path(tmp) / f"preview{suffix}"
+        preview_path.write_bytes(raw)
+        result = run_detection(preview_path)
+
+    result = result.model_copy(update={"annotated_jpg_path": None})
     return DetectPreview(
-        result=DetectorOutput.model_validate(load_fixture("detector_output")),
-        confidence_tier=ConfidenceTier.medium,
-        is_simulated=True,
+        result=result,
+        # Raw confidence is never shown without its tier (CLAUDE.md §2.7).
+        confidence_tier=confidence_tier(result.report_confidence),
+        is_simulated=is_stub_mode(),
     )
 
 
@@ -85,7 +102,9 @@ def create_report(
     accuracy: float | None = Form(None, description="GPS accuracy in metres."),
     note: str | None = Form(None, max_length=1000),
     reporter_name: str | None = Form(None, max_length=120, description="Citizen reporter name."),
-    reporter_phone: str | None = Form(None, max_length=30, description="Citizen contact phone number."),
+    reporter_phone: str | None = Form(
+        None, max_length=30, description="Citizen contact phone number."
+    ),
     user: DemoUser = Depends(citizen_only),
     conn: Connection = Depends(get_conn),
 ) -> ReportCreateResponse:
