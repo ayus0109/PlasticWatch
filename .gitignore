@@ -21,6 +21,10 @@ venv/
 backend/weights/*
 !backend/weights/.gitkeep
 ml/weights/
+# Datasets and training runs: TACO images, converted YOLO sets, Ultralytics runs.
+ml/data/
+ml/runs/
+ml/reports/failures/
 *.pt
 *.onnx
 

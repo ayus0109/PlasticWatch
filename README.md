@@ -150,6 +150,16 @@ still decide (SPEC §20):
 `DETECTOR_MODE` stays `stub` until real weights exist; the full pipeline must stay demoable on
 the stub.
 
+### Detector training (optional, runs outside the app)
+
+`ml/` holds the TACO downloader, the COCO→YOLO converter (60 categories → the 5 frozen
+classes, split by TACO batch, never randomly), the YOLO11s training notebook and `eval.py`.
+See [ml/README.md](ml/README.md) — including the open item: `class_map.csv` decides what the
+app calls *likely plastic* and needs two reviewers. With `backend/weights/best.pt` in place,
+set `DETECTOR_MODE=real`; the SPEC §6 output contract is identical either way. **No accuracy
+figure is promised anywhere** — quote the per-class numbers `eval.py` prints, and the drop on
+the local street set.
+
 ---
 
 ## Repo layout

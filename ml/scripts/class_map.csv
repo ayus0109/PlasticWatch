@@ -1,0 +1,61 @@
+taco_category,class_name,needs_review,note
+Aluminium foil,non_plastic_litter,no,metal
+Battery,non_plastic_litter,no,hazardous; not plastic
+Aluminium blister pack,non_plastic_litter,yes,foil-backed; often mixed with plastic
+Carded blister pack,plastic_packaging,yes,plastic bubble on card
+Other plastic bottle,plastic_bottle,no,
+Clear plastic bottle,plastic_bottle,no,
+Glass bottle,non_plastic_litter,no,glass
+Plastic bottle cap,plastic_bottle,no,small; often missed at 640 px
+Metal bottle cap,non_plastic_litter,no,metal
+Broken glass,non_plastic_litter,no,glass
+Food Can,non_plastic_litter,no,metal
+Aerosol,non_plastic_litter,no,metal
+Drink can,non_plastic_litter,no,metal
+Toilet tube,non_plastic_litter,no,cardboard
+Other carton,non_plastic_litter,yes,paperboard with a plastic liner
+Egg carton,non_plastic_litter,yes,paperboard or foam depending on the item
+Drink carton,non_plastic_litter,yes,paperboard with a plastic liner
+Corrugated carton,non_plastic_litter,no,cardboard
+Meal carton,non_plastic_litter,yes,paperboard with a plastic liner
+Pizza box,non_plastic_litter,no,cardboard
+Paper cup,non_plastic_litter,yes,paper with a thin plastic lining
+Disposable plastic cup,plastic_other,no,
+Foam cup,plastic_other,no,expanded polystyrene
+Glass cup,non_plastic_litter,no,glass
+Other plastic cup,plastic_other,no,
+Food waste,non_plastic_litter,no,organic
+Glass jar,non_plastic_litter,no,glass
+Plastic lid,plastic_packaging,no,
+Metal lid,non_plastic_litter,no,metal
+Other plastic,plastic_other,no,catch-all for plastic items
+Magazine paper,non_plastic_litter,no,paper
+Tissues,non_plastic_litter,no,paper
+Wrapping paper,non_plastic_litter,yes,may be plastic-coated
+Normal paper,non_plastic_litter,no,paper
+Paper bag,non_plastic_litter,no,paper
+Plastified paper bag,plastic_bag_film,yes,paper laminated with plastic film
+Plastic film,plastic_bag_film,no,
+Six pack rings,plastic_other,yes,film-like but rigid
+Garbage bag,plastic_bag_film,no,
+Other plastic wrapper,plastic_bag_film,no,
+Single-use carrier bag,plastic_bag_film,no,
+Polypropylene bag,plastic_bag_film,no,
+Crisp packet,plastic_packaging,no,metallised plastic film packet
+Spread tub,plastic_packaging,no,
+Tupperware,plastic_packaging,no,
+Disposable food container,plastic_packaging,yes,foam / plastic / coated paper
+Foam food container,plastic_packaging,no,expanded polystyrene
+Other plastic container,plastic_packaging,no,
+Plastic glooves,plastic_other,no,TACO spells it this way; keep the spelling to match
+Plastic utensils,plastic_other,no,
+Pop tab,non_plastic_litter,no,metal
+Rope & strings,non_plastic_litter,yes,natural fibre or plastic; cannot tell from a photo
+Scrap metal,non_plastic_litter,no,metal
+Shoe,non_plastic_litter,yes,mixed materials
+Squeezable tube,plastic_packaging,yes,plastic or aluminium tube
+Plastic straw,plastic_other,no,small; often missed at 640 px
+Paper straw,non_plastic_litter,no,paper
+Styrofoam piece,plastic_other,no,expanded polystyrene fragment
+Unlabeled litter,non_plastic_litter,yes,unknown material; conservative default
+Cigarette,non_plastic_litter,yes,filter contains cellulose acetate (a plastic)
