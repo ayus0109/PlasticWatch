@@ -287,16 +287,18 @@ def _load_model(weights: str):
 
 
 def _try_yolo_detection(path: Path) -> DetectorOutput | None:
-    """Run real YOLO model. Uses custom weights if present, else auto-downloads yolov8n.pt."""
-    try:
-        from ultralytics import YOLO  # noqa: F401
-    except ImportError:
-        return None
-
+    """Run YOLO only if dedicated trained weights exist on disk, avoiding PyTorch 800MB RAM overhead."""
     s = get_settings()
     custom = Path(s.DETECTOR_WEIGHTS)
-    weights_target = str(custom) if custom.is_file() else "yolov8n.pt"
+    if not custom.is_file():
+        return None
 
+    try:
+        from ultralytics import YOLO  # noqa: F401
+    except (ImportError, Exception):
+        return None
+
+    weights_target = str(custom)
     try:
         with Image.open(path) as raw:
             img = ImageOps.exif_transpose(raw).convert("RGB")

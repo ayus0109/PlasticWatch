@@ -93,7 +93,7 @@ app.add_middleware(
 @app.get("/ping", tags=["system"])
 def ping() -> dict:
     """Instantaneous keepalive endpoint that wakes or tests the service without DB overhead."""
-    return {"status": "ok", "pong": True}
+    return {"status": "ok", "pong": True, "version": "v1.0.1-cv"}
 
 
 for module in (auth, reports, hotspots, geo, tasks, before_after, analytics, admin):
