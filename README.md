@@ -54,11 +54,12 @@ make down
 
 ```bash
 make load-geo      # once per machine: sample wards, drains, water, amenities
-make reset-demo    # wipe + reseed the SIMULATED 45-day history (~20 s)
+make reset-demo    # wipe + reseed the SIMULATED 45-day history (~30 s)
 ```
 
 A fresh reset has 61 reports and 16 hotspots across 3 wards, spread over every status
-(queue, verified, scheduled, resolved, ruled out, reopened after cleanup). It is replayed
+(queue, verified, scheduled, resolved, ruled out, reopened after cleanup), 6 cleanup tasks
+and 5 before/after records — 4 confirmed by the authority, 1 still awaiting review. It is replayed
 through the real pipeline and status machine, so it obeys every rule the live system does.
 Authorities can also reset from **Dashboard → Reset demo data**. The click-by-click demo
 is in [docs/demo-script.md](docs/demo-script.md).
@@ -74,7 +75,7 @@ npm run gen:api    # regenerate src/api/schema.d.ts from frontend/openapi.json
 ```
 
 Pages: login role picker · citizen `/report`, `/my-reports` · authority `/map`, `/queue`,
-`/hotspots/:id`, `/dashboard`, `/tasks` · team `/team/tasks`.
+`/hotspots/:id`, `/dashboard`, `/tasks`, `/reviews` · team `/team/tasks`, `/team/tasks/:id`.
 
 ### Tests
 
@@ -125,6 +126,18 @@ reports is; the API returns that flag and the UI badges it.
 Nothing reaches Verified, Resolved or False-positive without a human action. Every hotspot
 status change writes a `hotspot_events` row whose `actor_id` records the human who acted, and
 `before_after.review_decision` stays NULL until an authority confirms the cleanup.
+
+### Cleanup and closure (P1)
+
+An authority routes **verified** hotspots into a cleanup task (OpenRouteService when
+`ORS_API_KEY` is set, otherwise a greedy nearest-first order drawn as a dashed straight line).
+The team checks in within `ARRIVE_RADIUS_M` of a stop, then uploads two after-photos. The
+backend runs the quality gate, the detector and an ORB viewpoint match against the hotspot's
+latest before photo, and suggests a verdict — `likely_cleaned`, `partial`, `not_cleaned`, or
+`inconclusive` when a check fails. **The verdict never closes anything:** an authority compares
+the photos on `/reviews` and confirms (→ resolved) or rejects (→ back to the team). Confirming
+against the suggested verdict requires a written note. A resolved hotspot stays on the map and
+reopens, with recurrence raised, if waste is reported there again.
 
 ### Configuration
 

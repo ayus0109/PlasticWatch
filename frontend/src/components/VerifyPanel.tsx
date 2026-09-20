@@ -79,7 +79,7 @@ export function VerifyPanel({
           No verification decision applies while this hotspot is{" "}
           <strong className="text-ink">{STATUS[status].label.toLowerCase()}</strong>.{" "}
           {status === "resolved" || status === "cleanup_completed"
-            ? "Resolution happens only by confirming before/after photos."
+            ? "Resolution happens only by confirming the before/after photos below."
             : status === "false_positive"
               ? "It was ruled out and will not merge new reports."
               : "Next steps happen through cleanup tasks."}

@@ -29,6 +29,7 @@ from app.schemas import (
     PriorityBand,
     ScoreBreakdown,
 )
+from app.services.before_after import latest_for_hotspot
 from app.services.hotspot_state import score_as_of
 from app.services.report_views import hotspot_reports
 from app.services.scoring import evidence_band
@@ -204,5 +205,6 @@ def hotspot_detail(conn: Connection, hotspot_id: int) -> HotspotDetail | None:
         score_breakdown=ScoreBreakdown.model_validate(row.score_breakdown),
         reports=hotspot_reports(conn, hotspot_id),
         events=hotspot_events(conn, hotspot_id),
+        before_after=latest_for_hotspot(conn, hotspot_id),
         is_simulated=row.is_simulated,
     )

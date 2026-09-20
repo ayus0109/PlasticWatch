@@ -3,7 +3,7 @@
   "entries": [
     {
       "file": "demo_01_bottles_by_drain.jpg",
-      "phash": "bd99dba95911905a",
+      "phash": "ad99dba49b11a45a",
       "purpose": "heavy pile -> high severity",
       "simulated": true,
       "detections": [
@@ -123,7 +123,7 @@
     },
     {
       "file": "demo_02_bags_on_kerb.jpg",
-      "phash": "a5527ebd734301b4",
+      "phash": "a94b7ebdb642013c",
       "purpose": "second nearby report -> merge",
       "simulated": true,
       "detections": [
@@ -219,7 +219,7 @@
     },
     {
       "file": "demo_03_market_lane.jpg",
-      "phash": "e1e3a71e3c8c790c",
+      "phash": "c3c3a71e3cc878ac",
       "purpose": "moderate pile",
       "simulated": true,
       "detections": [
@@ -307,7 +307,7 @@
     },
     {
       "file": "demo_04_packets_and_cups.jpg",
-      "phash": "d6916934784b96ce",
+      "phash": "96b16934714b9ec6",
       "purpose": "another heavy pile",
       "simulated": true,
       "detections": [
@@ -403,47 +403,30 @@
     },
     {
       "file": "demo_05_after_cleanup_wide.jpg",
-      "phash": "ffffffff00000000",
-      "purpose": "after-photo: mostly clean",
+      "phash": "bcc78e1cc338c339",
+      "purpose": "after-photo (wide) of H02",
       "simulated": true,
       "detections": [
         {
-          "class_name": "plastic_packaging",
-          "confidence": 0.92,
-          "x1": 0,
-          "y1": 17.6,
-          "x2": 129.5,
-          "y2": 153.7
-        },
-        {
           "class_name": "non_plastic_litter",
-          "confidence": 0.777,
-          "x1": 431.4,
-          "y1": 60.8,
-          "x2": 498.1,
-          "y2": 159.5
+          "confidence": 0.646,
+          "x1": 352.0,
+          "y1": 74.1,
+          "x2": 450.4,
+          "y2": 130.7
         }
       ]
     },
     {
       "file": "demo_06_after_cleanup_close.jpg",
-      "phash": "b9b1ce4e4e3131b1",
-      "purpose": "after-photo: close-up, clean",
+      "phash": "8ff107f107f007f0",
+      "purpose": "after-photo (close) of H02",
       "simulated": true,
-      "detections": [
-        {
-          "class_name": "non_plastic_litter",
-          "confidence": 0.763,
-          "x1": 368.2,
-          "y1": 235.3,
-          "x2": 442.0,
-          "y2": 282.6
-        }
-      ]
+      "detections": []
     },
     {
       "file": "demo_07_clean_street.jpg",
-      "phash": "ff80ff00007f00ff",
+      "phash": "ed806f68126d80ff",
       "purpose": "no likely plastic -> rejected",
       "simulated": true,
       "detections": [

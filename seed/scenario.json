@@ -1,5 +1,5 @@
 {
-  "_note": "SIMULATED 45-day demo history (SPEC §19). Every geotag, photo and detection here is fabricated and flagged is_simulated. Days count from 45 days ago (day 45 = the moment of seeding). 'by': A / B = the demo citizen accounts, numbers = extra seeded citizens. Actions are taken by the demo authority (verify / reject / false_positive / schedule / resolve) or the demo cleanup team (complete). Placeholder area — SPEC §20.1 (demo city) is still open.",
+  "_note": "SIMULATED 45-day demo history (SPEC §19). Every geotag, photo and detection here is fabricated and flagged is_simulated. Days count from 45 days ago (day 45 = the moment of seeding). 'by': A / B = the demo citizen accounts, numbers = extra seeded citizens. Actions are taken by the demo authority (verify / reject / false_positive / schedule / resolve) or the demo cleanup team (complete; 'left' = likely-plastic items still in the after-photos, default 0). Resolve goes through the authority's before/after review. Placeholder area — SPEC §20.1 (demo city) is still open.",
   "days": 45,
   "depot": [73.8560, 18.5200],
   "seed_citizens": 8,
@@ -92,7 +92,7 @@
       "actions": [
         {"day": 23, "do": "verify"},
         {"day": 24, "do": "schedule"},
-        {"day": 26, "do": "complete"}
+        {"day": 26, "do": "complete", "left": 3}
       ]
     },
     {

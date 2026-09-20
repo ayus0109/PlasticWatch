@@ -8,7 +8,10 @@ a real model's output. No people, vehicles or licence plates are ever drawn
 (CLAUDE.md §2.4).
 
 make_scene(seed, n_plastic, n_other) -> (PIL.Image, [detection dicts])
-Deterministic for a given seed.
+Deterministic for a given seed. The street itself (paving joints, kerb, drain grate)
+depends only on the seed, so make_scene(seed, 0, 0) is the SAME spot after a
+cleanup — which is what the before/after viewpoint check (SPEC §14) needs.
+retake() / close_up() re-photograph a scene and carry its boxes along.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ import math
 import random
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 W, H = 1024, 768
 
@@ -27,12 +30,70 @@ PLASTIC = ["plastic_bottle", "plastic_bag_film", "plastic_packaging", "plastic_o
 SCALE = 1.35
 
 
-def _ground(rng: random.Random) -> Image.Image:
-    """Soil / asphalt texture. Seeded numpy noise: fast and deterministic."""
+def _paving(img: Image.Image, street: random.Random) -> None:
+    """Irregular paving stones + cracks: the fixed texture a real street has, so an
+    after-photo can be matched to the before photo once the litter is gone."""
+    cols, rows = street.randint(6, 9), street.randint(4, 6)
+    cw, ch = W / cols, H / rows
+
+    def corner(i: int, j: int) -> tuple[float, float]:
+        jx = street.uniform(-0.28, 0.28) * cw if 0 < i < cols else 0.0
+        jy = street.uniform(-0.28, 0.28) * ch if 0 < j < rows else 0.0
+        return i * cw + jx, j * ch + jy
+
+    v = [[corner(i, j) for j in range(rows + 1)] for i in range(cols + 1)]
+    shades = Image.new("L", img.size, 128)
+    sd = ImageDraw.Draw(shades)
+    for i in range(cols):
+        for j in range(rows):
+            quad = [v[i][j], v[i + 1][j], v[i + 1][j + 1], v[i][j + 1]]
+            sd.polygon(quad, fill=128 + street.randint(-14, 14))
+    img.paste(Image.blend(img, shades.convert("RGB"), 0.18))
+
+    d = ImageDraw.Draw(img)
+    joint = (58, 55, 50)
+    for i in range(cols + 1):
+        for j in range(rows + 1):
+            if i < cols:
+                d.line([v[i][j], v[i + 1][j]], fill=joint, width=4)
+            if j < rows:
+                d.line([v[i][j], v[i][j + 1]], fill=joint, width=4)
+    for _ in range(street.randint(2, 4)):  # cracks
+        x, y, a = (
+            street.uniform(0, W),
+            street.uniform(0, H),
+            street.uniform(0, 2 * math.pi),
+        )
+        pts = [(x, y)]
+        for _ in range(street.randint(6, 12)):
+            a += street.uniform(-0.7, 0.7)
+            x += math.cos(a) * street.uniform(12, 30)
+            y += math.sin(a) * street.uniform(12, 30)
+            pts.append((x, y))
+        d.line(pts, fill=(48, 46, 42), width=2)
+
+
+def _grate(img: Image.Image, street: random.Random) -> None:
+    """A storm-drain grate: a strong, fixed landmark."""
+    d = ImageDraw.Draw(img)
+    gx, gy = street.uniform(80, W - 260), street.uniform(60, H - 160)
+    d.rectangle([gx, gy, gx + 180, gy + 90], fill=(52, 52, 54), outline=(30, 30, 30), width=4)
+    for k in range(1, 9):
+        d.line([gx + k * 20, gy + 10, gx + k * 20, gy + 80], fill=(22, 22, 24), width=6)
+
+
+def _ground(rng: random.Random, seed: int) -> Image.Image:
+    """Soil / asphalt texture. Seeded numpy noise: fast and deterministic.
+
+    The street furniture draws from its own generator, so adding it never changed
+    where the litter lands for a given seed."""
+    street = random.Random(seed ^ 0x5EED)
     base = rng.choice([(96, 92, 84), (112, 104, 90), (84, 88, 86), (120, 110, 94)])
     noise = np.random.default_rng(rng.getrandbits(32)).normal(0, 16, (H, W, 1))
     arr = np.clip(np.array(base, dtype=np.float32)[None, None, :] + noise, 0, 255).astype(np.uint8)
     img = Image.fromarray(arr, "RGB")
+    _paving(img, street)
+    _grate(img, street)
     d = ImageDraw.Draw(img)
     if rng.random() < 0.6:  # a kerb / drain edge across the frame
         y = rng.randint(90, 200)
@@ -42,7 +103,9 @@ def _ground(rng: random.Random) -> Image.Image:
         for _ in range(140):
             x, y = rng.randrange(W), rng.randrange(H)
             d.line(
-                [x, y, x + rng.randint(-6, 6), y - rng.randint(8, 22)], fill=(70, 110, 52), width=2
+                [x, y, x + rng.randint(-6, 6), y - rng.randint(8, 22)],
+                fill=(70, 110, 52),
+                width=2,
             )
     return img.filter(ImageFilter.GaussianBlur(0.8))
 
@@ -90,7 +153,12 @@ def _bottle(d, rng, cx, cy):
     )
     d.polygon(cap, fill=rng.choice([(30, 90, 200), (220, 40, 40), (240, 240, 240)]))
     band = _rot(
-        [(cx - L / 5, cy - R), (cx + L / 6, cy - R), (cx + L / 6, cy + R), (cx - L / 5, cy + R)],
+        [
+            (cx - L / 5, cy - R),
+            (cx + L / 6, cy - R),
+            (cx + L / 6, cy + R),
+            (cx - L / 5, cy + R),
+        ],
         cx,
         cy,
         ang,
@@ -139,7 +207,12 @@ def _packet(d, rng, cx, cy):
         outline=(50, 50, 50),
     )
     stripe = _rot(
-        [(cx - w / 2, cy - 6), (cx + w / 2, cy - 6), (cx + w / 2, cy + 6), (cx - w / 2, cy + 6)],
+        [
+            (cx - w / 2, cy - 6),
+            (cx + w / 2, cy - 6),
+            (cx + w / 2, cy + 6),
+            (cx - w / 2, cy + 6),
+        ],
         cx,
         cy,
         ang,
@@ -165,13 +238,20 @@ def _can(d, rng, cx, cy):
     L, R = rng.randint(50, 70) * SCALE, rng.randint(14, 18) * SCALE
     ang = rng.uniform(0, math.pi)
     body = _rot(
-        [(cx - L / 2, cy - R), (cx + L / 2, cy - R), (cx + L / 2, cy + R), (cx - L / 2, cy + R)],
+        [
+            (cx - L / 2, cy - R),
+            (cx + L / 2, cy - R),
+            (cx + L / 2, cy + R),
+            (cx - L / 2, cy + R),
+        ],
         cx,
         cy,
         ang,
     )
     d.polygon(
-        body, fill=rng.choice([(170, 175, 180), (200, 40, 40), (40, 90, 170)]), outline=(40, 40, 40)
+        body,
+        fill=rng.choice([(170, 175, 180), (200, 40, 40), (40, 90, 170)]),
+        outline=(40, 40, 40),
     )
     return _box(body)
 
@@ -200,7 +280,7 @@ DRAW = {
 
 def make_scene(seed: int, n_plastic: int, n_other: int = 2) -> tuple[Image.Image, list[dict]]:
     rng = random.Random(seed)
-    img = _ground(rng)
+    img = _ground(rng, seed)
     d = ImageDraw.Draw(img)
     dets: list[dict] = []
     cells = [(c, r) for c in range(6) for r in range(4)]
@@ -226,3 +306,58 @@ def make_scene(seed: int, n_plastic: int, n_other: int = 2) -> tuple[Image.Image
         )
     img = img.filter(ImageFilter.GaussianBlur(0.4))
     return img, dets
+
+
+# ---------------------------------------------------------------------------
+# Re-photographing a scene (after-photos). Boxes are mapped with the pixels.
+# ---------------------------------------------------------------------------
+
+
+def _map_boxes(dets: list[dict], fx, min_visible: float = 0.4) -> list[dict]:
+    """Map each box's corners through fx, clip to the frame, drop mostly-cut boxes."""
+    out = []
+    for det in dets:
+        x1, y1 = fx(det["x1"], det["y1"])
+        x2, y2 = fx(det["x2"], det["y2"])
+        cx1, cy1, cx2, cy2 = max(0, x1), max(0, y1), min(W, x2), min(H, y2)
+        full = max(1e-9, (x2 - x1) * (y2 - y1))
+        if cx2 <= cx1 or cy2 <= cy1 or (cx2 - cx1) * (cy2 - cy1) / full < min_visible:
+            continue
+        box = [round(v, 1) for v in (cx1, cy1, cx2, cy2)]
+        out.append({**det, "x1": box[0], "y1": box[1], "x2": box[2], "y2": box[3]})
+    return out
+
+
+def retake(img: Image.Image, dets: list[dict], seed: int) -> tuple[Image.Image, list[dict]]:
+    """The same spot photographed again: a small shift, zoom and exposure change."""
+    rng = random.Random(seed ^ 0xAF7E)
+    dx, dy = rng.uniform(-14, 14), rng.uniform(-10, 10)
+    zoom = rng.uniform(1.0, 1.06)
+    cx, cy = W / 2, H / 2
+    # Output (x', y') samples input ((x' - cx - dx) / zoom + cx, ...).
+    data = (1 / zoom, 0, cx - (cx + dx) / zoom, 0, 1 / zoom, cy - (cy + dy) / zoom)
+    out = img.transform((W, H), Image.AFFINE, data, Image.BICUBIC, fillcolor=(96, 92, 84))
+    out = ImageEnhance.Brightness(out).enhance(rng.uniform(0.94, 1.08))
+    return out, _map_boxes(
+        dets, lambda x, y: ((x - cx) * zoom + cx + dx, (y - cy) * zoom + cy + dy)
+    )
+
+
+def close_up(img: Image.Image, dets: list[dict], seed: int, frac: float = 0.62):
+    """A closer photo of the middle of the spot (the second after-photo, SPEC §14).
+
+    A real close-up is shot at full resolution, not upscaled: fresh sensor grain keeps
+    it as sharp as a real photo, so it is judged by the quality gate like one."""
+    rng = random.Random(seed ^ 0xC105)
+    cw, ch = W * frac, H * frac
+    x0 = (W - cw) / 2 + rng.uniform(-60, 60)
+    y0 = (H - ch) / 2 + rng.uniform(-40, 40)
+    out = img.crop((round(x0), round(y0), round(x0 + cw), round(y0 + ch))).resize(
+        (W, H), Image.BICUBIC
+    )
+    grain = np.random.default_rng(rng.getrandbits(32)).normal(0, 9, (H, W, 1))
+    out = Image.fromarray(
+        np.clip(np.asarray(out, dtype=np.float32) + grain, 0, 255).astype(np.uint8)
+    )
+    sx, sy = W / cw, H / ch
+    return out, _map_boxes(dets, lambda x, y: ((x - x0) * sx, (y - y0) * sy))

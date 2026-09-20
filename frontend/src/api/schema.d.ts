@@ -230,12 +230,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tasks */
+        /**
+         * List Tasks
+         * @description All tasks for an authority; only its own for a team.
+         */
         get: operations["list_tasks_tasks_get"];
         put?: never;
         /**
          * Create Task
-         * @description Optimised route over VERIFIED hotspots only. Non-verified ids will be a 409.
+         * @description Optimised route over VERIFIED hotspots. Each hotspot becomes cleanup_scheduled.
          */
         post: operations["create_task_tasks_post"];
         delete?: never;
@@ -272,7 +275,7 @@ export interface paths {
         put?: never;
         /**
          * Arrive At Stop
-         * @description Mark arrival. The real check requires the team within 50 m of the stop.
+         * @description Mark arrival — recorded only within ARRIVE_RADIUS_M (50 m) of the hotspot.
          */
         post: operations["arrive_at_stop_tasks__task_id__stops__stop_id__arrive_post"];
         delete?: never;
@@ -292,9 +295,46 @@ export interface paths {
         put?: never;
         /**
          * Upload After Photos
-         * @description Two after-photos -> before/after record + verdict. Never resolves anything.
+         * @description Two after-photos -> before/after record + SUGGESTED verdict (SPEC §14).
+         *
+         *     Moves the hotspot to cleanup_completed (the team's claim). Never resolves anything:
+         *     an authority reviews the photos side by side. Retakes are allowed until reviewed.
          */
         post: operations["upload_after_photos_tasks__task_id__stops__stop_id__after_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/before-after": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Before After */
+        get: operations["list_before_after_before_after_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/before-after/{ba_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Before After */
+        get: operations["get_before_after_before_after__ba_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -330,7 +370,7 @@ export interface paths {
         };
         /**
          * Summary
-         * @description The 6 KPI cards plus band and status breakdowns.
+         * @description The 6 KPI cards plus band (open hotspots) and status breakdowns.
          */
         get: operations["summary_analytics_summary_get"];
         put?: never;
@@ -348,7 +388,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Trend */
+        /**
+         * Trend
+         * @description Reports, hotspots opened and hotspots resolved per UTC day.
+         */
         get: operations["trend_analytics_trend_get"];
         put?: never;
         post?: never;
@@ -386,7 +429,7 @@ export interface paths {
         put?: never;
         /**
          * Reset Demo
-         * @description Wipe and reseed the simulated demo state.
+         * @description Wipe and reseed the simulated 45-day demo history (takes ~20 s).
          */
         post: operations["reset_demo_admin_reset_demo_post"];
         delete?: never;
@@ -511,17 +554,31 @@ export interface components {
             id: number;
             /** Task Stop Id */
             task_stop_id?: number | null;
+            /** Task Id */
+            task_id?: number | null;
             /** Hotspot Id */
             hotspot_id?: number | null;
+            hotspot_status?: components["schemas"]["HotspotStatus"] | null;
             /** Before Report Id */
             before_report_id?: string | null;
             /** Before Image Path */
             before_image_path?: string | null;
             /**
+             * Before Annotated Path
+             * @description Detector-annotated before photo (boxes), if written.
+             */
+            before_annotated_path?: string | null;
+            /**
              * After Image Paths
              * @default []
              */
             after_image_paths: string[];
+            /**
+             * After Annotated Paths
+             * @description Detector-annotated after-photos, in after_image_paths order.
+             * @default []
+             */
+            after_annotated_paths: (string | null)[];
             /** Before Count */
             before_count?: number | null;
             /** Before Area */
@@ -617,6 +674,13 @@ export interface components {
              * @description Close-up after-photo.
              */
             close: string;
+            /**
+             * Lat
+             * @description Team GPS at upload; else EXIF, else check-in.
+             */
+            lat?: number | null;
+            /** Lon */
+            lon?: number | null;
         };
         /**
          * ConfidenceTier
@@ -861,6 +925,8 @@ export interface components {
             reports: components["schemas"]["ReportSummary"][];
             /** Events */
             events: components["schemas"]["HotspotEvent"][];
+            /** @description Latest before/after record for this hotspot (SPEC §14), if any. */
+            before_after?: components["schemas"]["BeforeAfterRecord"] | null;
             /**
              * Is Simulated
              * @default false
@@ -1385,6 +1451,11 @@ export interface components {
             arrived_at?: string | null;
             /** Completed At */
             completed_at?: string | null;
+            /** Before After Id */
+            before_after_id?: number | null;
+            /** @description Suggested verdict — never a resolution. */
+            verdict?: components["schemas"]["Verdict"] | null;
+            review_decision?: components["schemas"]["ReviewDecision"] | null;
         };
         /** TaskSummary */
         TaskSummary: {
@@ -2044,6 +2115,69 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeforeAfterRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_before_after_before_after_get: {
+        parameters: {
+            query?: {
+                /** @description Only records awaiting an authority's review. */
+                pending?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeforeAfterRecord"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_before_after_before_after__ba_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ba_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

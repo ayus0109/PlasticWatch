@@ -96,6 +96,29 @@ def test_human_gate_holds_in_seeded_history(seeded, db_engine):
     assert completed and all(r == "team" for (r,) in completed)
 
 
+def test_seeded_cleanups_went_through_before_after(seeded, db_engine):
+    """SPEC §14: every seeded cleanup has a before/after record; every resolution is an
+    authority's confirm of one; the retakes pass quality + viewpoint checks."""
+    rows = q(
+        db_engine,
+        "SELECT b.verdict, b.review_decision, u.role, h.status FROM before_after b"
+        " JOIN task_stops s ON s.id = b.task_stop_id JOIN hotspots h ON h.id = s.hotspot_id"
+        " LEFT JOIN users u ON u.id = b.reviewed_by ORDER BY b.id",
+    )
+    assert len(rows) == 5, rows  # H01 H03 H04 H13 confirmed, H06 awaiting review
+    confirmed = [r for r in rows if r[1] == "confirm_resolved"]
+    assert len(confirmed) == 4 and all(r[0] == "likely_cleaned" and r[2] == "authority"
+                                       for r in confirmed), rows
+    pending = [r for r in rows if r[1] is None]
+    assert pending == [("partial", None, None, "cleanup_completed")], "H06: 3 items left"
+    resolved_events = q(
+        db_engine,
+        "SELECT count(*) FROM hotspot_events WHERE to_status = 'resolved'"
+        " AND from_status = 'cleanup_completed'",
+    )
+    assert resolved_events[0][0] == len(confirmed)
+
+
 def test_reopen_arcs_raise_recurrence(seeded, db_engine):
     rows = q(db_engine, "SELECT count(*) FROM hotspots WHERE recurrence_returns >= 1")
     assert rows[0][0] == 2

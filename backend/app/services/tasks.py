@@ -79,8 +79,10 @@ def task_detail(conn: Connection, task_id: int, user: DemoUser) -> TaskDetail | 
         text(
             """
             SELECT s.id, s.seq, s.hotspot_id, ST_Y(h.geom) AS lat, ST_X(h.geom) AS lon,
-                   h.priority_band, s.arrived_at, s.completed_at
+                   h.priority_band, s.arrived_at, s.completed_at,
+                   b.id AS before_after_id, b.verdict, b.review_decision
             FROM task_stops s JOIN hotspots h ON h.id = s.hotspot_id
+            LEFT JOIN before_after b ON b.task_stop_id = s.id
             WHERE s.task_id = :id ORDER BY s.seq
             """
         ),

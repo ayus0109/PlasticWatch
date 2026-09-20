@@ -56,7 +56,14 @@ export function RouteMap({ task, height = "h-80" }: { task: TaskDetail; height?:
         | { type: string; geometry?: { coordinates: number[][] }; coordinates?: number[][] }
         | null
         | undefined;
-      const coords = geo?.geometry?.coordinates ?? geo?.coordinates ?? [];
+      let coords = geo?.geometry?.coordinates ?? geo?.coordinates ?? [];
+      const straight = task.route_source !== "ors";
+      const [a, z] = [coords[0], coords[coords.length - 1]];
+      if (straight && coords.length > 2 && a[0] === z[0] && a[1] === z[1]) {
+        // Skip the straight return leg: drawn over the outbound leg, its dashes fill
+        // the gaps and the "fallback" line would look solid. Distance still includes it.
+        coords = coords.slice(0, -1);
+      }
       if (coords.length) {
         const line = coords.map(([x, y]) => [y, x] as [number, number]);
         L.polyline(line, {

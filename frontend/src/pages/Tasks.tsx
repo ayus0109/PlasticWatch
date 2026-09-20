@@ -3,6 +3,7 @@
  * added (the API returns 409 otherwise); creating a task schedules each one.
  */
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
   api,
   type DemoUser,
@@ -12,6 +13,7 @@ import {
   type WardFeatureCollection,
 } from "../api/client";
 import { useApi } from "../api/hooks";
+import { VerdictChip } from "../components/BeforeAfter";
 import { Icon } from "../components/Icon";
 import { RouteMap } from "../components/map/RouteMap";
 import { Shell } from "../components/Shell";
@@ -206,9 +208,20 @@ export default function Tasks() {
                           {detail.data.stops.map((s) => (
                             <li key={s.id} className="flex items-center gap-2">
                               <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-xs font-bold">{s.seq}</span>
-                              Hotspot #{s.hotspot_id}
-                              <span className="ml-auto text-xs text-muted">
-                                {s.completed_at ? "cleaned" : s.arrived_at ? "team on site" : "to do"}
+                              <Link to={`/hotspots/${s.hotspot_id}`} className="font-semibold hover:text-accent">
+                                Hotspot #{s.hotspot_id}
+                              </Link>
+                              <span className="ml-auto flex items-center gap-2 text-xs text-muted">
+                                {s.completed_at && s.verdict ? <VerdictChip verdict={s.verdict} /> : null}
+                                {s.completed_at
+                                  ? s.review_decision === "confirm_resolved"
+                                    ? "confirmed"
+                                    : "awaiting review"
+                                  : s.arrived_at
+                                    ? "team on site"
+                                    : s.review_decision === "reject"
+                                      ? "sent back"
+                                      : "to do"}
                               </span>
                             </li>
                           ))}

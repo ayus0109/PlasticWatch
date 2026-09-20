@@ -1,12 +1,14 @@
 /**
  * /team/tasks/:id — route map + stop list. At each stop the team checks in (browser
- * GPS, or a pin); the API records arrival only within ARRIVE_RADIUS_M of the hotspot. After-photos
- * (Stage P1-B) follow arrival.
+ * GPS, or a pin); the API records arrival only within ARRIVE_RADIUS_M of the hotspot.
+ * Then two after-photos; the verdict is a suggestion an authority reviews.
  */
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { api, type ArriveResponse, type TaskDetail, type TaskStop } from "../api/client";
 import { useApi } from "../api/hooks";
+import { AfterPhotos } from "../components/AfterPhotos";
+import { VerdictChip } from "../components/BeforeAfter";
 import { Icon } from "../components/Icon";
 import { RouteMap } from "../components/map/RouteMap";
 import { PinPicker, type LatLon } from "../components/PinPicker";
@@ -32,6 +34,7 @@ function StopCard({
   const [pinMode, setPinMode] = useState(false);
   const [pin, setPin] = useState<LatLon | null>(null);
   const [lastMiss, setLastMiss] = useState<number | null>(null);
+  const [retaking, setRetaking] = useState(false);
 
   const checkIn = async (at: LatLon) => {
     setBusy(true);
@@ -75,12 +78,24 @@ function StopCard({
         <div className="min-w-0 flex-1">
           <div className="font-semibold">Hotspot #{stop.hotspot_id}</div>
           <div className="text-xs text-muted">
-            {state === "done" ? "Cleaned — waiting for the authority's review" : state === "here" ? "You're on site" : "Not visited yet"}
+            {state === "done"
+              ? stop.review_decision === "confirm_resolved"
+                ? "Confirmed resolved by an authority"
+                : "Cleaned — waiting for the authority's review"
+              : state === "here"
+                ? "You're on site"
+                : "Not visited yet"}
           </div>
         </div>
         <BandChip band={stop.priority_band} />
       </div>
 
+      {state === "todo" && stop.review_decision === "reject" ? (
+        <p className="mt-3 flex items-start gap-2 rounded-lg bg-danger-soft p-2.5 text-sm text-danger">
+          <Icon name="refresh" size={16} className="mt-0.5 shrink-0" />
+          The authority asked for this spot to be cleaned again. Check in when you're back.
+        </p>
+      ) : null}
       {state === "todo" ? (
         <div className="mt-3 space-y-2">
           {pinMode ? (
@@ -108,10 +123,29 @@ function StopCard({
           ) : null}
         </div>
       ) : null}
-      {state === "here" ? (
-        <p className="mt-3 flex items-center gap-2 rounded-lg bg-surface-2 p-2.5 text-sm text-muted">
-          <Icon name="camera" size={16} /> After-photo upload opens here once cleanup is done.
-        </p>
+      {state === "here" ? <AfterPhotos taskId={taskId} stopId={stop.id} onDone={onChanged} /> : null}
+      {state === "done" && stop.verdict ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-2 p-2.5">
+          <span className="flex items-center gap-2 text-sm">
+            Suggested verdict <VerdictChip verdict={stop.verdict} />
+          </span>
+          {stop.review_decision == null && !retaking ? (
+            <Button variant="ghost" icon="camera" onClick={() => setRetaking(true)}>
+              Retake photos
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {state === "done" && retaking && stop.review_decision == null ? (
+        <AfterPhotos
+          taskId={taskId}
+          stopId={stop.id}
+          retake
+          onDone={() => {
+            setRetaking(false);
+            onChanged();
+          }}
+        />
       ) : null}
     </Card>
   );

@@ -43,6 +43,8 @@ export type TaskStop = S["TaskStop"];
 export type ArriveResponse = S["ArriveResponse"];
 export type BeforeAfterRecord = S["BeforeAfterRecord"];
 export type ReviewResponse = S["ReviewResponse"];
+export type ReviewDecision = S["ReviewDecision"];
+export type Verdict = S["Verdict"];
 export type ResetDemoResponse = S["ResetDemoResponse"];
 
 /** Browser -> Vite proxy -> FastAPI (see vite.config.ts). Override for a hosted API. */

@@ -14,7 +14,7 @@ different, reset again.
 
 1. Start the stack: `make up` (Windows without make: `docker compose up -d --build`).
 2. First time on this machine only: `make load-geo` (sample wards, drains, water).
-3. Reset the demo: `make reset-demo` — or **Dashboard → Reset demo data** (~20 s).
+3. Reset the demo: `make reset-demo` — or **Dashboard → Reset demo data** (~30 s).
    Expect: `61 reports, 16 hotspots, 12 users, 6 cleanup tasks`.
 4. Frontend: `cd frontend && npm run build && npm run preview` → <http://localhost:4173>
    (or `npm run dev` → <http://localhost:5173>).
@@ -23,7 +23,8 @@ different, reset again.
    - Window 1 (citizen): sign in as **Citizen — Demo Citizen A**.
    - Window 2 (authority): sign in as **Authority — Demo Ward Authority**, open **Map**.
 7. Have `seed/demo_images/` open in a file picker. The photos you'll use:
-   `demo_01_bottles_by_drain.jpg` and `demo_02_bags_on_kerb.jpg`.
+   `demo_01_bottles_by_drain.jpg` and `demo_02_bags_on_kerb.jpg` (plus `demo_05_…` and
+   `demo_06_…` if you run the extended cleanup segment).
 8. Location: on a laptop, browser GPS will put you in the wrong city. On the Report page
    use **Drop a pin instead** and tap just north of the blue drain line in Ward A, about
    halfway along it. (Phones need HTTPS for GPS — use the laptop.)
@@ -78,6 +79,28 @@ by impact, grades the evidence separately, and lets **people, not the model**, d
    priority, wards. *"Every number is computed from the database — nothing hard-coded."*
 2. The median time to resolve comes from real (simulated) resolve events.
 
+### Extended (+2 min, P1) — Cleanup and closure · both windows
+Run this between *Outcomes* and *The honest slide* when you have the time.
+1. **Window 2 → Tasks.** Task **#6** (planned) routes the team to hotspot **#5**. The line is
+   **dashed**: *"no OpenRouteService key here, so it's a straight-line nearest-first order —
+   and it says so."* Only **verified** hotspots can be scheduled; anything else is refused.
+2. **Window 1 → role switcher → Cleanup team → My tasks → Task #6.** At stop 1:
+   **Use a pin** → tap the middle of the map (it opens on the stop) → **Check in at this pin**.
+   *"Arrival only counts within 50 m of the hotspot."*
+3. Two after-photos: **Wide shot** = `demo_05_after_cleanup_wide.jpg`, **Close-up** =
+   `demo_06_after_cleanup_close.jpg` → **Send after-photos**. Suggested verdict: **Likely
+   cleaned** — *"a suggestion; nothing is closed yet."*
+4. **Window 2 → Reviews.** Two cleanups wait:
+   - **#5** (just uploaded): before and after side by side. Point at **Same place** — *"street
+     features match the before photo, so it's the same spot"* — and **−100%** likely-plastic
+     area. **Confirm resolved.** The toast: it stays on the map and reopens if waste is
+     reported again.
+   - **#8** (seeded, **Partial**, 3 items left): **Confirm** is disabled until you write a
+     note — *"to overrule the verdict you have to say why."* **Reject — send the team back.**
+5. Open hotspot **#5**: the ledger ends with *"Confirmed resolved from before/after …"*
+   under your name. Key line: *"No detections isn't proof a place is clean — that's why a
+   person looks at both photos."*
+
 ### 4:30 — The honest slide (30 s)
 - Detection runs on a stub in this demo; the real YOLO11s model and its measured
   precision/recall per class are in `ml/reports/` — **we do not promise an accuracy figure**.
@@ -101,9 +124,13 @@ by impact, grades the evidence separately, and lets **people, not the model**, d
 | Upload hangs | The detector cache answers the demo photos instantly; check `docker compose logs api`. |
 | Routing / OpenRouteService unavailable | Routes fall back to the built-in greedy route automatically. |
 | A 403 / "Only an authority can…" toast | You're signed in as the wrong role — use the role switcher (top right). |
+| Check-in refused ("You're … m from the hotspot") | Tap closer to the numbered stop marker; arrival needs ≤ 50 m. |
+| After-photo verdict **Inconclusive — Same place** fails | `demo_05`/`demo_06` show hotspot **#5**'s street only; upload them at task #6's stop. |
+| Uploaded the wrong photos | Before the authority reviews, the team can **Retake photos** on the stop card. |
 
 ## Reference: a fresh reset contains
 
 16 hotspots over 45 days in 3 wards · 61 reports (all simulated) · 5 in the verification queue ·
 2 resolved · 2 ruled out · 2 hotspots that came back after cleanup (recurrence) · 1 duplicate
-photo · 3 reports rejected as "no likely plastic" · 6 cleanup tasks with cached routes.
+photo · 3 reports rejected as "no likely plastic" · 6 cleanup tasks with cached routes ·
+5 before/after records: 4 confirmed by the authority, 1 (**#8**, partial) awaiting review.

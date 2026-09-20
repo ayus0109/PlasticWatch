@@ -12,6 +12,9 @@ pillow==11.*
 
 # Detection only — never people, vehicles or licence plates (CLAUDE.md §2.4)
 ultralytics==8.3.*
+# ORB viewpoint match for before/after (SPEC §14). Already installed by ultralytics;
+# listed because app/services/viewpoint.py imports cv2 directly (see SPEC §4).
+opencv-python>=4.6,<5
 
 # Tooling
 ruff==0.16.*

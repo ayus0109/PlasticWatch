@@ -128,6 +128,20 @@ class Settings(BaseSettings):
     GEO_RECOMPUTE_MOVE_M: float = 10.0
     MAX_UPLOAD_MB: float = 15.0
 
+    # --- Before/after closure (SPEC §14) — tunable proposals ------------------
+    # Verdict bands on reduction_ratio (worse after-photo). A verdict is only ever a
+    # suggestion: an authority confirms or rejects (CLAUDE.md §2.5).
+    VERDICT_CLEANED_MIN_REDUCTION: float = 0.8
+    VERDICT_CLEANED_MAX_DETECTIONS: int = 1
+    VERDICT_PARTIAL_MIN_REDUCTION: float = 0.4
+    # ORB viewpoint match vs the before photo. Score = RANSAC inliers / keypoints of
+    # the smaller set; BOTH floors must pass. Same-spot retakes of the demo scenes
+    # score >= 0.10 with >= 55 inliers, other places <= 0.02 with <= 11 inliers.
+    VIEWPOINT_MIN_MATCH: float = 0.05
+    VIEWPOINT_MIN_INLIERS: int = 25
+    VIEWPOINT_ORB_FEATURES: int = 1500
+    VIEWPOINT_MAX_SIDE: int = 800
+
     # --- Demo seed (SPEC F11) -------------------------------------------------
     # Where seed_demo.py + scenario.json live (mounted at /seed in docker).
     SEED_DIR: str = "../seed"

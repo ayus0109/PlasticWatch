@@ -444,6 +444,9 @@ class HotspotDetail(BaseModel):
     score_breakdown: ScoreBreakdown
     reports: list[ReportSummary]
     events: list[HotspotEvent]
+    before_after: BeforeAfterRecord | None = Field(
+        None, description="Latest before/after record for this hotspot (SPEC §14), if any."
+    )
     is_simulated: bool = False
     non_attribution_note: str = Field(
         NON_ATTRIBUTION_NOTE, description="Persistent note required on authority views."
@@ -547,6 +550,9 @@ class TaskStop(BaseModel):
     priority_band: PriorityBand | None = None
     arrived_at: datetime | None = None
     completed_at: datetime | None = None
+    before_after_id: int | None = None
+    verdict: Verdict | None = Field(None, description="Suggested verdict — never a resolution.")
+    review_decision: ReviewDecision | None = None
 
 
 class TaskSummary(BaseModel):
@@ -600,10 +606,18 @@ class BeforeAfterRecord(BaseModel):
 
     id: int
     task_stop_id: int | None = None
+    task_id: int | None = None
     hotspot_id: int | None = None
+    hotspot_status: HotspotStatus | None = None
     before_report_id: UUID | None = None
     before_image_path: str | None = None
+    before_annotated_path: str | None = Field(
+        None, description="Detector-annotated before photo (boxes), if written."
+    )
     after_image_paths: list[str] = []
+    after_annotated_paths: list[str | None] = Field(
+        [], description="Detector-annotated after-photos, in after_image_paths order."
+    )
     before_count: int | None = None
     before_area: float | None = None
     after_count: int | None = None

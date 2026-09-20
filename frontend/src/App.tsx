@@ -13,6 +13,7 @@ const HotspotDetail = lazy(() => import("./pages/HotspotDetail"));
 const Queue = lazy(() => import("./pages/Queue"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Tasks = lazy(() => import("./pages/Tasks"));
+const Reviews = lazy(() => import("./pages/Reviews"));
 const TeamTasks = lazy(() => import("./pages/TeamTasks"));
 const TeamTask = lazy(() => import("./pages/TeamTask"));
 
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/queue" element={<RequireRole role="authority"><Queue /></RequireRole>} />
           <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
           <Route path="/tasks" element={<RequireRole role="authority"><Tasks /></RequireRole>} />
+          <Route path="/reviews" element={<RequireRole role="authority"><Reviews /></RequireRole>} />
           <Route path="/team/tasks" element={<RequireRole role="team"><TeamTasks /></RequireRole>} />
           <Route path="/team/tasks/:id" element={<RequireRole role="team"><TeamTask /></RequireRole>} />
           <Route path="*" element={<NotFound />} />

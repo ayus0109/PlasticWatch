@@ -67,7 +67,7 @@ class PipelineResult:
 # ---------------------------------------------------------------------------
 
 
-def _decode(image_bytes: bytes) -> Image.Image:
+def decode_photo(image_bytes: bytes) -> Image.Image:
     max_bytes = get_settings().MAX_UPLOAD_MB * 1024 * 1024
     if len(image_bytes) > max_bytes:
         raise PipelineError(
@@ -156,7 +156,7 @@ def process_report(
     """
     s = get_settings()
     created_at = created_at or datetime.now(UTC)
-    img = _decode(image_bytes)
+    img = decode_photo(image_bytes)
 
     # Location: browser GPS / pin from the form, else EXIF, else ask for a pin.
     if lat is None or lon is None:

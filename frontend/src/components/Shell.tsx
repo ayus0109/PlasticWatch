@@ -19,6 +19,7 @@ const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
     { to: "/queue", label: "Queue", icon: "eye" },
     { to: "/dashboard", label: "Dashboard", icon: "chart" },
     { to: "/tasks", label: "Tasks", icon: "route" },
+    { to: "/reviews", label: "Reviews", icon: "scale" },
   ],
   team: [{ to: "/team/tasks", label: "My tasks", icon: "truck" }],
 };

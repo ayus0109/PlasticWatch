@@ -54,7 +54,9 @@ switch without editing this file**. Notes: Ultralytics is AGPL-3.0 (fine for hac
 future scope). **Frontend build-time tooling** (no runtime footprint, added Stage 8): TypeScript,
 `@vitejs/plugin-react`, `@tailwindcss/vite`, `@types/*`, `react-is` (Recharts peer), and
 `openapi-typescript`, which generates `src/api/schema.d.ts` from the frozen OpenAPI contract so the
-client cannot drift from `schemas.py`. Map uses plain Leaflet (no react-leaflet); icons are inline SVG. **OPEN ITEM:** current ORS free quota for `/optimization` (older source said ~500/day;
+client cannot drift from `schemas.py`. Map uses plain Leaflet (no react-leaflet); icons are inline SVG. **Backend (Stage P1-B):**
+`opencv-python` for the §14 ORB viewpoint match — already a dependency of Ultralytics, pinned
+explicitly because `services/viewpoint.py` imports it directly; no new install footprint. **OPEN ITEM:** current ORS free quota for `/optimization` (older source said ~500/day;
 recheck) — cache the demo route.
 
 ## §5 Datasets

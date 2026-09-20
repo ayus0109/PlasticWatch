@@ -4,8 +4,14 @@
  */
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import type { GeoFeatureCollection, HotspotDetail as Detail, VerifyResponse } from "../api/client";
+import type {
+  GeoFeatureCollection,
+  HotspotDetail as Detail,
+  ReviewResponse,
+  VerifyResponse,
+} from "../api/client";
 import { useApi } from "../api/hooks";
+import { BeforeAfterCompare, BeforeAfterFacts, ReviewPanel, VerdictChip } from "../components/BeforeAfter";
 import { EvidenceLedger } from "../components/EvidenceLedger";
 import { Icon } from "../components/Icon";
 import { MiniMap } from "../components/map/MiniMap";
@@ -49,6 +55,16 @@ export default function HotspotDetail() {
     // Reflect the decision immediately, then refetch for the new scores.
     detail.setData((prev) =>
       prev ? { ...prev, status: res.to_status, events: [...prev.events, res.event] } : prev,
+    );
+    setFreshEvent(res.event.id);
+    detail.refetch();
+  };
+
+  const onReview = (res: ReviewResponse) => {
+    detail.setData((prev) =>
+      prev
+        ? { ...prev, status: res.hotspot_status, events: [...prev.events, res.event], before_after: res.before_after }
+        : prev,
     );
     setFreshEvent(res.event.id);
     detail.refetch();
@@ -102,6 +118,23 @@ export default function HotspotDetail() {
           </header>
 
           <ScoreBars key={`${h.status}-${h.score_breakdown.scored_at}`} breakdown={h.score_breakdown} />
+
+          {h.before_after ? (
+            <section id="before-after" className="scroll-mt-24">
+              <SectionTitle hint={`task #${h.before_after.task_id} · photos ${timeAgo(h.before_after.created_at)}`}>
+                <span className="inline-flex items-center gap-2">
+                  Before / after <VerdictChip verdict={h.before_after.verdict} />
+                </span>
+              </SectionTitle>
+              <Card className="p-4 sm:p-5">
+                <BeforeAfterCompare record={h.before_after} />
+                <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
+                  <BeforeAfterFacts record={h.before_after} />
+                  <ReviewPanel record={{ ...h.before_after, hotspot_status: h.status }} onDone={onReview} />
+                </div>
+              </Card>
+            </section>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <section>

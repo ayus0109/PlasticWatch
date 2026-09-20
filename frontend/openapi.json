@@ -569,6 +569,7 @@
           "tasks"
         ],
         "summary": "List Tasks",
+        "description": "All tasks for an authority; only its own for a team.",
         "operationId": "list_tasks_tasks_get",
         "responses": {
           "200": {
@@ -597,7 +598,7 @@
           "tasks"
         ],
         "summary": "Create Task",
-        "description": "Optimised route over VERIFIED hotspots only. Non-verified ids will be a 409.",
+        "description": "Optimised route over VERIFIED hotspots. Each hotspot becomes cleanup_scheduled.",
         "operationId": "create_task_tasks_post",
         "requestBody": {
           "content": {
@@ -691,7 +692,7 @@
           "tasks"
         ],
         "summary": "Arrive At Stop",
-        "description": "Mark arrival. The real check requires the team within 50 m of the stop.",
+        "description": "Mark arrival \u2014 recorded only within ARRIVE_RADIUS_M (50 m) of the hotspot.",
         "operationId": "arrive_at_stop_tasks__task_id__stops__stop_id__arrive_post",
         "security": [
           {
@@ -758,7 +759,7 @@
           "tasks"
         ],
         "summary": "Upload After Photos",
-        "description": "Two after-photos -> before/after record + verdict. Never resolves anything.",
+        "description": "Two after-photos -> before/after record + SUGGESTED verdict (SPEC \u00a714).\n\nMoves the hotspot to cleanup_completed (the team's claim). Never resolves anything:\nan authority reviews the photos side by side. Retakes are allowed until reviewed.",
         "operationId": "upload_after_photos_tasks__task_id__stops__stop_id__after_post",
         "security": [
           {
@@ -797,6 +798,107 @@
         },
         "responses": {
           "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeforeAfterRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/before-after": {
+      "get": {
+        "tags": [
+          "before-after"
+        ],
+        "summary": "List Before After",
+        "operationId": "list_before_after_before_after_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only records awaiting an authority's review.",
+              "default": false,
+              "title": "Pending"
+            },
+            "description": "Only records awaiting an authority's review."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BeforeAfterRecord"
+                  },
+                  "title": "Response List Before After Before After Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/before-after/{ba_id}": {
+      "get": {
+        "tags": [
+          "before-after"
+        ],
+        "summary": "Get Before After",
+        "operationId": "get_before_after_before_after__ba_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ba_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ba Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -883,7 +985,7 @@
           "analytics"
         ],
         "summary": "Summary",
-        "description": "The 6 KPI cards plus band and status breakdowns.",
+        "description": "The 6 KPI cards plus band (open hotspots) and status breakdowns.",
         "operationId": "summary_analytics_summary_get",
         "responses": {
           "200": {
@@ -910,6 +1012,7 @@
           "analytics"
         ],
         "summary": "Trend",
+        "description": "Reports, hotspots opened and hotspots resolved per UTC day.",
         "operationId": "trend_analytics_trend_get",
         "security": [
           {
@@ -986,7 +1089,7 @@
           "admin"
         ],
         "summary": "Reset Demo",
-        "description": "Wipe and reseed the simulated demo state.",
+        "description": "Wipe and reseed the simulated 45-day demo history (takes ~20 s).",
         "operationId": "reset_demo_admin_reset_demo_post",
         "responses": {
           "200": {
@@ -1219,6 +1322,17 @@
             ],
             "title": "Task Stop Id"
           },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
           "hotspot_id": {
             "anyOf": [
               {
@@ -1229,6 +1343,16 @@
               }
             ],
             "title": "Hotspot Id"
+          },
+          "hotspot_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "before_report_id": {
             "anyOf": [
@@ -1253,12 +1377,40 @@
             ],
             "title": "Before Image Path"
           },
+          "before_annotated_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Annotated Path",
+            "description": "Detector-annotated before photo (boxes), if written."
+          },
           "after_image_paths": {
             "items": {
               "type": "string"
             },
             "type": "array",
             "title": "After Image Paths",
+            "default": []
+          },
+          "after_annotated_paths": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "After Annotated Paths",
+            "description": "Detector-annotated after-photos, in after_image_paths order.",
             "default": []
           },
           "before_count": {
@@ -1503,6 +1655,29 @@
             "format": "binary",
             "title": "Close",
             "description": "Close-up after-photo."
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat",
+            "description": "Team GPS at upload; else EXIF, else check-in."
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
           }
         },
         "type": "object",
@@ -2035,6 +2210,17 @@
             },
             "type": "array",
             "title": "Events"
+          },
+          "before_after": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeforeAfterRecord"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest before/after record for this hotspot (SPEC \u00a714), if any."
           },
           "is_simulated": {
             "type": "boolean",
@@ -3421,6 +3607,38 @@
               }
             ],
             "title": "Completed At"
+          },
+          "before_after_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before After Id"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Suggested verdict \u2014 never a resolution."
+          },
+          "review_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

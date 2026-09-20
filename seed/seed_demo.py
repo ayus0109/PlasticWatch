@@ -3,12 +3,15 @@
 Replays seed/scenario.json — a 45-day history — through the REAL code paths:
 every report goes through the report pipeline (quality gate, pHash, dedupe,
 geo-context, scoring, promotion) with a back-dated timestamp, and every decision
-goes through the status machine as the demo authority or cleanup team. The seeded
-state therefore obeys every rule the live system does: nothing is verified or
-resolved without a human actor on the audit record, and every row is simulated.
+goes through the status machine as the demo authority or cleanup team. Cleanups
+go through the before/after service (quality, ORB viewpoint, verdict) and are only
+resolved by an authority's review. The seeded state therefore obeys every rule the
+live system does: nothing is verified or resolved without a human actor on the
+audit record, and every row is simulated.
 
 Photos are procedurally drawn litter scenes (seed/scenes.py) whose exact boxes are
-fed in as the detections — simulated data, flagged as such.
+fed in as the detections — simulated data, flagged as such. After-photos are retakes
+of the same street (same scene seed) with the litter removed.
 
 Usage (repo root):   python seed/seed_demo.py [--reset]
 In docker:           make seed   /   make reset-demo
@@ -39,14 +42,21 @@ except ImportError:
     sys.path.insert(0, str(SEED_DIR.parent / "backend"))
 
 from app.deps import demo_users  # noqa: E402
-from app.schemas import DemoUser, HotspotStatus, LocationSource, UserRole  # noqa: E402
-from app.services import pipeline  # noqa: E402
+from app.schemas import (  # noqa: E402
+    DemoUser,
+    HotspotStatus,
+    LocationSource,
+    ReviewDecision,
+    ReviewRequest,
+    UserRole,
+)
+from app.services import before_after, pipeline  # noqa: E402
 from app.services.hotspot_state import rescore_hotspot  # noqa: E402
 from app.services.media import upload_root  # noqa: E402
 from app.services.routing import greedy_route  # noqa: E402
 from app.services.users import ensure_demo_users  # noqa: E402
 from app.services.workflow import transition  # noqa: E402
-from scenes import make_scene  # noqa: E402
+from scenes import close_up, make_scene, retake  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.engine import Connection  # noqa: E402
 
@@ -110,8 +120,27 @@ def _jitter(lon: float, lat: float, key: str, idx: int, max_m: float = 8.0) -> t
     return lon + dlon, lat + dlat
 
 
+def _scene_seed(key: str, idx: int) -> int:
+    return zlib.crc32(f"{key}-{idx}".encode())
+
+
+def _jpeg(img) -> bytes:
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=90)
+    return buf.getvalue()
+
+
+def _after_photos(seed: int, left: int) -> tuple[dict[str, bytes], dict[str, list[dict]]]:
+    """Wide + close after-photos of the SAME street (same scene seed), `left` likely-
+    plastic items remaining, with the boxes carried through the re-photographing."""
+    scene, dets = make_scene(seed, left, 1)
+    wide, wide_dets = retake(scene, dets, seed)
+    close, close_dets = close_up(wide, wide_dets, seed)
+    return {"wide": _jpeg(wide), "close": _jpeg(close)}, {"wide": wide_dets, "close": close_dets}
+
+
 def _photo(key: str, idx: int, plastic: int, other: int, conf: list[float] | None):
-    img, dets = make_scene(zlib.crc32(f"{key}-{idx}".encode()), plastic, other)
+    img, dets = make_scene(_scene_seed(key, idx), plastic, other)
     if conf:  # rescale the drawn "confidences" into the scenario's range
         lo, hi = conf
         for d in dets:
@@ -153,6 +182,7 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
     steps.sort(key=lambda s: (s[0], s[1]))
 
     hotspot_of: dict[str, int] = {}
+    last_scene: dict[str, int] = {}  # hotspot key -> scene seed of its latest photo
     photos: dict[tuple[str, int], tuple[bytes, list[dict]]] = {}
     tasks: dict[int, int] = {}  # scenario day -> cleanup_tasks.id
     reporter = people["reporter"]
@@ -180,6 +210,7 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
             )
             if res.dedupe is not None:
                 hotspot_of.setdefault(h["key"], res.dedupe.hotspot_id)
+                last_scene[h["key"]] = _scene_seed(h["key"], i)
         elif kind == "rejected":
             i, r = payload
             image, dets = _photo(f"rejected-{i}", 0, 0, 3, None)
@@ -265,23 +296,37 @@ def reset_and_seed(conn: Connection, now: datetime | None = None) -> dict:
                     {"t": task, "h": hid, "s": seq},
                 )
             elif do == "complete":
-                conn.execute(
+                stop = conn.execute(
                     text(
-                        "UPDATE task_stops SET arrived_at = :arr, completed_at = :at"
-                        " WHERE hotspot_id = :h AND completed_at IS NULL"
+                        "SELECT id, task_id FROM task_stops"
+                        " WHERE hotspot_id = :h AND completed_at IS NULL ORDER BY id DESC LIMIT 1"
                     ),
-                    {"h": hid, "at": when, "arr": when - timedelta(minutes=40)},
+                    {"h": hid},
+                ).one()
+                conn.execute(  # the team checked in on site (simulated)
+                    text("UPDATE task_stops SET arrived_at = :arr WHERE id = :id"),
+                    {"arr": when - timedelta(minutes=40), "id": stop.id},
                 )
-                transition(
-                    conn,
-                    hid,
-                    S.cleanup_completed,
-                    actor=team,
-                    note="Cleanup done; after-photos uploaded.",
-                    at=when,
+                after, known = _after_photos(last_scene[h["key"]], a.get("left", 0))
+                before_after.submit_after(
+                    conn, stop.task_id, stop.id, after, team, at=when, known_detections=known
                 )
             elif do == "resolve":
-                transition(conn, hid, S.resolved, actor=authority, note=a.get("note"), at=when)
+                ba_id = conn.execute(
+                    text(
+                        "SELECT b.id FROM before_after b JOIN task_stops s"
+                        " ON s.id = b.task_stop_id WHERE s.hotspot_id = :h"
+                        " ORDER BY b.id DESC LIMIT 1"
+                    ),
+                    {"h": hid},
+                ).scalar_one()
+                before_after.review(
+                    conn,
+                    ba_id,
+                    ReviewRequest(decision=ReviewDecision.confirm_resolved, note=a.get("note")),
+                    authority,
+                    at=when,
+                )
             else:
                 raise ValueError(f"unknown action {do!r}")
 

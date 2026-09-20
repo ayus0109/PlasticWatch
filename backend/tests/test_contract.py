@@ -192,12 +192,12 @@ def test_citizen_cannot_read_authority_map():
 
 
 def test_before_after_review_is_authority_only():
+    # The role check runs before any DB access. The authority's confirm against a real
+    # record (and that it is the only way to resolve) is in test_before_after.py.
     body = {"decision": "confirm_resolved"}
-    as_team = client.post("/before-after/9/review", json=body, headers=token_for(TEAM))
-    assert as_team.status_code == 403
-    res = client.post("/before-after/9/review", json=body, headers=token_for(AUTHORITY))
-    assert res.status_code == 200
-    assert res.json()["hotspot_status"] == "resolved"
+    for who in (TEAM, CITIZEN):
+        res = client.post("/before-after/9/review", json=body, headers=token_for(who))
+        assert res.status_code == 403
 
 
 # --------------------------------------------------------------------------
