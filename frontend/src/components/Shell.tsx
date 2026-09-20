@@ -47,17 +47,27 @@ const UI_ROLES: ReadonlySet<UserRole> = new Set(["citizen", "authority"]);
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="flex items-center gap-2">
-      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden>
+    <span className="flex items-center gap-2.5">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden className="shrink-0">
         <rect width="32" height="32" rx="8" fill="var(--pw-accent)" />
-        <path
-          d="M16 6c-4.4 0-8 3.4-8 7.7C8 19.5 16 26 16 26s8-6.5 8-12.3C24 9.4 20.4 6 16 6z"
-          fill="var(--pw-accent-fg)"
-        />
-        <circle cx="16" cy="13.5" r="3.2" fill="var(--pw-accent)" />
+        <g fill="var(--pw-accent-fg)">
+          {/* Top handle loop */}
+          <path d="M14 4.5 h4 v2.6 h-0.9 v-1.8 h-2.2 v1.8 H14 z" />
+          {/* Lid with bevel and side drop lips */}
+          <path d="M7.6 7.6 h16.8 l1 1 h-0.1 v1.5 h-1.5 v-1.4 H8.2 v1.4 H6.7 V8.6 z" />
+          {/* Collar / upper rim */}
+          <rect x="7.7" y="10.8" width="16.6" height="1.8" rx="0.3" />
+          {/* 4 tapered body flutes */}
+          <path d="M8.5 13.8 h3.2 l0.4 13.6 H9.4 z" />
+          <path d="M12.4 13.8 h3.2 v13.6 h-2.8 z" />
+          <path d="M16.4 13.8 h3.2 l-0.3 13.6 h-2.9 z" />
+          <path d="M20.3 13.8 h3.2 l-0.9 13.6 h-2.7 z" />
+        </g>
       </svg>
       {compact ? null : (
-        <span className="font-display text-[17px] font-bold tracking-tight">PlasticWatch</span>
+        <span className="font-display text-[16px] font-extrabold tracking-wider uppercase text-ink">
+          PlasticWatch
+        </span>
       )}
     </span>
   );
