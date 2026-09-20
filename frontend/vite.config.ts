@@ -47,7 +47,7 @@ function phoneUrlBanner(port: number): Plugin {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const target = env.VITE_API_TARGET || "http://localhost:8000";
+  const target = env.VITE_API_TARGET || "https://plasticwatch.onrender.com";
   const proxy = {
     "/api": {
       target,

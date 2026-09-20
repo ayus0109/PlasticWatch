@@ -4,8 +4,35 @@ import type { DemoUser, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
 import { Logo, ThemeToggle } from "../components/Shell";
-import { ErrorState, Skeleton, cx } from "../components/ui";
-import { homeFor, loginAs, useSession } from "../store/auth";
+import { cx } from "../components/ui";
+import { homeFor, loginAs, setSessionToken, useSession } from "../store/auth";
+
+const FALLBACK_USERS: Record<UserRole, DemoUser> = {
+  citizen: {
+    id: "11111111-1111-4111-8111-111111111111",
+    name: "Demo Citizen A",
+    role: "citizen",
+    ward_id: 1,
+    reliability: 0.5,
+    is_simulated: true,
+  },
+  authority: {
+    id: "22222222-2222-4222-8222-222222222222",
+    name: "Demo Ward Authority",
+    role: "authority",
+    ward_id: null,
+    reliability: 0.5,
+    is_simulated: true,
+  },
+  team: {
+    id: "33333333-3333-4333-8333-333333333333",
+    name: "Demo Cleanup Team 1",
+    role: "team",
+    ward_id: null,
+    reliability: 0.5,
+    is_simulated: true,
+  },
+};
 
 const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] = [
   {
@@ -41,10 +68,15 @@ export default function Login() {
     setBusy(u.id);
     setError(null);
     try {
-      await loginAs({ user_id: u.id });
+      await loginAs({ user_id: u.id, role: u.role });
       navigate(homeFor(u.role), { replace: true });
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      // Offline fallback: if network fails or server is cold-starting,
+      // create a local demo session so the user is never locked out.
+      const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+      setSessionToken("offline-demo-token", u, expiresAt);
+      navigate(homeFor(u.role), { replace: true });
+    } finally {
       setBusy(null);
     }
   };
@@ -96,48 +128,42 @@ export default function Login() {
             </div>
 
             <div className="mt-6 space-y-3">
-              {users.error ? (
-                <ErrorState message={users.error.message} onRetry={users.refetch} />
-              ) : !users.data ? (
-                [0, 1].map((i) => <Skeleton key={i} className="h-[76px] w-full rounded-card" />)
-              ) : (
-                ROLES.map((r) => {
-                  const u = users.data!.find((x) => x.role === r.role);
-                  if (!u) return null;
-                  return (
-                    <button
-                      key={r.role}
-                      onClick={() => signIn(u)}
-                      disabled={busy !== null}
-                      className={cx(
-                        "group flex w-full items-center gap-4 rounded-card border border-line bg-surface p-4 text-left",
-                        "transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-accent hover:shadow-raised",
-                        "disabled:opacity-60",
-                      )}
-                    >
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-field bg-surface-2 text-ink transition-colors group-hover:bg-accent group-hover:text-accent-fg">
-                        <Icon name={r.icon} size={20} />
+              {ROLES.map((r) => {
+                const u = users.data?.find((x) => x.role === r.role) ?? FALLBACK_USERS[r.role];
+                const isBusy = busy === u.id || busy === r.role;
+                return (
+                  <button
+                    key={r.role}
+                    onClick={() => signIn(u)}
+                    disabled={busy !== null}
+                    className={cx(
+                      "group flex w-full items-center gap-4 rounded-card border border-line bg-surface p-4 text-left",
+                      "transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-accent hover:shadow-raised",
+                      "disabled:opacity-60",
+                    )}
+                  >
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-field bg-surface-2 text-ink transition-colors group-hover:bg-accent group-hover:text-accent-fg">
+                      <Icon name={r.icon} size={20} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 font-semibold">
+                        {r.title}
+                        <span className="truncate text-xs font-normal text-faint">{u.name}</span>
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 font-semibold">
-                          {r.title}
-                          <span className="truncate text-xs font-normal text-faint">{u.name}</span>
-                        </span>
-                        <span className="mt-0.5 block text-sm text-muted">{r.blurb}</span>
-                      </span>
-                      {busy === u.id ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-r-transparent" />
-                      ) : (
-                        <Icon
-                          name="arrowRight"
-                          size={18}
-                          className="text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
-                        />
-                      )}
-                    </button>
-                  );
-                })
-              )}
+                      <span className="mt-0.5 block text-sm text-muted">{r.blurb}</span>
+                    </span>
+                    {isBusy ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-r-transparent" />
+                    ) : (
+                      <Icon
+                        name="arrowRight"
+                        size={18}
+                        className="text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
             {error ? <p className="mt-4 text-sm text-danger">{error}</p> : null}
           </div>
