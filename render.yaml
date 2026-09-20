@@ -7,8 +7,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      # stub until a trained model (weights or ONNX) is deployed — see detector.py fix
       - key: DETECTOR_MODE
-        value: real
+        value: stub
       - key: CORS_ORIGINS
         value: "*"
 
