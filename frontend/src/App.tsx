@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
 import { warmupApi, type UserRole } from "./api/client";
 import { EmptyState, Skeleton } from "./components/ui";
+import { EarthBackground } from "./components/EarthBackground";
 import { homeFor, loginAs, useSession } from "./store/auth";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -71,22 +72,25 @@ export default function App() {
 
   return (
     <HashRouter>
-      <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
-          <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />
-          <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
-          {/* The old fragmented authority tabs all live on the dashboard now. */}
-          {["/map", "/queue", "/tasks", "/reviews", "/hotspots/:id", "/team/tasks", "/team/tasks/:id"].map(
-            (path) => (
-              <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
-            ),
-          )}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+      <EarthBackground />
+      <div className="relative z-10 min-h-full">
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
+            <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />
+            <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
+            {/* The old fragmented authority tabs all live on the dashboard now. */}
+            {["/map", "/queue", "/tasks", "/reviews", "/hotspots/:id", "/team/tasks", "/team/tasks/:id"].map(
+              (path) => (
+                <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
+              ),
+            )}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </div>
     </HashRouter>
   );
 }

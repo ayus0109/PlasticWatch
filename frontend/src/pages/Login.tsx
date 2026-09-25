@@ -5,7 +5,6 @@ import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
 import { Logo, ThemeToggle } from "../components/Shell";
 import { Button, cx, Spinner } from "../components/ui";
-import { EarthGlobe } from "../components/EarthGlobe";
 import {
   homeFor,
   loginAs,
@@ -192,43 +191,7 @@ export default function Login() {
             happens.
           </p>
 
-          {/* Interactive 3D Earth Orbit Card inspired by Spline */}
-          <div className="mt-6 overflow-hidden rounded-card border border-line bg-gradient-to-b from-[#070e1b] via-[#050a14] to-[#020408] p-4 text-white shadow-raised">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                </span>
-                <span className="text-xs font-semibold tracking-wider uppercase text-cyan-300">
-                  Global Earth Sentinel · Day & Night
-                </span>
-              </div>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-mono text-cyan-200">
-                Orbital GIS
-              </span>
-            </div>
-
-            <div className="relative my-2 h-44 sm:h-52 md:h-60 w-full">
-              <EarthGlobe className="h-full w-full" />
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2.5 text-[11px] text-white/70">
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
-                <span>Day Biosphere</span>
-                <span className="text-white/30">•</span>
-                <span className="inline-block h-2 w-2 rounded-full bg-amber-400"></span>
-                <span>Night City Lights</span>
-                <span className="text-white/30">•</span>
-                <span className="inline-block h-2 w-2 rounded-full bg-rose-500"></span>
-                <span>Drainage Hotspots</span>
-              </div>
-              <span className="text-[10px] text-cyan-300/80">✦ Drag to rotate globe</span>
-            </div>
-          </div>
-
-          <ul className="mt-6 space-y-2.5 hidden md:block">
+          <ul className="mt-8 space-y-3">
             {PRINCIPLES.map((p) => (
               <li key={p.text} className="flex items-start gap-3 text-sm">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
@@ -534,23 +497,6 @@ export default function Login() {
           <p className="mt-4 text-center text-xs text-faint">
             SDGs 11 · 12 · 14 — detection model trained on TACO. Demo geotags are simulated.
           </p>
-
-          {/* Mobile-only Principles footer */}
-          <div className="mt-8 border-t border-line/60 pt-5 md:hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-2.5">
-              Core Principles
-            </h3>
-            <ul className="space-y-2.5">
-              {PRINCIPLES.map((p) => (
-                <li key={p.text} className="flex items-start gap-2.5 text-xs text-muted">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
-                    <Icon name={p.icon} size={13} />
-                  </span>
-                  <span className="pt-0.5">{p.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
       </div>
     </div>
