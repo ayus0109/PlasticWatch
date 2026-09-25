@@ -25,19 +25,33 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-ANNOTATIONS_URL = "https://raw.githubusercontent.com/pedropro/TACO/master/data/annotations.json"
+ANNOTATIONS_URLS = [
+    "https://cdn.jsdelivr.net/gh/pedropro/TACO@master/data/annotations.json",
+    "https://raw.githubusercontent.com/pedropro/TACO/master/data/annotations.json",
+]
 MIN_BYTES = 2048  # smaller than this is an error page, not a photo
 RETRIES = 3
 TIMEOUT_S = 30
 USER_AGENT = "PlasticWatch-dataset-fetch/0.1 (hackathon project; contact via repo)"
 
 
-def load_annotations(source: str) -> dict:
-    if source.startswith(("http://", "https://")):
-        req = urllib.request.Request(source, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=TIMEOUT_S) as r:  # noqa: S310 (fixed host)
-            return json.load(r)
-    return json.loads(Path(source).read_text(encoding="utf-8"))
+def load_annotations(source: str | None = None) -> dict:
+    if source and not source.startswith(("http://", "https://")):
+        return json.loads(Path(source).read_text(encoding="utf-8"))
+
+    urls = [source] if source else ANNOTATIONS_URLS
+    last_err = None
+    for url in urls:
+        if not url:
+            continue
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(req, timeout=TIMEOUT_S) as r:
+                return json.load(r)
+        except Exception as exc:
+            last_err = exc
+            continue
+    raise RuntimeError(f"Failed to load annotations from all sources. Last error: {last_err}")
 
 
 def image_url(img: dict) -> str | None:
@@ -68,7 +82,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--out", type=Path, default=Path("ml/data/taco"), help="dataset root")
-    ap.add_argument("--annotations", default=ANNOTATIONS_URL, help="annotations.json path or URL")
+    ap.add_argument("--annotations", default=None, help="annotations.json path or URL")
     ap.add_argument("--limit", type=int, default=0, help="download at most N images (0 = all)")
     ap.add_argument("--workers", type=int, default=4, help="parallel downloads (be gentle)")
     ap.add_argument("--dry-run", action="store_true", help="list what would be downloaded")
