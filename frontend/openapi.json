@@ -36,7 +36,7 @@
           "auth"
         ],
         "summary": "List Demo Users",
-        "description": "Seeded accounts for the login role picker (SPEC \u00a79). No token required.",
+        "description": "Seeded accounts for the login role picker (SPEC §9). No token required.",
         "operationId": "list_demo_users_auth_demo_users_get",
         "responses": {
           "200": {
@@ -215,7 +215,7 @@
           "reports"
         ],
         "summary": "Detect Preview",
-        "description": "Preview likely-plastic detection without saving a report.\n\nRuns the SAME detector as POST /reports, on a temp copy that is deleted before\nthis returns \u2014 so a preview can never disagree with what submitting would say.\nNothing is persisted, so `annotated_jpg_path` is always null here: handing back\na path under a deleted temp dir would only 404.",
+        "description": "Preview likely-plastic detection without saving a report.\n\nRuns the SAME detector as POST /reports, on a temp copy that is deleted before\nthis returns — so a preview can never disagree with what submitting would say.\nNothing is persisted, so `annotated_jpg_path` is always null here: handing back\na path under a deleted temp dir would only 404.",
         "operationId": "detect_preview_detect_post",
         "requestBody": {
           "content": {
@@ -262,7 +262,7 @@
           "reports"
         ],
         "summary": "Create Report",
-        "description": "Submit a photo report. Records that waste appears to be present \u2014 not who is\nresponsible (CLAUDE.md \u00a72.3).",
+        "description": "Submit a photo report. Records that waste appears to be present — not who is\nresponsible (CLAUDE.md §2.3).",
         "operationId": "create_report_reports_post",
         "requestBody": {
           "content": {
@@ -479,10 +479,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Time slider: recompute scores from reports and events up to this time. Read-only \u2014 stored rows are never changed.",
+              "description": "Time slider: recompute scores from reports and events up to this time. Read-only — stored rows are never changed.",
               "title": "As Of"
             },
-            "description": "Time slider: recompute scores from reports and events up to this time. Read-only \u2014 stored rows are never changed."
+            "description": "Time slider: recompute scores from reports and events up to this time. Read-only — stored rows are never changed."
           }
         ],
         "responses": {
@@ -563,7 +563,7 @@
           "hotspots"
         ],
         "summary": "Verify Hotspot",
-        "description": "Human verification gate (CLAUDE.md \u00a72.5). Illegal transition -> 409.",
+        "description": "Human verification gate (CLAUDE.md §2.5). Illegal transition -> 409.",
         "operationId": "verify_hotspot_hotspots__hotspot_id__verify_post",
         "security": [
           {
@@ -827,7 +827,7 @@
           "tasks"
         ],
         "summary": "Arrive At Stop",
-        "description": "Mark arrival \u2014 recorded only within ARRIVE_RADIUS_M (50 m) of the hotspot.",
+        "description": "Mark arrival — recorded only within ARRIVE_RADIUS_M (50 m) of the hotspot.",
         "operationId": "arrive_at_stop_tasks__task_id__stops__stop_id__arrive_post",
         "security": [
           {
@@ -894,7 +894,7 @@
           "tasks"
         ],
         "summary": "Upload After Photos",
-        "description": "Two after-photos -> before/after record + SUGGESTED verdict (SPEC \u00a714).\n\nMoves the hotspot to cleanup_completed (the team's claim). Never resolves anything:\nan authority reviews the photos side by side. Retakes are allowed until reviewed.",
+        "description": "Two after-photos -> before/after record + SUGGESTED verdict (SPEC §14).\n\nMoves the hotspot to cleanup_completed (the team's claim). Never resolves anything:\nan authority reviews the photos side by side. Retakes are allowed until reviewed.",
         "operationId": "upload_after_photos_tasks__task_id__stops__stop_id__after_post",
         "security": [
           {
@@ -1114,6 +1114,28 @@
         }
       }
     },
+    "/analytics/public": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Public Summary",
+        "description": "Civic totals for the landing page, with NO auth dependency on purpose.\n\nThese are the aggregates a public transparency dashboard would publish. The\nresponse is counts only (see PublicSummary); every field that could locate a\nhotspot or identify a reporter stays behind `authority_only` on /summary.",
+        "operationId": "public_summary_analytics_public_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/analytics/summary": {
       "get": {
         "tags": [
@@ -1277,7 +1299,7 @@
           "error"
         ],
         "title": "AiStatus",
-        "description": "SPEC \u00a76 detector contract."
+        "description": "SPEC §6 detector contract."
       },
       "AnalyticsSummary": {
         "properties": {
@@ -1301,7 +1323,7 @@
           "simulated_data": {
             "type": "boolean",
             "title": "Simulated Data",
-            "description": "True while the dashboard is showing seeded demo data (CLAUDE.md \u00a72.2).",
+            "description": "True while the dashboard is showing seeded demo data (CLAUDE.md §2.2).",
             "default": true
           },
           "non_attribution_note": {
@@ -1398,7 +1420,7 @@
           "lon"
         ],
         "title": "ArriveRequest",
-        "description": "The team's current position, checked against the stop (SPEC \u00a78: within 50 m)."
+        "description": "The team's current position, checked against the stop (SPEC §8: within 50 m)."
       },
       "ArriveResponse": {
         "properties": {
@@ -1421,7 +1443,7 @@
           "within_range"
         ],
         "title": "ArriveResponse",
-        "description": "Arrival is checked within 50 m of the stop (SPEC \u00a78)."
+        "description": "Arrival is checked within 50 m of the stop (SPEC §8)."
       },
       "BandCount": {
         "properties": {
@@ -1635,7 +1657,7 @@
           "verdict_note": {
             "type": "string",
             "title": "Verdict Note",
-            "description": "CLAUDE.md \u00a72.5/\u00a72.6.",
+            "description": "CLAUDE.md §2.5/§2.6.",
             "default": "A verdict is a suggestion. Only an authority can resolve a hotspot."
           },
           "review_decision": {
@@ -1688,7 +1710,7 @@
           "created_at"
         ],
         "title": "BeforeAfterRecord",
-        "description": "SPEC \u00a714. The system computes a verdict but NEVER auto-resolves (CLAUDE.md \u00a72.5).\n\nAbsence of detections after cleanup is not proof of cleanliness (CLAUDE.md \u00a72.6)."
+        "description": "SPEC §14. The system computes a verdict but NEVER auto-resolves (CLAUDE.md §2.5).\n\nAbsence of detections after cleanup is not proof of cleanliness (CLAUDE.md §2.6)."
       },
       "Body_create_report_reports_post": {
         "properties": {
@@ -1856,7 +1878,7 @@
           "high"
         ],
         "title": "ConfidenceTier",
-        "description": "Raw model confidence is not a calibrated probability (CLAUDE.md \u00a72.7).\n\nA tier is shown beside every number so a score is never read as a promise."
+        "description": "Raw model confidence is not a calibrated probability (CLAUDE.md §2.7).\n\nA tier is shown beside every number so a score is never read as a promise."
       },
       "DemoLoginRequest": {
         "properties": {
@@ -1926,7 +1948,7 @@
           "reliability": {
             "type": "number",
             "title": "Reliability",
-            "description": "Static 0.5 \u2014 learned reporter reliability is out of scope.",
+            "description": "Static 0.5 — learned reporter reliability is out of scope.",
             "default": 0.5
           },
           "is_simulated": {
@@ -1966,7 +1988,7 @@
           "confidence_tier"
         ],
         "title": "DetectPreview",
-        "description": "POST /detect \u2014 the frozen DetectorOutput, wrapped with the tier the UI must show.\n\nComposition, not inheritance: `result` is exactly what detector.py returns, so\nthe \u00a76 contract appears verbatim (as its own schema) in /docs, and the tier is\nadded at the API layer without touching it (CLAUDE.md \u00a72.7)."
+        "description": "POST /detect — the frozen DetectorOutput, wrapped with the tier the UI must show.\n\nComposition, not inheritance: `result` is exactly what detector.py returns, so\nthe §6 contract appears verbatim (as its own schema) in /docs, and the tier is\nadded at the API layer without touching it (CLAUDE.md §2.7)."
       },
       "Detection": {
         "properties": {
@@ -2027,7 +2049,7 @@
           "non_plastic_litter"
         ],
         "title": "DetectionClass",
-        "description": "SPEC \u00a76 \u2014 5 classes collapsed from TACO's 60.\n\nThe four plastic_* classes are \"plastic-likely\". No person, vehicle or\nlicence-plate class may ever be added here (CLAUDE.md \u00a72.4)."
+        "description": "SPEC §6 — 5 classes collapsed from TACO's 60.\n\nThe four plastic_* classes are \"plastic-likely\". No person, vehicle or\nlicence-plate class may ever be added here (CLAUDE.md §2.4)."
       },
       "DetectorOutput": {
         "properties": {
@@ -2084,7 +2106,7 @@
           "ai_status"
         ],
         "title": "DetectorOutput",
-        "description": "FROZEN CONTRACT (SPEC \u00a76) \u2014 detector.py returns exactly this shape in both\nstub and real mode. Do not add, rename or reorder fields without a stage."
+        "description": "FROZEN CONTRACT (SPEC §6) — detector.py returns exactly this shape in both\nstub and real mode. Do not add, rename or reorder fields without a stage."
       },
       "EvidenceBand": {
         "type": "string",
@@ -2094,7 +2116,7 @@
           "strong"
         ],
         "title": "EvidenceBand",
-        "description": "SPEC \u00a711 Evidence bands (half-open): <0.4 low, [0.4,0.75) moderate, >=0.75 strong."
+        "description": "SPEC §11 Evidence bands (half-open): <0.4 low, [0.4,0.75) moderate, >=0.75 strong."
       },
       "GeoContext": {
         "properties": {
@@ -2156,7 +2178,7 @@
         },
         "type": "object",
         "title": "GeoContext",
-        "description": "Distances stored on the hotspot row at create/update (SPEC \u00a710)."
+        "description": "Distances stored on the hotspot row at create/update (SPEC §10)."
       },
       "GeoFeature": {
         "properties": {
@@ -2206,7 +2228,7 @@
           "attribution": {
             "type": "string",
             "title": "Attribution",
-            "default": "\u00a9 OpenStreetMap contributors"
+            "default": "© OpenStreetMap contributors"
           }
         },
         "type": "object",
@@ -2225,7 +2247,7 @@
           "market"
         ],
         "title": "GeoFeatureKind",
-        "description": "SPEC \u00a77 geo_features.kind."
+        "description": "SPEC §7 geo_features.kind."
       },
       "GeoFeatureProperties": {
         "properties": {
@@ -2392,7 +2414,7 @@
                 "type": "null"
               }
             ],
-            "description": "Latest before/after record for this hotspot (SPEC \u00a714), if any."
+            "description": "Latest before/after record for this hotspot (SPEC §14), if any."
           },
           "cleanup_task_id": {
             "anyOf": [
@@ -2445,7 +2467,7 @@
           "events"
         ],
         "title": "HotspotDetail",
-        "description": "GET /hotspots/{id} \u2014 score breakdown, reports, events (the evidence ledger)."
+        "description": "GET /hotspots/{id} — score breakdown, reports, events (the evidence ledger)."
       },
       "HotspotEvent": {
         "properties": {
@@ -2721,7 +2743,7 @@
           "is_simulated": {
             "type": "boolean",
             "title": "Is Simulated",
-            "description": "True when any member report has a fabricated geotag (CLAUDE.md \u00a72.2).",
+            "description": "True when any member report has a fabricated geotag (CLAUDE.md §2.2).",
             "default": false
           }
         },
@@ -2734,7 +2756,7 @@
           "recurrence_returns"
         ],
         "title": "HotspotProperties",
-        "description": "FROZEN \u2014 the property set every map marker styles itself from.\n\nd_drain_m / d_water_m were added for the PS-08 dashboard, which shows proximity to\ndrains and water on the marker popup and in the priority list. Additive only: the\nfrozen properties above keep their names and meaning."
+        "description": "FROZEN — the property set every map marker styles itself from.\n\nd_drain_m / d_water_m were added for the PS-08 dashboard, which shows proximity to\ndrains and water on the marker popup and in the priority list. Additive only: the\nfrozen properties above keep their names and meaning."
       },
       "HotspotStatus": {
         "type": "string",
@@ -2748,7 +2770,7 @@
           "false_positive"
         ],
         "title": "HotspotStatus",
-        "description": "SPEC \u00a713. Only an authority reaches verified / false_positive / resolved."
+        "description": "SPEC §13. Only an authority reaches verified / false_positive / resolved."
       },
       "HotspotSummary": {
         "properties": {
@@ -2889,7 +2911,7 @@
           "resolved_hotspots"
         ],
         "title": "KpiCards",
-        "description": "The 6 KPI cards of SPEC \u00a72 F8."
+        "description": "The 6 KPI cards of SPEC §2 F8."
       },
       "LocationSource": {
         "type": "string",
@@ -2899,7 +2921,7 @@
           "pin"
         ],
         "title": "LocationSource",
-        "description": "SPEC \u00a77 reports.location_source. Capture order: browser GPS -> EXIF -> map pin."
+        "description": "SPEC §7 reports.location_source. Capture order: browser GPS -> EXIF -> map pin."
       },
       "LoginRequest": {
         "properties": {
@@ -2959,7 +2981,7 @@
             },
             "type": "array",
             "title": "Coordinates",
-            "description": "[lon, lat] \u2014 GeoJSON order."
+            "description": "[lon, lat] — GeoJSON order."
           }
         },
         "type": "object",
@@ -2977,7 +2999,42 @@
           "critical"
         ],
         "title": "PriorityBand",
-        "description": "SPEC \u00a711 Impact bands (half-open): >=70 critical, [50,70) high, [30,50) medium, <30 low."
+        "description": "SPEC §11 Impact bands (half-open): >=70 critical, [50,70) high, [30,50) medium, <30 low."
+      },
+      "PublicSummary": {
+        "properties": {
+          "active_hotspots": {
+            "type": "integer",
+            "title": "Active Hotspots"
+          },
+          "awaiting_verification": {
+            "type": "integer",
+            "title": "Awaiting Verification"
+          },
+          "resolved_hotspots": {
+            "type": "integer",
+            "title": "Resolved Hotspots"
+          },
+          "total_reports": {
+            "type": "integer",
+            "title": "Total Reports"
+          },
+          "simulated_data": {
+            "type": "boolean",
+            "title": "Simulated Data",
+            "description": "True while these counts come from seeded demo data (CLAUDE.md §2.2).",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "active_hotspots",
+          "awaiting_verification",
+          "resolved_hotspots",
+          "total_reports"
+        ],
+        "title": "PublicSummary",
+        "description": "Aggregate-only counts for the unauthenticated landing page.\n\nDeliberately narrow: totals and nothing else. No coordinates, no ward names, no\nhotspot ids, no reporters — nothing that identifies a place or a person, and\nnothing that attributes responsibility (CLAUDE.md §2.3). That is what makes it\nsafe to serve without a session; widening it would not be."
       },
       "RegisterRequest": {
         "properties": {
@@ -3035,7 +3092,7 @@
           "other"
         ],
         "title": "RejectReason",
-        "description": "SPEC \u00a713."
+        "description": "SPEC §13."
       },
       "ReportCreateResponse": {
         "properties": {
@@ -3096,7 +3153,7 @@
           "message"
         ],
         "title": "ReportCreateResponse",
-        "description": "Result of POST /reports: detect -> dedupe -> context -> score (SPEC \u00a78)."
+        "description": "Result of POST /reports: detect -> dedupe -> context -> score (SPEC §8)."
       },
       "ReportDetail": {
         "properties": {
@@ -3533,7 +3590,7 @@
           "users"
         ],
         "title": "ResetDemoResponse",
-        "description": "POST /admin/reset-demo \u2014 wipes and reseeds the simulated demo state."
+        "description": "POST /admin/reset-demo — wipes and reseeds the simulated demo state."
       },
       "ReviewDecision": {
         "type": "string",
@@ -3542,7 +3599,7 @@
           "reject"
         ],
         "title": "ReviewDecision",
-        "description": "SPEC \u00a78 POST /before-after/{id}/review. Only confirm_resolved closes a hotspot."
+        "description": "SPEC §8 POST /before-after/{id}/review. Only confirm_resolved closes a hotspot."
       },
       "ReviewRequest": {
         "properties": {
@@ -3631,7 +3688,7 @@
           "weights_note": {
             "type": "string",
             "title": "Weights Note",
-            "description": "CLAUDE.md \u00a72.8.",
+            "description": "CLAUDE.md §2.8.",
             "default": "Weights are tunable proposals, not published truth."
           },
           "scored_at": {
@@ -3707,7 +3764,7 @@
           "contribution"
         ],
         "title": "ScoreFactor",
-        "description": "One row of the explanation card (SPEC \u00a711).\n\nWeights are tunable proposals documented here, not published truth (CLAUDE.md \u00a72.8)."
+        "description": "One row of the explanation card (SPEC §11).\n\nWeights are tunable proposals documented here, not published truth (CLAUDE.md §2.8)."
       },
       "StatusCount": {
         "properties": {
@@ -3757,7 +3814,7 @@
           "depot"
         ],
         "title": "TaskCreateRequest",
-        "description": "Tasks accept VERIFIED hotspots only (SPEC \u00a713) \u2014 a non-verified id is a 409."
+        "description": "Tasks accept VERIFIED hotspots only (SPEC §13) — a non-verified id is a 409."
       },
       "TaskDetail": {
         "properties": {
@@ -3907,7 +3964,7 @@
           "done"
         ],
         "title": "TaskStatus",
-        "description": "SPEC \u00a77 cleanup_tasks.status."
+        "description": "SPEC §7 cleanup_tasks.status."
       },
       "TaskStop": {
         "properties": {
@@ -3985,7 +4042,7 @@
                 "type": "null"
               }
             ],
-            "description": "Suggested verdict \u2014 never a resolution."
+            "description": "Suggested verdict — never a resolution."
           },
           "review_decision": {
             "anyOf": [
@@ -4164,7 +4221,7 @@
           "team"
         ],
         "title": "UserRole",
-        "description": "SPEC \u00a77 users.role."
+        "description": "SPEC §7 users.role."
       },
       "ValidationError": {
         "properties": {
@@ -4208,7 +4265,7 @@
           "inconclusive"
         ],
         "title": "Verdict",
-        "description": "SPEC \u00a714. A verdict is a suggestion \u2014 it never resolves anything by itself."
+        "description": "SPEC §14. A verdict is a suggestion — it never resolves anything by itself."
       },
       "VerifyDecision": {
         "type": "string",
@@ -4218,7 +4275,7 @@
           "false_positive"
         ],
         "title": "VerifyDecision",
-        "description": "SPEC \u00a78 POST /hotspots/{id}/verify."
+        "description": "SPEC §8 POST /hotspots/{id}/verify."
       },
       "VerifyRequest": {
         "properties": {
@@ -4253,7 +4310,7 @@
           "decision"
         ],
         "title": "VerifyRequest",
-        "description": "SPEC \u00a78. A human authority action \u2014 nothing here happens automatically."
+        "description": "SPEC §8. A human authority action — nothing here happens automatically."
       },
       "VerifyResponse": {
         "properties": {
@@ -4327,7 +4384,7 @@
           "attribution": {
             "type": "string",
             "title": "Attribution",
-            "default": "\u00a9 OpenStreetMap contributors"
+            "default": "© OpenStreetMap contributors"
           }
         },
         "type": "object",

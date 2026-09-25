@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import type { DemoUser, UserRole } from "../api/client";
+import type { DemoUser, PublicSummary, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
 import { Logo, ThemeToggle } from "../components/Shell";
-import { Button, cx, Spinner } from "../components/ui";
+import { Button, cx, SimulatedBadge, Spinner } from "../components/ui";
 import {
   homeFor,
   loginAs,
@@ -65,12 +65,22 @@ const PRINCIPLES: { icon: IconName; text: string }[] = [
   { icon: "users", text: "Reports show waste is present, never who is responsible." },
 ];
 
+/** Live civic totals. Only counts the public endpoint actually returns — no
+ *  accuracy or tonnage claims, because nothing here can measure those. */
+const HERO_TILES: { key: keyof PublicSummary; label: string; hint: string }[] = [
+  { key: "active_hotspots", label: "Active hotspots", hint: "open and tracked" },
+  { key: "awaiting_verification", label: "Awaiting review", hint: "queued for a person" },
+  { key: "total_reports", label: "Citizen reports", hint: "photos submitted" },
+  { key: "resolved_hotspots", label: "Resolved", hint: "closed by an authority" },
+];
+
 type AuthTab = "login" | "register" | "demo";
 
 export default function Login() {
   const session = useSession();
   const navigate = useNavigate();
   const users = useApi<DemoUser[]>("/auth/demo-users");
+  const stats = useApi<PublicSummary>("/analytics/public");
 
   const [tab, setTab] = useState<AuthTab>("login");
   const [busy, setBusy] = useState<boolean>(false);
@@ -158,6 +168,16 @@ export default function Login() {
     }
   };
 
+  /** Hero CTAs do not sign anyone in: they carry you to the access panel with the
+   *  matching demo credentials filled, so the click does exactly what it says. */
+  const goToAccess = (role: UserRole) => {
+    fillDemoCredentials(role);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById("access")
+      ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  };
+
   const fillDemoCredentials = (role: UserRole) => {
     setTab("login");
     setLoginEmail(role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local");
@@ -166,56 +186,132 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-full overflow-hidden">
-      {/* Ambient cosmic glows inspired by Spline 3D Earth */}
-      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/5 blur-[120px] dark:bg-cyan-500/10" />
-      <div className="pointer-events-none absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-blue-600/5 blur-[140px] dark:bg-blue-600/10" />
+    <div className="relative min-h-full">
+      {/* ----------------------------------------------------------------- hero ---- */}
+      <section className="relative isolate overflow-hidden text-white">
+        {/* Save the waterway photo to frontend/public/hero-waterway.jpg and it appears
+            here. The gradient underneath is a designed fallback, not a broken image. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-20"
+          style={{ background: "linear-gradient(135deg,#064e3b 0%,#047857 48%,#0e7490 100%)" }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-20 bg-cover bg-center"
+          style={{ backgroundImage: "url('/hero-waterway.jpg')" }}
+        />
+        {/* Scrim: deep forest into oceanic slate, dark enough that body copy clears
+            AA contrast over ANY photograph dropped in behind it. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(115deg,rgba(6,78,59,.95) 0%,rgba(6,78,59,.87) 42%,rgba(15,23,42,.76) 100%)",
+          }}
+        />
 
-      <div className="mx-auto grid min-h-full max-w-6xl gap-10 px-5 py-8 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16 md:py-16">
-        {/* Left Branding Column */}
-        <div className="animate-rise">
-          <div className="flex items-center justify-between">
-            <Logo />
-            <div className="md:hidden">
-              <ThemeToggle />
-            </div>
+        <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 md:py-16">
+          <div className="flex items-center justify-between gap-4">
+            <Logo onDark />
+            <ThemeToggle onDark />
           </div>
-          <h1 className="font-display mt-8 text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl">
-            Find plastic hotspots.
-            <br />
-            <span className="text-accent">Clean the worst first.</span>
-          </h1>
-          <p className="mt-4 max-w-md text-body leading-relaxed text-muted">
-            Citizens report likely plastic waste with a photo. Duplicates merge into hotspots,
-            ranked by impact near drains and water — then people, not the model, decide what
-            happens.
-          </p>
 
-          <ul className="mt-8 space-y-3">
-            {PRINCIPLES.map((p) => (
-              <li key={p.text} className="flex items-start gap-3 text-sm">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
-                  <Icon name={p.icon} size={16} />
-                </span>
-                <span className="pt-1.5">{p.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="animate-rise">
+            <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm">
+              <Icon name="sparkle" size={13} />
+              AI-assisted spatial triage
+            </span>
+
+            <h1 className="font-display mt-5 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl">
+              AI and GIS for urban waterway and waste intelligence
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-body leading-relaxed text-white/85">
+              Citizens photograph likely plastic waste. Duplicate reports merge into hotspots,
+              ranked by impact near drains and water — then a person, not the model, decides
+              what happens next.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => goToAccess("citizen")}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field bg-accent px-5 text-label font-semibold text-accent-fg transition-transform duration-150 hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+              >
+                <Icon name="camera" size={17} />
+                Sign in to report waste
+              </button>
+              <button
+                type="button"
+                onClick={() => goToAccess("authority")}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-white/10 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-white/20 active:translate-y-0 active:scale-[0.98]"
+              >
+                <Icon name="shield" size={17} />
+                Sign in as authority
+              </button>
+            </div>
+
+            <ul className="mt-8 flex flex-col gap-2 text-label text-white/80 sm:flex-row sm:flex-wrap sm:gap-x-6">
+              {PRINCIPLES.map((pr) => (
+                <li key={pr.text} className="flex items-start gap-2">
+                  <Icon name={pr.icon} size={15} className="mt-0.5 shrink-0 text-accent" />
+                  <span>{pr.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Live counts from /analytics/public — totals only, no session required. */}
+          <div className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {HERO_TILES.map((t) => {
+              const value = stats.data ? (stats.data[t.key] as number) : null;
+              return (
+                <div
+                  key={t.key}
+                  className="rounded-card border border-white/15 bg-white/10 p-4 backdrop-blur-sm"
+                >
+                  <div className="text-micro font-semibold text-white/70">{t.label}</div>
+                  <div className="font-display tabular mt-1.5 text-display font-bold">
+                    {stats.loading ? (
+                      <span className="inline-block h-7 w-16 animate-pulse rounded-field bg-white/25" />
+                    ) : value === null ? (
+                      "—"
+                    ) : (
+                      value.toLocaleString()
+                    )}
+                  </div>
+                  <div className="mt-1 text-micro text-white/65">{t.hint}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-micro text-white/70">
+            {stats.error ? (
+              <span>Live totals are unavailable right now. The figures above will fill in once the service responds.</span>
+            ) : stats.data?.simulated_data ? (
+              <>
+                <SimulatedBadge />
+                <span>These counts come from seeded demo data.</span>
+              </>
+            ) : null}
+          </div>
         </div>
+      </section>
 
-        {/* Right Authentication Card */}
-        <div className="animate-rise [animation-delay:80ms]">
-          <div className="rounded-card border border-line bg-surface p-6 shadow-raised sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-ink">Welcome to PlasticWatch</h2>
-                <p className="mt-1 text-sm text-muted">
-                  Sign in to your account, create a new one, or try quick demo roles.
-                </p>
-              </div>
-              <div className="hidden md:block">
-                <ThemeToggle />
-              </div>
+      {/* --------------------------------------------------------------- access ---- */}
+      <section id="access" className="bg-bg">
+        <div className="mx-auto w-full max-w-lg px-5 py-12 sm:px-8 md:py-16">
+          <div className="rounded-panel border border-line bg-surface p-6 shadow-raised sm:p-7">
+            <div>
+              <h2 className="font-display text-heading font-bold tracking-tight text-ink">
+                Sign in to PlasticWatch
+              </h2>
+              <p className="mt-1 text-label text-muted">
+                Use your account, create one, or pick a demo role.
+              </p>
             </div>
 
             {/* Auth Navigation Tabs */}
@@ -229,7 +325,7 @@ export default function Login() {
                 className={cx(
                   "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "login"
-                    ? "bg-surface font-semibold text-ink shadow-sm"
+                    ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
                 )}
               >
@@ -244,7 +340,7 @@ export default function Login() {
                 className={cx(
                   "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "register"
-                    ? "bg-surface font-semibold text-ink shadow-sm"
+                    ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
                 )}
               >
@@ -259,7 +355,7 @@ export default function Login() {
                 className={cx(
                   "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "demo"
-                    ? "bg-surface font-semibold text-ink shadow-sm"
+                    ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
                 )}
               >
@@ -494,11 +590,11 @@ export default function Login() {
               </div>
             )}
           </div>
-          <p className="mt-4 text-center text-xs text-faint">
-            SDGs 11 · 12 · 14 — detection model trained on TACO. Demo geotags are simulated.
+          <p className="mt-5 text-center text-micro text-faint">
+            SDGs 11 · 12 · 14 · detection model trained on TACO. Demo geotags are simulated.
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

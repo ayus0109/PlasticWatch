@@ -446,6 +446,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analytics/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Summary
+         * @description Civic totals for the landing page, with NO auth dependency on purpose.
+         *
+         *     These are the aggregates a public transparency dashboard would publish. The
+         *     response is counts only (see PublicSummary); every field that could locate a
+         *     hotspot or identify a reporter stays behind `authority_only` on /summary.
+         */
+        get: operations["public_summary_analytics_public_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/analytics/summary": {
         parameters: {
             query?: never;
@@ -1241,6 +1265,31 @@ export interface components {
          * @enum {string}
          */
         PriorityBand: "low" | "medium" | "high" | "critical";
+        /**
+         * PublicSummary
+         * @description Aggregate-only counts for the unauthenticated landing page.
+         *
+         *     Deliberately narrow: totals and nothing else. No coordinates, no ward names, no
+         *     hotspot ids, no reporters — nothing that identifies a place or a person, and
+         *     nothing that attributes responsibility (CLAUDE.md §2.3). That is what makes it
+         *     safe to serve without a session; widening it would not be.
+         */
+        PublicSummary: {
+            /** Active Hotspots */
+            active_hotspots: number;
+            /** Awaiting Verification */
+            awaiting_verification: number;
+            /** Resolved Hotspots */
+            resolved_hotspots: number;
+            /** Total Reports */
+            total_reports: number;
+            /**
+             * Simulated Data
+             * @description True while these counts come from seeded demo data (CLAUDE.md §2.2).
+             * @default true
+             */
+            simulated_data: boolean;
+        };
         /**
          * RegisterRequest
          * @description User signup request.
@@ -2510,6 +2559,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_summary_analytics_public_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSummary"];
                 };
             };
         };

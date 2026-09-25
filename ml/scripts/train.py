@@ -28,6 +28,18 @@ def main() -> int:
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
     parser.add_argument("--device", default="0" if torch.cuda.is_available() else "cpu", help="Device (cpu, 0, etc.)")
     parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
+    parser.add_argument(
+        "--cache",
+        default=None,
+        choices=["ram", "disk"],
+        help="Cache images between epochs. 'ram' is a large speedup on a small set like TACO.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Dataloader workers. Keep low on Windows: process spawn is expensive there.",
+    )
     parser.add_argument("--project", default="ml/runs", help="Project directory for runs")
     parser.add_argument("--name", default="plasticwatch", help="Run name")
     parser.add_argument("--output-weights", type=Path, default=Path("backend/weights/best.pt"), help="Destination for best.pt")
@@ -56,6 +68,8 @@ def main() -> int:
         name=args.name,
         seed=0,
         deterministic=True,
+        cache=args.cache if args.cache else False,
+        workers=args.workers,
     )
 
     save_dir = Path(results.save_dir) if hasattr(results, "save_dir") else Path(args.project) / args.name

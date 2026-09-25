@@ -34,6 +34,8 @@ export type WardFeatureCollection = S["WardFeatureCollection"];
 export type VerifyRequest = S["VerifyRequest"];
 export type VerifyResponse = S["VerifyResponse"];
 export type AnalyticsSummary = S["AnalyticsSummary"];
+/** Counts only, servable without a session — see backend PublicSummary. */
+export type PublicSummary = S["PublicSummary"];
 export type AnalyticsTrend = S["AnalyticsTrend"];
 export type AnalyticsWards = S["AnalyticsWards"];
 export type BandCount = S["BandCount"];

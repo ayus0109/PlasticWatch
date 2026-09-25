@@ -740,6 +740,25 @@ class AnalyticsSummary(BaseModel):
     non_attribution_note: str = NON_ATTRIBUTION_NOTE
 
 
+class PublicSummary(BaseModel):
+    """Aggregate-only counts for the unauthenticated landing page.
+
+    Deliberately narrow: totals and nothing else. No coordinates, no ward names, no
+    hotspot ids, no reporters — nothing that identifies a place or a person, and
+    nothing that attributes responsibility (CLAUDE.md §2.3). That is what makes it
+    safe to serve without a session; widening it would not be.
+    """
+
+    active_hotspots: int
+    awaiting_verification: int
+    resolved_hotspots: int
+    total_reports: int
+    simulated_data: bool = Field(
+        True,
+        description="True while these counts come from seeded demo data (CLAUDE.md §2.2).",
+    )
+
+
 class TrendPoint(BaseModel):
     date: str = Field(..., description="ISO date, YYYY-MM-DD.")
     reports: int

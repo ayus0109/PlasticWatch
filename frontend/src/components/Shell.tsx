@@ -45,7 +45,17 @@ const ROLE_LABEL: Record<UserRole, string> = {
 /** Only the two PS-08 roles are offered anywhere in the UI. */
 const UI_ROLES: ReadonlySet<UserRole> = new Set(["citizen", "authority"]);
 
-export function Logo({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+export function Logo({
+  compact = false,
+  className = "",
+  onDark = false,
+}: {
+  compact?: boolean;
+  className?: string;
+  /** For the landing hero, whose scrim stays dark in BOTH themes. The lockup goes
+   *  mono there: the two-tone accent is unreadable on a dark green photograph. */
+  onDark?: boolean;
+}) {
   return (
     <span className={cx("flex items-center gap-2.5 select-none", className)}>
       <img
@@ -54,8 +64,13 @@ export function Logo({ compact = false, className = "" }: { compact?: boolean; c
         className="h-8 w-8 object-contain shrink-0 drop-shadow-sm transition-transform hover:scale-105"
       />
       {compact ? null : (
-        <span className="font-display text-[17px] font-extrabold tracking-tight text-ink">
-          Plastic<span className="text-accent">Watch</span>
+        <span
+          className={cx(
+            "font-display text-[17px] font-extrabold tracking-tight",
+            onDark ? "text-white" : "text-ink",
+          )}
+        >
+          Plastic{onDark ? "Watch" : <span className="text-accent">Watch</span>}
         </span>
       )}
     </span>
@@ -257,7 +272,7 @@ function RoleSwitcher() {
   );
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
   const [mode, setMode] = useState<ThemeMode>(currentTheme());
   const flip = () => {
     const next = mode === "dark" ? "light" : "dark";
@@ -269,7 +284,12 @@ export function ThemeToggle() {
     <button
       onClick={flip}
       aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} theme`}
-      className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95"
+      className={cx(
+        "grid h-11 w-11 place-items-center rounded-full transition-colors active:scale-95",
+        onDark
+          ? "text-white/80 hover:bg-white/15 hover:text-white"
+          : "text-muted hover:bg-surface-2 hover:text-ink",
+      )}
     >
       <Icon name={mode === "dark" ? "sun" : "moon"} size={18} />
     </button>

@@ -38,15 +38,21 @@
   --shadow-raised: var(--pw-shadow-raised);
   --shadow-pop: var(--pw-shadow-pop);
 
-  /* Two radius ROLES, not a free scale: an outer surface and an inset/control.
-     Pills use Tailwind's own rounded-full. Anything else is drift — see Card/Button. */
-  --radius-card: 14px;
-  --radius-field: 11px;
+  /* Three radius ROLES, not a free scale (Civic Eco-Intelligence "soft" posture):
+     a control, a data surface, a floating panel. Pills use Tailwind's rounded-full.
+     Anything else is drift — see Card/Button in components/ui.tsx. */
+  --radius-field: 4px;
+  --radius-card: 8px;
+  --radius-panel: 12px;
 
+  /* Plus Jakarta Sans carries structural authority in headings; Inter does the
+     high-density reading; JetBrains Mono is reserved for coordinates and IDs. */
   --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui,
     -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Inter Display", "Segoe UI Variable Display", "Segoe UI", ui-sans-serif,
-    system-ui, -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", "Segoe UI Variable Display", "Segoe UI",
+    ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas,
+    monospace;
 
   /* Type scale. Tracking tightens as size grows — large numerals read as DATA, body
      text keeps normal tracking for reading. Pair `display`/`title` with `.tabular`

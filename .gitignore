@@ -47,3 +47,6 @@ Thumbs.db
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Ultralytics writes here when project= is relative (see ml/scripts/train.py).
+runs/

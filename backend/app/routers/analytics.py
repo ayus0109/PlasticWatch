@@ -5,10 +5,34 @@ from sqlalchemy.engine import Connection
 
 from app.db import get_conn
 from app.deps import authority_only
-from app.schemas import AnalyticsSummary, AnalyticsTrend, AnalyticsWards, DemoUser
+from app.schemas import (
+    AnalyticsSummary,
+    AnalyticsTrend,
+    AnalyticsWards,
+    DemoUser,
+    PublicSummary,
+)
 from app.services import analytics
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+
+@router.get("/public", response_model=PublicSummary)
+def public_summary(conn: Connection = Depends(get_conn)) -> PublicSummary:
+    """Civic totals for the landing page, with NO auth dependency on purpose.
+
+    These are the aggregates a public transparency dashboard would publish. The
+    response is counts only (see PublicSummary); every field that could locate a
+    hotspot or identify a reporter stays behind `authority_only` on /summary.
+    """
+    s = analytics.summary(conn)
+    return PublicSummary(
+        active_hotspots=s.kpis.active_hotspots,
+        awaiting_verification=s.kpis.awaiting_verification,
+        resolved_hotspots=s.kpis.resolved_hotspots,
+        total_reports=s.kpis.total_reports,
+        simulated_data=s.simulated_data,
+    )
 
 
 @router.get("/summary", response_model=AnalyticsSummary)
