@@ -2,12 +2,14 @@
  * Typed API client. Every type comes from src/api/schema.d.ts, generated from the
  * backend's frozen OpenAPI contract (`npm run gen:api`) — never hand-written.
  */
-import { getToken, logout, setSessionToken } from "../store/auth";
+import { getCurrentUser, getToken, logout, setSessionToken } from "../store/auth";
 import type { components } from "./schema";
 
 type S = components["schemas"];
 export type DemoUser = S["DemoUser"];
 export type TokenResponse = S["TokenResponse"];
+export type RegisterRequest = S["RegisterRequest"];
+export type LoginRequest = S["LoginRequest"];
 export type HotspotStatus = S["HotspotStatus"];
 export type PriorityBand = S["PriorityBand"];
 export type EvidenceBand = S["EvidenceBand"];
@@ -197,11 +199,14 @@ async function request<T>(
 
   const res = await fetchWithRetry(url, { method, headers, body, signal: opts.signal });
 
-  // If existing token was rejected (401), auto-renew session and retry once transparently
+  // If existing token was rejected (401), auto-renew session for demo users and retry once transparently
   if (res.status === 401 && !isAuthRetry && !path.startsWith("/auth") && token) {
-    const refreshed = await autoAuthenticate();
-    if (refreshed) {
-      return request<T>(method, path, opts, true);
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.is_simulated) {
+      const refreshed = await autoAuthenticate();
+      if (refreshed) {
+        return request<T>(method, path, opts, true);
+      }
     }
     logout();
   }

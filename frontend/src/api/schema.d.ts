@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/ping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ping
+         * @description Instantaneous keepalive endpoint that wakes or tests the service without DB overhead.
+         */
+        get: operations["ping_ping_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/demo-users": {
         parameters: {
             query?: never;
@@ -44,6 +64,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register
+         * @description Register a new user account with secure password hashing and role support.
+         */
+        post: operations["register_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login
+         * @description Authenticate with email or username and password.
+         */
+        post: operations["login_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Me
+         * @description Return the profile of the current authenticated user.
+         */
+        get: operations["get_me_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/detect": {
         parameters: {
             query?: never;
@@ -55,7 +135,12 @@ export interface paths {
         put?: never;
         /**
          * Detect Preview
-         * @description P1: preview likely-plastic detection without saving a report.
+         * @description Preview likely-plastic detection without saving a report.
+         *
+         *     Runs the SAME detector as POST /reports, on a temp copy that is deleted before
+         *     this returns — so a preview can never disagree with what submitting would say.
+         *     Nothing is persisted, so `annotated_jpg_path` is always null here: handing back
+         *     a path under a deleted temp dir would only 404.
          */
         post: operations["detect_preview_detect_post"];
         delete?: never;
@@ -650,6 +735,16 @@ export interface components {
             accuracy?: number | null;
             /** Note */
             note?: string | null;
+            /**
+             * Reporter Name
+             * @description Citizen reporter name.
+             */
+            reporter_name?: string | null;
+            /**
+             * Reporter Phone
+             * @description Citizen contact phone number.
+             */
+            reporter_phone?: string | null;
         };
         /** Body_detect_preview_detect_post */
         Body_detect_preview_detect_post: {
@@ -701,7 +796,7 @@ export interface components {
         };
         /**
          * DemoUser
-         * @description A seeded demo account. There is no real auth in this system (CLAUDE.md §8).
+         * @description User account schema (supports both demo and registered users).
          */
         DemoUser: {
             /**
@@ -711,6 +806,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Email */
+            email?: string | null;
             role: components["schemas"]["UserRole"];
             /** Ward Id */
             ward_id?: number | null;
@@ -722,7 +819,7 @@ export interface components {
             reliability: number;
             /**
              * Is Simulated
-             * @default true
+             * @default false
              */
             is_simulated: boolean;
         };
@@ -1106,6 +1203,19 @@ export interface components {
          * @enum {string}
          */
         LocationSource: "browser" | "exif" | "pin";
+        /**
+         * LoginRequest
+         * @description User login request with email or username and password.
+         */
+        LoginRequest: {
+            /**
+             * Email
+             * @description Email address or username
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
         /** PointGeometry */
         PointGeometry: {
             /**
@@ -1126,6 +1236,22 @@ export interface components {
          * @enum {string}
          */
         PriorityBand: "low" | "medium" | "high" | "critical";
+        /**
+         * RegisterRequest
+         * @description User signup request.
+         */
+        RegisterRequest: {
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /** @default citizen */
+            role: components["schemas"]["UserRole"];
+            /** Ward Id */
+            ward_id?: number | null;
+        };
         /**
          * RejectReason
          * @description SPEC §13.
@@ -1217,6 +1343,16 @@ export interface components {
              */
             is_simulated: boolean;
             /**
+             * Reporter Name
+             * @description Citizen reporter name for proof.
+             */
+            reporter_name?: string | null;
+            /**
+             * Reporter Phone
+             * @description Citizen contact phone for proof.
+             */
+            reporter_phone?: string | null;
+            /**
              * Detections
              * @default []
              */
@@ -1281,9 +1417,15 @@ export interface components {
              * @default false
              */
             is_simulated: boolean;
-            /** Reporter Name */
+            /**
+             * Reporter Name
+             * @description Citizen reporter name for proof.
+             */
             reporter_name?: string | null;
-            /** Reporter Phone */
+            /**
+             * Reporter Phone
+             * @description Citizen contact phone for proof.
+             */
             reporter_phone?: string | null;
         };
         /**
@@ -1680,6 +1822,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ping_ping_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     list_demo_users_auth_demo_users_get: {
         parameters: {
             query?: never;
@@ -1729,6 +1893,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_me_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoUser"];
                 };
             };
         };

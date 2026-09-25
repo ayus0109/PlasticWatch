@@ -215,7 +215,9 @@ function RoleSwitcher() {
         </span>
         <span className="hidden text-left leading-tight sm:block">
           <span className="block text-label font-semibold">{session.user.name}</span>
-          <span className="block text-micro text-muted">{ROLE_LABEL[session.user.role]}</span>
+          <span className="block text-micro text-muted">
+            {session.user.is_simulated ? `${ROLE_LABEL[session.user.role]} (Demo)` : ROLE_LABEL[session.user.role]}
+          </span>
         </span>
       </button>
       {open ? (
@@ -223,8 +225,14 @@ function RoleSwitcher() {
           role="menu"
           className="absolute right-0 top-12 z-[1100] w-64 overflow-hidden rounded-card border border-line bg-surface p-1 shadow-pop animate-rise"
         >
+          {session.user.email ? (
+            <div className="border-b border-line px-2.5 py-1.5 mb-1">
+              <span className="block text-micro font-medium text-muted">Signed in as</span>
+              <span className="block text-xs font-semibold text-ink truncate">{session.user.email}</span>
+            </div>
+          ) : null}
           <p className="px-2.5 pb-1.5 pt-1 text-micro font-semibold uppercase tracking-wider text-faint">
-            Switch demo role
+            {session.user.is_simulated ? "Switch demo role" : "Demo roles (Testing)"}
           </p>
           {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
             <button

@@ -169,16 +169,48 @@ class Verdict(StrEnum):
 
 
 class DemoUser(BaseModel):
-    """A seeded demo account. There is no real auth in this system (CLAUDE.md §8)."""
+    """User account schema (supports both demo and registered users)."""
 
     id: UUID
     name: str
+    email: str | None = None
     role: UserRole
     ward_id: int | None = None
     reliability: float = Field(
         0.5, description="Static 0.5 — learned reporter reliability is out of scope."
     )
-    is_simulated: bool = True
+    is_simulated: bool = False
+
+
+UserPublic = DemoUser
+
+
+class RegisterRequest(BaseModel):
+    """User signup request."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=6, max_length=128)
+    role: UserRole = UserRole.citizen
+    ward_id: int | None = None
+
+
+class LoginRequest(BaseModel):
+    """User login request with email or username and password."""
+
+    email: str | None = Field(None, min_length=1, max_length=255, description="Email address or username")
+    username: str | None = Field(None, min_length=1, max_length=255, description="Username or email address")
+    password: str = Field(..., min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def _validate_identifier(self) -> LoginRequest:
+        if not (self.email and self.email.strip()) and not (self.username and self.username.strip()):
+            raise ValueError("Provide email or username.")
+        return self
+
+    @property
+    def identifier(self) -> str:
+        return (self.email or self.username or "").strip()
 
 
 class DemoLoginRequest(BaseModel):

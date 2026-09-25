@@ -71,6 +71,29 @@ export async function loginAs(pick: { role?: UserRole; user_id?: string }): Prom
   return next;
 }
 
+export async function loginWithPassword(creds: {
+  email: string;
+  password: string;
+}): Promise<Session> {
+  const res = await api.post<TokenResponse>("/auth/login", creds);
+  const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
+  emit(next);
+  return next;
+}
+
+export async function registerUser(data: {
+  name: string;
+  email: string;
+  password: string;
+  role?: UserRole;
+  ward_id?: number | null;
+}): Promise<Session> {
+  const res = await api.post<TokenResponse>("/auth/register", data);
+  const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
+  emit(next);
+  return next;
+}
+
 export function logout(): void {
   emit(null);
 }

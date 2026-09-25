@@ -6,6 +6,30 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/ping": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Ping",
+        "description": "Instantaneous keepalive endpoint that wakes or tests the service without DB overhead.",
+        "operationId": "ping_ping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Ping Ping Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/demo-users": {
       "get": {
         "tags": [
@@ -74,13 +98,124 @@
         }
       }
     },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "description": "Register a new user account with secure password hashing and role support.",
+        "operationId": "register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "description": "Authenticate with email or username and password.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get Me",
+        "description": "Return the profile of the current authenticated user.",
+        "operationId": "get_me_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoUser"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/detect": {
       "post": {
         "tags": [
           "reports"
         ],
         "summary": "Detect Preview",
-        "description": "P1: preview likely-plastic detection without saving a report.",
+        "description": "Preview likely-plastic detection without saving a report.\n\nRuns the SAME detector as POST /reports, on a temp copy that is deleted before\nthis returns \u2014 so a preview can never disagree with what submitting would say.\nNothing is persisted, so `annotated_jpg_path` is always null here: handing back\na path under a deleted temp dir would only 404.",
         "operationId": "detect_preview_detect_post",
         "requestBody": {
           "content": {
@@ -1619,6 +1754,32 @@
               }
             ],
             "title": "Note"
+          },
+          "reporter_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Name",
+            "description": "Citizen reporter name."
+          },
+          "reporter_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Phone",
+            "description": "Citizen contact phone number."
           }
         },
         "type": "object",
@@ -1737,6 +1898,17 @@
             "type": "string",
             "title": "Name"
           },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
           "role": {
             "$ref": "#/components/schemas/UserRole"
           },
@@ -1760,7 +1932,7 @@
           "is_simulated": {
             "type": "boolean",
             "title": "Is Simulated",
-            "default": true
+            "default": false
           }
         },
         "type": "object",
@@ -1770,7 +1942,7 @@
           "role"
         ],
         "title": "DemoUser",
-        "description": "A seeded demo account. There is no real auth in this system (CLAUDE.md \u00a78)."
+        "description": "User account schema (supports both demo and registered users)."
       },
       "DetectPreview": {
         "properties": {
@@ -2729,6 +2901,30 @@
         "title": "LocationSource",
         "description": "SPEC \u00a77 reports.location_source. Capture order: browser GPS -> EXIF -> map pin."
       },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Email",
+            "description": "Email address or username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "description": "User login request with email or username and password."
+      },
       "PointGeometry": {
         "properties": {
           "type": {
@@ -2762,6 +2958,51 @@
         ],
         "title": "PriorityBand",
         "description": "SPEC \u00a711 Impact bands (half-open): >=70 critical, [50,70) high, [30,50) medium, <30 low."
+      },
+      "RegisterRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "Password"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "citizen"
+          },
+          "ward_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "description": "User signup request."
       },
       "RejectReason": {
         "type": "string",
@@ -2994,6 +3235,30 @@
             "title": "Is Simulated",
             "default": false
           },
+          "reporter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Name",
+            "description": "Citizen reporter name for proof."
+          },
+          "reporter_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Phone",
+            "description": "Citizen contact phone for proof."
+          },
           "detections": {
             "items": {
               "$ref": "#/components/schemas/Detection"
@@ -3171,6 +3436,30 @@
             "type": "boolean",
             "title": "Is Simulated",
             "default": false
+          },
+          "reporter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Name",
+            "description": "Citizen reporter name for proof."
+          },
+          "reporter_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Phone",
+            "description": "Citizen contact phone for proof."
           }
         },
         "type": "object",

@@ -48,12 +48,18 @@ def demo_users() -> list[DemoUser]:
     return [DemoUser.model_validate(u) for u in load_fixture("demo_users")]
 
 
-def find_demo_user(user_id: UUID | None = None, role: UserRole | None = None) -> DemoUser | None:
+def find_demo_user(user_id: UUID | str | None = None, role: UserRole | None = None) -> DemoUser | None:
     """By id if given, otherwise the first seeded account with the role."""
+    target_id: UUID | None = None
+    if user_id is not None:
+        try:
+            target_id = user_id if isinstance(user_id, UUID) else UUID(str(user_id))
+        except (ValueError, TypeError):
+            return None
     for user in demo_users():
-        if user_id is not None and user.id == user_id:
+        if target_id is not None and user.id == target_id:
             return user
-        if user_id is None and role is not None and user.role == role:
+        if target_id is None and role is not None and user.role == role:
             return user
     return None
 
@@ -77,19 +83,27 @@ def _sign(payload: bytes) -> str:
 
 
 def create_demo_token(user: DemoUser) -> tuple[str, datetime]:
-    """Return (token, expires_at) for a seeded demo user."""
+    """Return (token, expires_at) for an authenticated or demo user."""
     expires_at = datetime.now(UTC) + timedelta(hours=get_settings().DEMO_TOKEN_TTL_HOURS)
     payload = json.dumps(
         {
             "sub": str(user.id),
             "role": user.role.value,
             "name": user.name,
+            "email": getattr(user, "email", None),
+            "ward_id": getattr(user, "ward_id", None),
+            "reliability": getattr(user, "reliability", 0.5),
+            "is_simulated": getattr(user, "is_simulated", False),
             "exp": int(expires_at.timestamp()),
         },
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
     return f"{_b64encode(payload)}.{_sign(payload)}", expires_at
+
+
+# Alias for create_demo_token for real authentication
+create_access_token = create_demo_token
 
 
 def decode_demo_token(token: str) -> dict[str, Any]:
@@ -118,11 +132,11 @@ def decode_demo_token(token: str) -> dict[str, Any]:
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> DemoUser:
-    """Resolve the bearer token to a seeded demo user. 401 if absent or invalid."""
+    """Resolve bearer token to an active user account. 401 if absent or invalid."""
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing bearer token. Call POST /auth/demo-login first.",
+            detail="Missing bearer token. Call POST /auth/login or /auth/demo-login first.",
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
@@ -134,12 +148,42 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
-    user = find_demo_user(user_id=UUID(claims["sub"]))
-    if user is None:
+    try:
+        user_id = UUID(claims["sub"])
+    except (KeyError, ValueError, TypeError) as exc:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown demo user."
-        )
-    return user
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Malformed token claims.",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    # 1. Check seeded demo fixtures (fast path, preserves fixture metadata)
+    user = find_demo_user(user_id=user_id)
+    if user is not None:
+        return user
+
+    # 2. Reconstruct authenticated user from cryptographically verified token claims
+    if "role" in claims and "name" in claims:
+        try:
+            return DemoUser(
+                id=user_id,
+                name=claims["name"],
+                email=claims.get("email"),
+                role=UserRole(claims["role"]),
+                ward_id=claims.get("ward_id"),
+                reliability=float(claims.get("reliability", 0.5)),
+                is_simulated=bool(claims.get("is_simulated", False)),
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Malformed user claims.",
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from exc
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown user."
+    )
 
 
 def require_role(*roles: UserRole) -> Callable[..., DemoUser]:

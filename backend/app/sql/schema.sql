@@ -34,17 +34,24 @@ CREATE INDEX IF NOT EXISTS idx_wards_geom ON wards USING GIST (geom);
 -- 2. users -------------------------------------------------------------------
 -- users(id uuid PK, name, role CHECK in ('citizen','authority','team'),
 --       ward_id FK→wards null, reliability real default 0.5, created_at)
--- Seeded demo accounts only — no real auth (CLAUDE.md §8).
 CREATE TABLE IF NOT EXISTS users (
-    id          uuid PRIMARY KEY,
-    name        text NOT NULL,
-    role        text NOT NULL
-                CHECK (role IN ('citizen', 'authority', 'team')),
-    ward_id     integer REFERENCES wards (id),
+    id              uuid PRIMARY KEY,
+    name            text NOT NULL,
+    email           text,
+    hashed_password text,
+    role            text NOT NULL
+                    CHECK (role IN ('citizen', 'authority', 'team')),
+    ward_id         integer REFERENCES wards (id),
     -- Static 0.5; learned reporter reliability is out of scope (CLAUDE.md §8).
-    reliability real NOT NULL DEFAULT 0.5,
-    created_at  timestamptz NOT NULL DEFAULT now()
+    reliability     real NOT NULL DEFAULT 0.5,
+    is_simulated    boolean NOT NULL DEFAULT false,
+    created_at      timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_simulated boolean NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (lower(email)) WHERE email IS NOT NULL;
 
 
 -- 3. geo_features ------------------------------------------------------------

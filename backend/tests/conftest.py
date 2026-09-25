@@ -110,7 +110,7 @@ def api(db_engine: Engine, set_env, tmp_path):
     uploads in a temp dir, stub detector. Each request commits, like production."""
     from fastapi.testclient import TestClient
 
-    from app.db import get_conn
+    from app.db import get_conn, get_optional_conn
     from app.main import app
     from app.services.users import ensure_demo_users
 
@@ -124,10 +124,12 @@ def api(db_engine: Engine, set_env, tmp_path):
             yield c
 
     app.dependency_overrides[get_conn] = _conn
+    app.dependency_overrides[get_optional_conn] = _conn
     try:
         yield TestClient(app)
     finally:
         app.dependency_overrides.pop(get_conn, None)
+        app.dependency_overrides.pop(get_optional_conn, None)
 
 
 def auth_header(client, role: str) -> dict[str, str]:
