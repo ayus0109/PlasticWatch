@@ -310,7 +310,7 @@ export function HotspotDrawer({
         </button>
       </header>
 
-      <div className="pb-safe space-y-5 p-4">
+      <div className="pb-safe space-y-5 p-4 pb-8">
         {detail.error ? (
           <ErrorState message={detail.error.message} onRetry={detail.refetch} />
         ) : !h ? (

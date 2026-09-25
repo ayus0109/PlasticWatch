@@ -180,7 +180,7 @@ export default function Login() {
               <ThemeToggle />
             </div>
           </div>
-          <h1 className="font-display mt-8 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
+          <h1 className="font-display mt-8 text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl">
             Find plastic hotspots.
             <br />
             <span className="text-accent">Clean the worst first.</span>
