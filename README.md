@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🌿 PlasticWatch
+<img src="frontend/public/logo.png" alt="PlasticWatch Logo" width="200" />
+
+# PlasticWatch
 ### AI-GIS Detection & Ethical Prioritisation of Plastic-Waste Hotspots
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-10b981?style=for-the-badge&logo=render&logoColor=white)](https://plasticwatch-1.onrender.com)
