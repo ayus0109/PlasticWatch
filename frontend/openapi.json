@@ -2904,11 +2904,32 @@
       "LoginRequest": {
         "properties": {
           "email": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Email",
             "description": "Email address or username"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "Username or email address"
           },
           "password": {
             "type": "string",
@@ -2919,7 +2940,6 @@
         },
         "type": "object",
         "required": [
-          "email",
           "password"
         ],
         "title": "LoginRequest",

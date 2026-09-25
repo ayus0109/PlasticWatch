@@ -198,13 +198,19 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     """User login request with email or username and password."""
 
-    email: str | None = Field(None, min_length=1, max_length=255, description="Email address or username")
-    username: str | None = Field(None, min_length=1, max_length=255, description="Username or email address")
+    email: str | None = Field(
+        None, min_length=1, max_length=255, description="Email address or username"
+    )
+    username: str | None = Field(
+        None, min_length=1, max_length=255, description="Username or email address"
+    )
     password: str = Field(..., min_length=1, max_length=128)
 
     @model_validator(mode="after")
     def _validate_identifier(self) -> LoginRequest:
-        if not (self.email and self.email.strip()) and not (self.username and self.username.strip()):
+        has_email = bool(self.email and self.email.strip())
+        has_user = bool(self.username and self.username.strip())
+        if not has_email and not has_user:
             raise ValueError("Provide email or username.")
         return self
 

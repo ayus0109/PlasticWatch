@@ -464,14 +464,24 @@ def test_register_and_login_with_mock_db(mock_db_api):
     # Invalid email fails with 422
     bad_email_res = mock_db_api.post(
         "/auth/register",
-        json={"name": "Alice", "email": "not-an-email", "password": "validPassword123", "role": "citizen"},
+        json={
+            "name": "Alice",
+            "email": "not-an-email",
+            "password": "validPassword123",
+            "role": "citizen",
+        },
     )
     assert bad_email_res.status_code == 422
 
     # Empty name fails with 422
     empty_name_res = mock_db_api.post(
         "/auth/register",
-        json={"name": "   ", "email": "alice@x.com", "password": "validPassword123", "role": "citizen"},
+        json={
+            "name": "   ",
+            "email": "alice@x.com",
+            "password": "validPassword123",
+            "role": "citizen",
+        },
     )
     assert empty_name_res.status_code == 422
 

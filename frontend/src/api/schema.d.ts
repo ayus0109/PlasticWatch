@@ -1212,7 +1212,12 @@ export interface components {
              * Email
              * @description Email address or username
              */
-            email: string;
+            email?: string | null;
+            /**
+             * Username
+             * @description Username or email address
+             */
+            username?: string | null;
             /** Password */
             password: string;
         };

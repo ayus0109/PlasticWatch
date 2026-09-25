@@ -48,7 +48,9 @@ def demo_users() -> list[DemoUser]:
     return [DemoUser.model_validate(u) for u in load_fixture("demo_users")]
 
 
-def find_demo_user(user_id: UUID | str | None = None, role: UserRole | None = None) -> DemoUser | None:
+def find_demo_user(
+    user_id: UUID | str | None = None, role: UserRole | None = None
+) -> DemoUser | None:
     """By id if given, otherwise the first seeded account with the role."""
     target_id: UUID | None = None
     if user_id is not None:
