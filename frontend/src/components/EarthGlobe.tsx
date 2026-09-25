@@ -90,6 +90,9 @@ export function EarthGlobe({ className = "", size, interactive = true }: EarthGl
       lastX = e.clientX;
       lastY = e.clientY;
       velY = 0;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {}
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -103,9 +106,12 @@ export function EarthGlobe({ className = "", size, interactive = true }: EarthGl
       lastY = e.clientY;
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: PointerEvent) => {
       isDragging = false;
       velY = 0.0025;
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch {}
     };
 
     if (interactive) {
@@ -319,7 +325,7 @@ export function EarthGlobe({ className = "", size, interactive = true }: EarthGl
     <div className={`relative flex items-center justify-center select-none ${className}`}>
       <canvas
         ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+        className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-y"
         title="Interactive 3D Earth — Drag to rotate"
       />
     </div>

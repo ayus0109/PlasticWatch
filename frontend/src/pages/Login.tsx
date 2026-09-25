@@ -209,7 +209,7 @@ export default function Login() {
               </span>
             </div>
 
-            <div className="relative my-2 h-56 sm:h-64 w-full">
+            <div className="relative my-2 h-44 sm:h-52 md:h-60 w-full">
               <EarthGlobe className="h-full w-full" />
             </div>
 
@@ -228,7 +228,7 @@ export default function Login() {
             </div>
           </div>
 
-          <ul className="mt-6 space-y-2.5">
+          <ul className="mt-6 space-y-2.5 hidden md:block">
             {PRINCIPLES.map((p) => (
               <li key={p.text} className="flex items-start gap-3 text-sm">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
@@ -264,7 +264,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-1.5 text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "login"
                     ? "bg-surface font-semibold text-ink shadow-sm"
                     : "text-muted hover:text-ink",
@@ -279,7 +279,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-1.5 text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "register"
                     ? "bg-surface font-semibold text-ink shadow-sm"
                     : "text-muted hover:text-ink",
@@ -294,7 +294,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-1.5 text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
                   tab === "demo"
                     ? "bg-surface font-semibold text-ink shadow-sm"
                     : "text-muted hover:text-ink",
@@ -365,14 +365,14 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("citizen")}
-                      className="rounded border border-line bg-surface px-2 py-1 font-medium hover:border-accent hover:text-accent transition-colors"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
                       Fill Citizen Credentials
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("authority")}
-                      className="rounded border border-line bg-surface px-2 py-1 font-medium hover:border-accent hover:text-accent transition-colors"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
                       Fill Authority Credentials
                     </button>
@@ -534,6 +534,23 @@ export default function Login() {
           <p className="mt-4 text-center text-xs text-faint">
             SDGs 11 · 12 · 14 — detection model trained on TACO. Demo geotags are simulated.
           </p>
+
+          {/* Mobile-only Principles footer */}
+          <div className="mt-8 border-t border-line/60 pt-5 md:hidden">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-2.5">
+              Core Principles
+            </h3>
+            <ul className="space-y-2.5">
+              {PRINCIPLES.map((p) => (
+                <li key={p.text} className="flex items-start gap-2.5 text-xs text-muted">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-field bg-accent-soft text-accent">
+                    <Icon name={p.icon} size={13} />
+                  </span>
+                  <span className="pt-0.5">{p.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>

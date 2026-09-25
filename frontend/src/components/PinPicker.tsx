@@ -33,7 +33,14 @@ export function PinPicker({
     L.tileLayer(OSM_TILES, { attribution: OSM_ATTRIBUTION, maxZoom: 19 }).addTo(m);
     m.on("click", (e) => onChangeRef.current({ lat: e.latlng.lat, lon: e.latlng.lng }));
     map.current = m;
+
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize();
+    });
+    ro.observe(el.current);
+
     return () => {
+      ro.disconnect();
       m.remove();
       map.current = null;
       marker.current = null;

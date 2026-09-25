@@ -99,7 +99,14 @@ export default function HotspotMap({
     };
     m.on("click", () => onSelectRef.current(null));
     map.current = m;
+
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize();
+    });
+    ro.observe(el.current);
+
     return () => {
+      ro.disconnect();
       m.remove();
       map.current = null;
       g.current = null;
