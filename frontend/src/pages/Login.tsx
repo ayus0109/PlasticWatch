@@ -4,7 +4,7 @@ import type { DemoUser, PublicSummary, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
 import { Logo, ThemeToggle } from "../components/Shell";
-import { Button, cx, SimulatedBadge, Spinner } from "../components/ui";
+import { Button, cx, Spinner } from "../components/ui";
 import {
   homeFor,
   loginAs,
@@ -57,12 +57,6 @@ const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] 
     blurb: "Ranked hotspots on the map, verify evidence, approve cleanups.",
     icon: "shield",
   },
-];
-
-const PRINCIPLES: { icon: IconName; text: string }[] = [
-  { icon: "detect", text: "The AI flags likely plastic — it never has the last word." },
-  { icon: "shield", text: "Nothing is verified or resolved until a person confirms it." },
-  { icon: "users", text: "Reports show waste is present, never who is responsible." },
 ];
 
 /** Live civic totals. Only counts the public endpoint actually returns — no
@@ -222,17 +216,12 @@ export default function Login() {
 
         <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 md:py-16">
           <div className="flex items-center justify-between gap-4">
-            <Logo onDark />
+            <Logo onDark size="lg" />
             <ThemeToggle onDark />
           </div>
 
           <div className="animate-rise">
-            <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm shadow-sm">
-              <Icon name="detect" size={13} />
-              AI-assisted spatial triage
-            </span>
-
-            <h1 className="font-display mt-5 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+            <h1 className="font-display mt-8 sm:mt-12 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
               AI and GIS for urban waterway and waste intelligence
             </h1>
 
@@ -260,15 +249,6 @@ export default function Login() {
                 Sign in as authority
               </button>
             </div>
-
-            <ul className="mt-8 flex flex-col gap-2 text-label text-white/80 sm:flex-row sm:flex-wrap sm:gap-x-6">
-              {PRINCIPLES.map((pr) => (
-                <li key={pr.text} className="flex items-start gap-2">
-                  <Icon name={pr.icon} size={15} className="mt-0.5 shrink-0 text-accent" />
-                  <span>{pr.text}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* Live counts from /analytics/public — totals only, no session required. */}
@@ -296,16 +276,11 @@ export default function Login() {
             })}
           </div>
 
-          <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-micro text-white/70">
-            {stats.error ? (
+          {stats.error ? (
+            <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-micro text-white/70">
               <span>Live totals are unavailable right now. The figures above will fill in once the service responds.</span>
-            ) : stats.data?.simulated_data ? (
-              <>
-                <SimulatedBadge />
-                <span>These counts come from seeded demo data.</span>
-              </>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
