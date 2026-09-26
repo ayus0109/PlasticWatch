@@ -7,9 +7,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      # stub until a trained model (weights or ONNX) is deployed — see detector.py fix
       - key: DETECTOR_MODE
-        value: stub
+        value: roboflow
+      - key: ROBOFLOW_MODEL_ID
+        value: plastic-bags-aenhn/1,waste-tfpi0/7,garbage-0q3db/10
       - key: CORS_ORIGINS
         value: "*"
 
