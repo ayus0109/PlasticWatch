@@ -189,26 +189,34 @@ export default function Login() {
     <div className="relative min-h-full">
       {/* ----------------------------------------------------------------- hero ---- */}
       <section className="relative isolate overflow-hidden text-white">
-        {/* Save the waterway photo to frontend/public/hero-waterway.jpg and it appears
-            here. The gradient underneath is a designed fallback, not a broken image. */}
+        {/* Underlay tone */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-20"
-          style={{ background: "linear-gradient(135deg,#064e3b 0%,#047857 48%,#0e7490 100%)" }}
+          className="absolute inset-0 -z-30 bg-[#042019]"
         />
+        {/* Background waterway photograph */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-20 bg-cover bg-center"
+          className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat transition-all duration-700"
           style={{ backgroundImage: "url('/hero-waterway.jpg')" }}
         />
-        {/* Scrim: deep forest into oceanic slate, dark enough that body copy clears
-            AA contrast over ANY photograph dropped in behind it. */}
+        {/* Semi-transparent scrim: deeper on the left for text readability,
+            gentler on the right so the waterway, park, and city skyline remain clearly visible */}
         <div
           aria-hidden
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(115deg,rgba(6,78,59,.95) 0%,rgba(6,78,59,.87) 42%,rgba(15,23,42,.76) 100%)",
+              "linear-gradient(108deg, rgba(4, 38, 28, 0.88) 0%, rgba(4, 38, 28, 0.72) 42%, rgba(6, 60, 48, 0.38) 78%, rgba(15, 23, 42, 0.48) 100%)",
+          }}
+        />
+        {/* Vertical vignette to anchor bottom cards */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0, 0, 0, 0.20) 0%, transparent 40%, rgba(4, 25, 20, 0.55) 100%)",
           }}
         />
 
@@ -219,16 +227,16 @@ export default function Login() {
           </div>
 
           <div className="animate-rise">
-            <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm">
+            <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm shadow-sm">
               <Icon name="sparkle" size={13} />
               AI-assisted spatial triage
             </span>
 
-            <h1 className="font-display mt-5 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl">
+            <h1 className="font-display mt-5 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
               AI and GIS for urban waterway and waste intelligence
             </h1>
 
-            <p className="mt-5 max-w-2xl text-body leading-relaxed text-white/85">
+            <p className="mt-5 max-w-2xl text-body leading-relaxed text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
               Citizens photograph likely plastic waste. Duplicate reports merge into hotspots,
               ranked by impact near drains and water — then a person, not the model, decides
               what happens next.
@@ -270,7 +278,7 @@ export default function Login() {
               return (
                 <div
                   key={t.key}
-                  className="rounded-card border border-white/15 bg-white/10 p-4 backdrop-blur-sm"
+                  className="rounded-card border border-white/20 bg-black/25 p-4 backdrop-blur-md shadow-md"
                 >
                   <div className="text-micro font-semibold text-white/70">{t.label}</div>
                   <div className="font-display tabular mt-1.5 text-display font-bold">

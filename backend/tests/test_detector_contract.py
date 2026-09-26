@@ -200,6 +200,55 @@ def test_real_mode_drops_classes_outside_the_contract(set_env, tmp_path, monkeyp
     DetectorOutput.model_validate(out.model_dump())
 
 
+def _fake_model(monkeypatch, names, boxes):
+    result = SimpleNamespace(names=names, boxes=boxes)
+    monkeypatch.setattr(
+        detector,
+        "_load_model",
+        lambda weights: SimpleNamespace(predict=lambda *a, **k: [result]),
+    )
+
+
+def test_real_mode_finding_nothing_is_not_detected_never_an_error(
+    set_env, tmp_path, monkeypatch
+):
+    """A model that RAN and saw no plastic is not_detected — a real answer.
+
+    Regression: an empty box list used to return None, which _run_real could not tell
+    apart from "no detector available", so it produced ai_status=error. The citizen was
+    then told "we couldn't analyse this photo right now" about a photo that analysed
+    perfectly — e.g. every photo of an already-clean street.
+    """
+    weights = tmp_path / "best.pt"
+    weights.write_bytes(b"fake")
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=weights)
+    _fake_model(monkeypatch, {0: "plastic_bottle"}, [])
+
+    out = detector.run_detection(textured_photo(tmp_path / "clean.jpg"))
+    assert out.ai_status == AiStatus.not_detected
+    assert out.plastic_count == 0 and out.report_confidence == 0.0
+    assert out.detections == []
+    DetectorOutput.model_validate(out.model_dump())
+
+
+def test_real_mode_only_forbidden_classes_is_not_detected_not_an_error(
+    set_env, tmp_path, monkeypatch
+):
+    """§2.4 filtering emptying the list is still "ran and found no plastic"."""
+    weights = tmp_path / "best.pt"
+    weights.write_bytes(b"fake")
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=weights)
+    boxes = [
+        SimpleNamespace(cls=0, conf=0.99, xyxy=[SimpleNamespace(tolist=lambda: [0, 0, 40, 40])]),
+        SimpleNamespace(cls=1, conf=0.97, xyxy=[SimpleNamespace(tolist=lambda: [5, 5, 60, 60])]),
+    ]
+    _fake_model(monkeypatch, {0: "person", 1: "car"}, boxes)
+
+    out = detector.run_detection(textured_photo(tmp_path / "street.jpg"))
+    assert out.detections == []
+    assert out.ai_status == AiStatus.not_detected
+
+
 # ---------------------------------------------------------------------------
 # Confidence tiers
 # ---------------------------------------------------------------------------

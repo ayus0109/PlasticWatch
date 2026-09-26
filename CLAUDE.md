@@ -86,10 +86,15 @@ Health check: `curl localhost:8000/health` → `{"status":"ok","postgis":true}`.
 - [ ] Short summary written: what changed, how it was verified, what's next.
 
 ## 8. Do NOT build (out of scope)
-Native mobile app · real auth/OTP (use seeded demo users + role switcher) · notifications/email/push ·
+Native mobile app · OTP / SMS / third-party SSO · notifications/email/push ·
 segmentation / SAM / Grounding DINO · CLIP (P2 only) · learned reporter reliability (static 0.5) ·
 trend-prediction models · satellite/drone/CCTV pipelines · **any person/vehicle/licence-plate detection** ·
 websockets (use polling) · multi-city · i18n · payments/rewards/blockchain · hotspot polygons (circle only).
+
+**Amended:** email/password auth WAS built (`routers/auth.py`, `auth_utils.py`) — register,
+login, `/me`, PBKDF2-HMAC-SHA256 with a per-user salt, stdlib only so §3 still holds. The
+seeded demo users and role switcher remain, so a demo never needs an account. This entry
+previously forbade it and was out of step with the code; OTP and external SSO stay out.
 P1 (tasks/routing F9, before/after F10) are built ONLY after the P0 cut line (F1–F7 + F11 + KPI F8).
 
 ## 9. Design language (for "great UI/UX" within the fixed stack)

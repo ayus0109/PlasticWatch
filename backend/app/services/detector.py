@@ -354,7 +354,12 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
             detections.append(_box(target_class, float(box.conf), x1, y1, x2, y2, w, h))
 
         if not detections:
-            return None
+            # The model RAN and found nothing it may report. That is an answer
+            # (not_detected), not a failure. Returning None here would make _run_real
+            # fall through to _error_output(), and the citizen would be told "we
+            # couldn't analyse this photo" about a photo that analysed perfectly —
+            # the same distinction _try_cv_detection's docstring already draws.
+            return summarise([], None)
 
         annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
         return summarise(detections, annotated)
