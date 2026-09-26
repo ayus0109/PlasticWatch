@@ -193,6 +193,12 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6, max_length=128)
     role: UserRole = UserRole.citizen
     ward_id: int | None = None
+    centre_id: str | None = Field(
+        None, description="Assigned Municipal Centre / Ward ID for Government Officials"
+    )
+    department: str | None = Field(
+        None, description="Department or Designation for Government Officials"
+    )
 
 
 class LoginRequest(BaseModel):

@@ -80,32 +80,16 @@ export function HamburgerMenu({
             type="button"
             onClick={() => handleLoginClick()}
             className={cx(
-              "hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[38px] rounded-field text-xs font-semibold shadow-sm transition-all duration-150 active:scale-95",
+              "inline-flex items-center gap-1.5 px-4 py-2 min-h-[40px] rounded-field text-xs sm:text-sm font-bold shadow-sm transition-all duration-150 active:scale-95",
               onDark
                 ? "bg-accent text-accent-fg hover:bg-accent/90"
                 : "bg-accent text-accent-fg hover:bg-accent/90",
             )}
           >
-            <Icon name="shield" size={14} />
+            <Icon name="shield" size={15} />
             Sign In
           </button>
         )}
-
-        {/* Quick Theme Toggle Icon */}
-        <button
-          type="button"
-          onClick={flipTheme}
-          aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} theme`}
-          className={cx(
-            "grid h-10 w-10 place-items-center rounded-field border transition-colors active:scale-95",
-            onDark
-              ? "border-white/20 bg-white/10 text-white/90 hover:bg-white/20 hover:text-white"
-              : "border-line bg-surface text-ink hover:bg-surface-2",
-          )}
-          title={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
-        >
-          <Icon name={mode === "dark" ? "sun" : "moon"} size={17} />
-        </button>
 
         {/* Hamburger Corner Button */}
         <button
@@ -130,7 +114,7 @@ export function HamburgerMenu({
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-12 z-[1100] w-80 overflow-hidden rounded-card border border-line bg-surface p-2 shadow-pop animate-rise"
+            className="absolute right-0 top-12 z-[1100] w-72 overflow-hidden rounded-card border border-line bg-surface p-2.5 shadow-pop animate-rise"
           >
             {/* Menu Header */}
             <div className="flex items-center justify-between border-b border-line px-2.5 pb-2.5 pt-1">
@@ -149,54 +133,7 @@ export function HamburgerMenu({
               </button>
             </div>
 
-            {/* MAIN: LOGIN / ACCESS PORTAL */}
-            <div className="mt-2.5 rounded-card border border-accent/30 bg-accent-soft p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                  <Icon name="shield" size={13} />
-                  Main Action · Login
-                </span>
-                <span className="text-[10px] rounded-full bg-accent/20 px-2 py-0.5 font-semibold text-accent">
-                  Portal
-                </span>
-              </div>
-              <p className="text-xs text-ink font-medium leading-snug mb-2.5">
-                Sign in to your account or choose your role:
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleLoginClick("citizen")}
-                  className="flex flex-col items-center justify-center gap-1 rounded-field bg-surface p-2 text-center border border-line hover:border-accent hover:text-accent transition-all duration-150 active:scale-95 shadow-sm"
-                >
-                  <Icon name="camera" size={18} className="text-accent" />
-                  <span className="text-xs font-bold text-ink">Citizen</span>
-                  <span className="text-[10px] text-muted">Report waste</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleLoginClick("authority")}
-                  className="flex flex-col items-center justify-center gap-1 rounded-field bg-surface p-2 text-center border border-line hover:border-accent hover:text-accent transition-all duration-150 active:scale-95 shadow-sm"
-                >
-                  <Icon name="shield" size={18} className="text-accent" />
-                  <span className="text-xs font-bold text-ink">Authority</span>
-                  <span className="text-[10px] text-muted">Govt Triage</span>
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleLoginClick()}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-field bg-accent py-2 text-xs font-bold text-accent-fg hover:bg-accent/90 transition-colors shadow-sm"
-              >
-                Go to Login Page
-                <Icon name="arrowRight" size={14} />
-              </button>
-            </div>
-
-            {/* SECONDARY OPTIONS */}
+            {/* ONLY: About & Theme Mode */}
             <div className="mt-2 space-y-1">
               {/* About Button */}
               <button

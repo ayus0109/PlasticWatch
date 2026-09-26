@@ -82,6 +82,8 @@ export default function Login() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState<UserRole>("citizen");
+  const [regCentreId, setRegCentreId] = useState("");
+  const [regDepartment, setRegDepartment] = useState("");
 
   // Read URL query parameter: e.g. /login?role=citizen or /login?role=authority
   useEffect(() => {
@@ -100,6 +102,10 @@ export default function Login() {
       role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local",
     );
     setLoginPassword("password123");
+    if (role === "authority") {
+      setRegCentreId("PMC-CENTRE-401");
+      setRegDepartment("Urban Solid Waste & Sanitation Bureau");
+    }
     setError(null);
   };
 
@@ -153,6 +159,10 @@ export default function Login() {
       setError("Password must be at least 6 characters.");
       return;
     }
+    if (regRole === "authority" && !regCentreId.trim()) {
+      setError("Municipal Centre ID or Ward ID is required for Government Official accounts (e.g. PMC-CENTRE-401).");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -161,6 +171,8 @@ export default function Login() {
         email: regEmail.trim(),
         password: regPassword,
         role: regRole,
+        centre_id: regRole === "authority" ? regCentreId.trim() : undefined,
+        department: regRole === "authority" ? regDepartment.trim() : undefined,
       });
       navigate(homeFor(res.user.role), { replace: true });
     } catch (err) {
@@ -272,7 +284,7 @@ export default function Login() {
               <form onSubmit={handlePasswordLogin} className="mt-5 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-ink" htmlFor="login-email">
-                    Email or Username
+                    Email Address or Centre ID
                   </label>
                   <input
                     id="login-email"
@@ -280,10 +292,13 @@ export default function Login() {
                     autoComplete="username"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="name@example.com or citizen"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    placeholder="user@example.org or PMC-CENTRE-401"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
+                  <p className="mt-1 text-[11px] text-muted">
+                    Citizens use email; Government officials can use their assigned Centre ID or email.
+                  </p>
                 </div>
 
                 <div>
@@ -299,7 +314,7 @@ export default function Login() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
@@ -308,7 +323,7 @@ export default function Login() {
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full"
+                  className="w-full !min-h-[46px] text-sm font-bold"
                 >
                   Sign In
                 </Button>
@@ -331,7 +346,7 @@ export default function Login() {
                       className="flex-1 min-h-[38px] rounded border border-line bg-surface px-3 py-1.5 font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 text-center flex items-center justify-center gap-1.5"
                     >
                       <Icon name="shield" size={14} className="text-accent" />
-                      Authority (Gov)
+                      Authority (PMC-CENTRE-401)
                     </button>
                   </div>
                 </div>
@@ -431,11 +446,53 @@ export default function Login() {
                   </div>
                 </div>
 
+                {/* Government Official Centre ID Verification */}
+                {regRole === "authority" && (
+                  <div className="rounded-card border border-accent/40 bg-accent-soft/30 p-3.5 space-y-3 animate-rise">
+                    <div className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-wider">
+                      <Icon name="shield" size={15} />
+                      <span>Official Government Credentials</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-ink" htmlFor="reg-centre-id">
+                        Municipal Centre / Ward ID <span className="text-accent">*</span>
+                      </label>
+                      <input
+                        id="reg-centre-id"
+                        type="text"
+                        value={regCentreId}
+                        onChange={(e) => setRegCentreId(e.target.value.toUpperCase())}
+                        placeholder="e.g. PMC-CENTRE-401 or WARD-04"
+                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent font-mono tracking-wide"
+                        required={regRole === "authority"}
+                      />
+                      <p className="mt-1 text-[11px] text-muted">
+                        Verification proof: Required municipal center or ward badge ID for authority triage.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-ink" htmlFor="reg-department">
+                        Department / Designation (optional)
+                      </label>
+                      <input
+                        id="reg-department"
+                        type="text"
+                        value={regDepartment}
+                        onChange={(e) => setRegDepartment(e.target.value)}
+                        placeholder="e.g. Solid Waste & Sanitation Bureau"
+                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full mt-2"
+                  className="w-full !min-h-[46px] text-sm font-bold mt-2"
                 >
                   Create Account
                 </Button>
@@ -495,9 +552,14 @@ export default function Login() {
             )}
           </div>
 
-          <div className="mt-5 text-center text-micro text-muted">
-            <Link to="/" className="hover:underline">
-              ← Return to PlasticWatch Overview
+          {/* Comfortable, prominent mobile-friendly return link */}
+          <div className="mt-6 text-center">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center gap-2 rounded-field px-4 py-2.5 text-sm sm:text-base font-semibold text-muted hover:text-ink hover:bg-surface-2 border border-transparent hover:border-line transition-all active:scale-95"
+            >
+              <Icon name="chevronLeft" size={17} />
+              <span>Return to PlasticWatch Overview</span>
             </Link>
           </div>
         </div>

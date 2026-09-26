@@ -101,6 +101,17 @@ def register(
             detail="This name is reserved for demo accounts. Please pick another name.",
         )
 
+    # Government Officials can provide their assigned Municipal Centre / Ward ID
+    ward_id = body.ward_id
+    if body.role == UserRole.authority and body.centre_id:
+        import re
+        nums = re.findall(r"\d+", body.centre_id)
+        if nums and ward_id is None:
+            try:
+                ward_id = int(nums[0])
+            except ValueError:
+                pass
+
     # Check if email is already registered in DB
     existing_by_email = get_user_by_email_or_name(conn, email)
     if existing_by_email:
@@ -123,7 +134,7 @@ def register(
         email=email,
         password=body.password,
         role=body.role,
-        ward_id=body.ward_id,
+        ward_id=ward_id,
     )
     token, expires_at = create_demo_token(new_user)
     return TokenResponse(token=token, user=new_user, expires_at=expires_at)

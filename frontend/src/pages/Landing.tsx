@@ -105,9 +105,9 @@ export default function Landing() {
               what happens next.
             </p>
 
-            {/* Action Buttons Navigating to Login */}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {session ? (
+            {/* Authenticated quick jump button */}
+            {session && (
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => navigate(homeFor(session.user.role))}
@@ -116,28 +116,8 @@ export default function Landing() {
                   <Icon name="shield" size={17} />
                   Open {session.user.role === "authority" ? "Government Dashboard" : "Citizen Portal"}
                 </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => goToLogin("citizen")}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field bg-accent px-5 text-label font-bold text-accent-fg transition-transform duration-150 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] shadow-lg"
-                  >
-                    <Icon name="camera" size={17} />
-                    Sign in to report waste
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => goToLogin("authority")}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-white/10 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-white/20 active:translate-y-0 active:scale-[0.98]"
-                  >
-                    <Icon name="shield" size={17} />
-                    Sign in as authority
-                  </button>
-                </>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Live Civic Counts */}

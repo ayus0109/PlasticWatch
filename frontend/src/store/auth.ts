@@ -87,6 +87,8 @@ export async function registerUser(data: {
   password: string;
   role?: UserRole;
   ward_id?: number | null;
+  centre_id?: string | null;
+  department?: string | null;
 }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/register", data);
   const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
