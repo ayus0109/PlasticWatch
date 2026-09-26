@@ -192,8 +192,33 @@ For responsible disclosure of security vulnerabilities, please refer to [SECURIT
 
 ---
 
+## 📚 Citations & Dataset Provenance
+
+### Plastic Waste Computer Vision Dataset
+This project uses the open-source **Plastic Waste Dataset** (12,484 annotated images across 3 splits: 9,609 train, 1,983 valid, 892 test) hosted on Roboflow Universe for object detection of plastic bottles, bags, and packaging.
+
+```bibtex
+@misc{ plastic-waste-ag4eg_dataset,
+  title = { Plastic Waste Dataset },
+  type = { Open Source Dataset },
+  author = { Edwin Daza Saavedra's Workspace },
+  howpublished = { \url{ https://universe.roboflow.com/edwin-daza-saavedra-s-workspace/plastic-waste-ag4eg } },
+  url = { https://universe.roboflow.com/edwin-daza-saavedra-s-workspace/plastic-waste-ag4eg },
+  journal = { Roboflow Universe },
+  publisher = { Roboflow },
+  year = { 2026 },
+  month = { jul },
+  note = { visited on 2026-09-26 },
+}
+```
+
+### TACO (Trash Annotations in Context)
+Detection models also benchmark against open [TACO](https://tacodataset.org/) annotations for contextual waste in natural and urban environments.
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
 Geo data © [OpenStreetMap](https://www.openstreetmap.org/) contributors.
-Detection trained on open [TACO](https://tacodataset.org/) annotations.
+Detection trained on open [Plastic Waste Dataset](https://universe.roboflow.com/edwin-daza-saavedra-s-workspace/plastic-waste-ag4eg) and [TACO](https://tacodataset.org/) annotations.

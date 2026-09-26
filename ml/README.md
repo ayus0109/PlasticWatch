@@ -51,3 +51,23 @@ TACO category can't quietly shrink the training set.
 Per-class mAP50 / precision / recall, measured, from `eval.py` or the notebook — plus the
 drop on the local street set, and ten failure images. **Never promise an accuracy figure.**
 Results belong in `ml/reports/metrics.md` (written by the notebook), quoted as they are.
+
+## Dataset Citations & Provenance
+
+### Plastic Waste Dataset (Roboflow Universe)
+Open-source dataset of 12,484 annotated images focused on plastic bottles, bags, and cups.
+
+```bibtex
+@misc{ plastic-waste-ag4eg_dataset,
+  title = { Plastic Waste Dataset },
+  type = { Open Source Dataset },
+  author = { Edwin Daza Saavedra's Workspace },
+  howpublished = { \url{ https://universe.roboflow.com/edwin-daza-saavedra-s-workspace/plastic-waste-ag4eg } },
+  url = { https://universe.roboflow.com/edwin-daza-saavedra-s-workspace/plastic-waste-ag4eg },
+  journal = { Roboflow Universe },
+  publisher = { Roboflow },
+  year = { 2026 },
+  month = { jul },
+  note = { visited on 2026-09-26 },
+}
+```

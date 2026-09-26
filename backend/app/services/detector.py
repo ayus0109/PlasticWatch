@@ -383,77 +383,18 @@ TACO_TO_CONTRACT: dict[str, DetectionClass] = {
 # ---------------------------------------------------------------------------
 
 
-@lru_cache
-def _load_model(weights: str):
-    from ultralytics import YOLO  # imported lazily: the stub must not need it
-
-    return YOLO(weights)
-
-
-def _try_yolo_detection(path: Path) -> DetectorOutput | None:
-    """Run YOLO only if trained weights exist on disk, so a host that cannot afford
-    PyTorch's ~800MB never loads it."""
-    s = get_settings()
-    custom = Path(s.DETECTOR_WEIGHTS)
-    if not custom.is_file():
-        return None
-
-    # No import probe here: _load_model() is the single lazy import site, and the
-    # except below already covers a missing ultralytics.
-    weights_target = str(custom)
-    try:
-        with Image.open(path) as raw:
-            img = ImageOps.exif_transpose(raw).convert("RGB")
-        w, h = img.size
-
-        model = _load_model(weights_target)
-        # Use operating threshold capped at 0.25 to catch real-world litter
-        conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
-        results = model.predict(img, imgsz=s.DETECTOR_IMGSZ, conf=conf_floor, verbose=False)
-        if not results:
-            return None
-        result = results[0]
-
-        detections: list[Detection] = []
-        for box in result.boxes:
-            raw_name = result.names[int(box.cls)].lower().strip()
-            # CLAUDE.md §2.4: strictly drop persons, vehicles, license plates, animals
-            if is_forbidden_label(raw_name):
-                continue
-
-            target_class: DetectionClass | None = None
-            if raw_name in ALLOWED_CLASS_NAMES:
-                target_class = DetectionClass(raw_name)
-            elif raw_name in COCO_TO_CONTRACT:
-                target_class = COCO_TO_CONTRACT[raw_name]
-            elif "bottle" in raw_name:
-                target_class = DetectionClass.plastic_bottle
-            elif "bag" in raw_name:
-                target_class = DetectionClass.plastic_bag_film
-            elif any(k in raw_name for k in ("cup", "can", "bowl", "box", "pack", "container")):
-                target_class = DetectionClass.plastic_packaging
-            elif "plastic" in raw_name or "waste" in raw_name or "litter" in raw_name:
-                target_class = DetectionClass.plastic_other
-
-            if target_class is None:
-                continue
-
-            x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
-            detections.append(_box(target_class, float(box.conf), x1, y1, x2, y2, w, h))
-
-        if not detections:
-            # The model RAN and found nothing it may report. That is an answer
-            # (not_detected), not a failure. Returning None here would make _run_real
-            # fall through to _error_output(), and the citizen would be told "we
-            # couldn't analyse this photo" about a photo that analysed perfectly —
-            # the same distinction _try_cv_detection's docstring already draws.
-            return summarise([], None)
-
-        annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
-        return summarise(detections, annotated)
-    except Exception:
-        logger.exception("YOLO inference failed for %s", path)
-        return None
+def _resolve_weights_path(weights_str: str) -> Path | None:
+    """Resolve detector weights path robustly across CWD variations."""
+    p = Path(weights_str)
+    if p.is_file():
+        return p
+    backend_p = Path(__file__).resolve().parent.parent.parent / weights_str
+    if backend_p.is_file():
+        return backend_p
+    alt = Path(__file__).resolve().parent.parent.parent / "weights" / Path(weights_str).name
+    if alt.is_file():
+        return alt
+    return None
 
 
 def resolve_roboflow_class(raw: str) -> DetectionClass | None:
@@ -470,7 +411,7 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
     # 3. Known COCO mapping
     if raw_name in COCO_TO_CONTRACT:
         return COCO_TO_CONTRACT[raw_name]
-    # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, etc.)
+    # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, plastic-waste-ag4eg, etc.)
     if "bottle" in raw_name:
         return (
             DetectionClass.non_plastic_litter
@@ -508,6 +449,69 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
     ):
         return DetectionClass.non_plastic_litter
     return None
+
+
+@lru_cache
+def _load_model(weights: str):
+    from ultralytics import YOLO  # imported lazily: the stub must not need it
+
+    return YOLO(weights)
+
+
+def _try_yolo_detection(path: Path) -> DetectorOutput | None:
+    """Run YOLO only if trained weights exist on disk, so a host that cannot afford
+    PyTorch's ~800MB never loads it."""
+    s = get_settings()
+    custom = _resolve_weights_path(s.DETECTOR_WEIGHTS)
+    if custom is None:
+        return None
+
+    # No import probe here: _load_model() is the single lazy import site, and the
+    # except below already covers a missing ultralytics.
+    weights_target = str(custom)
+    try:
+        with Image.open(path) as raw:
+            img = ImageOps.exif_transpose(raw).convert("RGB")
+        w, h = img.size
+
+        model = _load_model(weights_target)
+        # Use operating threshold capped at 0.25 to catch real-world litter
+        conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
+        results = model.predict(img, imgsz=s.DETECTOR_IMGSZ, conf=conf_floor, verbose=False)
+        if not results:
+            return None
+        result = results[0]
+
+        detections: list[Detection] = []
+        for box in result.boxes:
+            raw_name = result.names[int(box.cls)].lower().strip()
+            # CLAUDE.md §2.4: strictly drop persons, vehicles, license plates, animals
+            if is_forbidden_label(raw_name):
+                continue
+
+            target_class = resolve_roboflow_class(raw_name)
+            if target_class is None:
+                continue
+
+            x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
+            detections.append(_box(target_class, float(box.conf), x1, y1, x2, y2, w, h))
+
+        if not detections:
+            # The model RAN and found nothing it may report. That is an answer
+            # (not_detected), not a failure. Returning None here would make _run_real
+            # fall through to _error_output(), and the citizen would be told "we
+            # couldn't analyse this photo" about a photo that analysed perfectly —
+            # the same distinction _try_cv_detection's docstring already draws.
+            return summarise([], None)
+
+        annotated = _write_annotated(img, detections, _annotated_path(path), simulated=False)
+        return summarise(detections, annotated)
+    except Exception:
+        logger.exception("YOLO inference failed for %s", path)
+        return None
+
+
+
 
 
 def _box_iou(b1: Detection, b2: Detection) -> float:
@@ -756,7 +760,7 @@ def _run_real(path: Path) -> DetectorOutput:
         return _error_output()
 
     # 1. The trained model, when its weights are actually on disk.
-    if Path(s.DETECTOR_WEIGHTS).is_file():
+    if _resolve_weights_path(s.DETECTOR_WEIGHTS) is not None:
         yolo_res = _try_yolo_detection(path)
         if yolo_res is not None:
             return yolo_res
