@@ -46,6 +46,19 @@ class Settings(BaseSettings):
     DETECTOR_CACHE_PATH: str = "../seed/demo_images/detections.json"
     DETECTOR_CACHE_HAMMING: int = 6
 
+    # --- Hosted inference (Roboflow) ----------------------------------------
+    # PRIVACY: this uploads the citizen's photo to a third party. Everything else in
+    # PlasticWatch runs on our own machine. Only for hosts that cannot carry PyTorch
+    # (the free deploy tier); the local docker-compose demo should use "real".
+    # Off unless a key is set, and tried only AFTER local weights (detector._run_real).
+    # The model is trained on TACO, so it returns TACO category names, which
+    # detector.TACO_TO_CONTRACT maps onto the frozen five (SPEC §6). Person/vehicle
+    # labels are dropped by the same filter as every other path (CLAUDE.md §2.4).
+    ROBOFLOW_API_KEY: str = ""
+    ROBOFLOW_MODEL_ID: str = "garbage-litter-detector/1"
+    ROBOFLOW_URL: str = "https://serverless.roboflow.com"
+    ROBOFLOW_TIMEOUT_S: float = 12.0
+
     # --- Confidence tiers (CLAUDE.md §2.7) ----------------------------------
     # Raw confidence is not a calibrated probability; the UI always shows a tier.
     # [0, MEDIUM) low, [MEDIUM, HIGH) medium, [HIGH, 1] high.

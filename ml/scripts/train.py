@@ -43,11 +43,31 @@ def main() -> int:
     parser.add_argument("--project", default="ml/runs", help="Project directory for runs")
     parser.add_argument("--name", default="plasticwatch", help="Run name")
     parser.add_argument("--output-weights", type=Path, default=Path("backend/weights/best.pt"), help="Destination for best.pt")
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help=(
+            "Continue an interrupted run from its last.pt "
+            "(e.g. ml/runs/<name>/weights/last.pt). Ultralytics reuses the ORIGINAL "
+            "run's arguments, so --epochs/--batch here are ignored."
+        ),
+    )
 
     args = parser.parse_args()
 
     if not args.data.is_file():
         raise SystemExit(f"data.yaml not found at {args.data}. Run taco_to_yolo.py first.")
+
+    if args.resume:
+        if not args.resume.is_file():
+            raise SystemExit(f"--resume checkpoint not found: {args.resume}")
+        print(f"=== Resuming training from {args.resume} ===")
+        model = YOLO(str(args.resume))
+        results = model.train(resume=True)
+        save_dir = Path(results.save_dir) if hasattr(results, "save_dir") else args.resume.parent.parent
+        _finish(args, save_dir)
+        return 0
 
     print(f"=== Starting YOLO Training ({args.model}) ===")
     print(f"Data: {args.data}")
@@ -73,6 +93,15 @@ def main() -> int:
     )
 
     save_dir = Path(results.save_dir) if hasattr(results, "save_dir") else Path(args.project) / args.name
+    _finish(args, save_dir)
+    return 0
+
+
+def _finish(args, save_dir: Path) -> None:
+    """Copy the best checkpoint into the app, validate it, and write metrics.md.
+
+    Shared by a fresh run and a --resume run so both leave the repo in the same state.
+    """
     best_weights = save_dir / "weights" / "best.pt"
 
     if best_weights.is_file():
@@ -118,8 +147,6 @@ def main() -> int:
         print(f"[+] Wrote metrics report to: {metrics_file}")
     else:
         print(f"[!] Warning: Best weights not found at {best_weights}")
-
-    return 0
 
 
 if __name__ == "__main__":

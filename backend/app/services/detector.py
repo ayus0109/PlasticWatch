@@ -21,10 +21,15 @@ Both modes feed one summarise() so count / area / confidence follow SPEC §6 exa
 
 from __future__ import annotations
 
+import base64
 import hashlib
+import io as _io
 import json
 import logging
 import random
+import re
+import urllib.error
+import urllib.request
 from functools import lru_cache
 from pathlib import Path
 
@@ -48,9 +53,25 @@ PLASTIC_CLASSES = frozenset(
 )
 ALLOWED_CLASS_NAMES = frozenset(c.value for c in DetectionClass)
 # Never let a model label a person, a vehicle or an animal out of this module (§2.4).
-FORBIDDEN_NAME_PARTS = (
-    "person", "car", "vehicle", "truck", "motorcycle", "bike", "bus", "dog", "cat", "horse",
+# Matched as WHOLE WORDS (plural allowed), not substrings. A plain substring test also
+# caught "carton", "cardboard", "carded" and "carrier bag" on the word "car" — seven
+# TACO categories, including a plastic carrier bag, silently discarded as vehicles.
+# Widening the list is safe; loosening the pattern is not.
+FORBIDDEN_WORDS = (
+    "person", "people", "car", "vehicle", "truck", "motorcycle", "bike", "bicycle",
+    "bus", "dog", "cat", "horse", "face", "licence plate", "license plate",
+    "number plate",
 )
+_FORBIDDEN_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(w) for w in FORBIDDEN_WORDS) + r")(?:e?s)?\b",
+    re.IGNORECASE,
+)
+
+
+def is_forbidden_label(name: str) -> bool:
+    """True when a model's raw class name names a person, vehicle or animal (§2.4)."""
+    return bool(_FORBIDDEN_RE.search(name.lower()))
+
 
 # Box labels always say "likely" and carry the tier (CLAUDE.md §2.1, §2.7).
 _LABELS = {
@@ -126,7 +147,7 @@ def _box(cls: DetectionClass, conf: float, x1, y1, x2, y2, w: int, h: int) -> De
 
 
 def is_stub_mode() -> bool:
-    return get_settings().DETECTOR_MODE.strip().lower() != "real"
+    return get_settings().DETECTOR_MODE.strip().lower() == "stub"
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +310,72 @@ COCO_TO_CONTRACT: dict[str, DetectionClass] = {
     "book": DetectionClass.non_plastic_litter,
 }
 
+# TACO's 60 categories -> the frozen five. Generated from ml/scripts/class_map.csv,
+# the mapping two people reviewed (SPEC §20 item 3); keep the two in step. The hosted
+# Roboflow model is trained on TACO and answers with these names verbatim.
+TACO_TO_CONTRACT: dict[str, DetectionClass] = {
+    "aerosol": DetectionClass.non_plastic_litter,
+    "aluminium blister pack": DetectionClass.non_plastic_litter,
+    "aluminium foil": DetectionClass.non_plastic_litter,
+    "battery": DetectionClass.non_plastic_litter,
+    "broken glass": DetectionClass.non_plastic_litter,
+    "carded blister pack": DetectionClass.plastic_packaging,
+    "cigarette": DetectionClass.non_plastic_litter,
+    "clear plastic bottle": DetectionClass.plastic_bottle,
+    "corrugated carton": DetectionClass.non_plastic_litter,
+    "crisp packet": DetectionClass.plastic_packaging,
+    "disposable food container": DetectionClass.plastic_packaging,
+    "disposable plastic cup": DetectionClass.plastic_other,
+    "drink can": DetectionClass.non_plastic_litter,
+    "drink carton": DetectionClass.non_plastic_litter,
+    "egg carton": DetectionClass.non_plastic_litter,
+    "foam cup": DetectionClass.plastic_other,
+    "foam food container": DetectionClass.plastic_packaging,
+    "food can": DetectionClass.non_plastic_litter,
+    "food waste": DetectionClass.non_plastic_litter,
+    "garbage bag": DetectionClass.plastic_bag_film,
+    "glass bottle": DetectionClass.non_plastic_litter,
+    "glass cup": DetectionClass.non_plastic_litter,
+    "glass jar": DetectionClass.non_plastic_litter,
+    "magazine paper": DetectionClass.non_plastic_litter,
+    "meal carton": DetectionClass.non_plastic_litter,
+    "metal bottle cap": DetectionClass.non_plastic_litter,
+    "metal lid": DetectionClass.non_plastic_litter,
+    "normal paper": DetectionClass.non_plastic_litter,
+    "other carton": DetectionClass.non_plastic_litter,
+    "other plastic": DetectionClass.plastic_other,
+    "other plastic bottle": DetectionClass.plastic_bottle,
+    "other plastic container": DetectionClass.plastic_packaging,
+    "other plastic cup": DetectionClass.plastic_other,
+    "other plastic wrapper": DetectionClass.plastic_bag_film,
+    "paper bag": DetectionClass.non_plastic_litter,
+    "paper cup": DetectionClass.non_plastic_litter,
+    "paper straw": DetectionClass.non_plastic_litter,
+    "pizza box": DetectionClass.non_plastic_litter,
+    "plastic bottle cap": DetectionClass.plastic_bottle,
+    "plastic film": DetectionClass.plastic_bag_film,
+    "plastic glooves": DetectionClass.plastic_other,
+    "plastic lid": DetectionClass.plastic_packaging,
+    "plastic straw": DetectionClass.plastic_other,
+    "plastic utensils": DetectionClass.plastic_other,
+    "plastified paper bag": DetectionClass.plastic_bag_film,
+    "polypropylene bag": DetectionClass.plastic_bag_film,
+    "pop tab": DetectionClass.non_plastic_litter,
+    "rope & strings": DetectionClass.non_plastic_litter,
+    "scrap metal": DetectionClass.non_plastic_litter,
+    "shoe": DetectionClass.non_plastic_litter,
+    "single-use carrier bag": DetectionClass.plastic_bag_film,
+    "six pack rings": DetectionClass.plastic_other,
+    "spread tub": DetectionClass.plastic_packaging,
+    "squeezable tube": DetectionClass.plastic_packaging,
+    "styrofoam piece": DetectionClass.plastic_other,
+    "tissues": DetectionClass.non_plastic_litter,
+    "toilet tube": DetectionClass.non_plastic_litter,
+    "tupperware": DetectionClass.plastic_packaging,
+    "unlabeled litter": DetectionClass.non_plastic_litter,
+    "wrapping paper": DetectionClass.non_plastic_litter,
+}
+
 
 # ---------------------------------------------------------------------------
 # Real (Ultralytics) & OpenCV Computer Vision Detectors
@@ -330,7 +417,7 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
         for box in result.boxes:
             raw_name = result.names[int(box.cls)].lower().strip()
             # CLAUDE.md §2.4: strictly drop persons, vehicles, license plates, animals
-            if any(f in raw_name for f in FORBIDDEN_NAME_PARTS):
+            if is_forbidden_label(raw_name):
                 continue
 
             target_class: DetectionClass | None = None
@@ -365,6 +452,86 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
         return summarise(detections, annotated)
     except Exception:
         logger.exception("YOLO inference failed for %s", path)
+        return None
+
+
+def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
+    """Hosted inference on Roboflow: a REAL model, but someone else's, and reaching it
+    means UPLOADING THE CITIZEN'S PHOTO off this machine. Everything else in
+    PlasticWatch stays local, so this is opt-in (ROBOFLOW_API_KEY) and is tried only
+    after local weights have been ruled out.
+
+    None means "could not run" — not configured, network down, bad response — so the
+    caller falls through to the next detector. It never turns a failure into output.
+
+    The hosted model is trained on TACO and returns TACO category names, which
+    TACO_TO_CONTRACT maps onto the five SPEC §6 classes; an unmapped name is dropped
+    rather than guessed, and the §2.4 person/vehicle filter runs first, exactly as on
+    the local path. A model that ran and matched nothing is not_detected, not an error.
+    """
+    s = get_settings()
+    if not s.ROBOFLOW_API_KEY:
+        return None
+
+    try:
+        with Image.open(path) as raw:
+            img = ImageOps.exif_transpose(raw).convert("RGB")
+        w, h = img.size
+
+        # Send the EXIF-corrected image, so the boxes we get back are in the same
+        # orientation as the image we draw them on.
+        buf = _io.BytesIO()
+        img.save(buf, format="JPEG", quality=90)
+        body = base64.b64encode(buf.getvalue())
+
+        conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
+        url = (
+            f"{s.ROBOFLOW_URL.rstrip('/')}/{s.ROBOFLOW_MODEL_ID}"
+            f"?confidence={conf_floor}&format=json"
+        )
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                # Header transport: the key never goes in a URL, where it would land
+                # in logs and proxy history.
+                "Authorization": f"Bearer {s.ROBOFLOW_API_KEY}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=s.ROBOFLOW_TIMEOUT_S) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+
+        detections: list[Detection] = []
+        for pred in payload.get("predictions", []):
+            raw_name = str(pred.get("class", "")).lower().strip()
+            if is_forbidden_label(raw_name):
+                continue
+            target = TACO_TO_CONTRACT.get(raw_name)
+            if target is None and raw_name in ALLOWED_CLASS_NAMES:
+                target = DetectionClass(raw_name)
+            if target is None:
+                continue
+            # Roboflow gives the box centre plus its size, in pixels.
+            cx, cy = float(pred.get("x", 0)), float(pred.get("y", 0))
+            bw, bh = float(pred.get("width", 0)), float(pred.get("height", 0))
+            detections.append(
+                _box(target, float(pred.get("confidence", 0.0)),
+                     cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2, w, h)
+            )
+
+        annotated = (
+            _write_annotated(img, detections, _annotated_path(path), simulated=False)
+            if detections
+            else None
+        )
+        return summarise(detections, annotated)
+    except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
+        logger.exception("Roboflow inference failed for %s", path)
+        return None
+    except Exception:
+        logger.exception("Roboflow inference failed for %s", path)
         return None
 
 
@@ -444,18 +611,39 @@ def _try_cv_detection(path: Path) -> DetectorOutput | None:
 
 def _run_real(path: Path) -> DetectorOutput:
     s = get_settings()
+    mode = s.DETECTOR_MODE.strip().lower()
+
+    # Explicit roboflow mode routes directly to Roboflow Serverless Cloud API
+    if mode == "roboflow":
+        if s.ROBOFLOW_API_KEY:
+            rf_res = _try_roboflow_detection(path)
+            if rf_res is not None:
+                return rf_res
+        logger.warning(
+            "DETECTOR_MODE=roboflow requested but ROBOFLOW_API_KEY is unset, "
+            "or the hosted call failed"
+        )
+        return _error_output()
+
     # 1. The trained model, when its weights are actually on disk.
     if Path(s.DETECTOR_WEIGHTS).is_file():
         yolo_res = _try_yolo_detection(path)
         if yolo_res is not None:
             return yolo_res
-    # 2. Opt-in contour heuristic for hosts that cannot afford PyTorch. Off by default:
+    # 2. Hosted inference, if a key is configured. A real model, but a third party's,
+    #    and the photo leaves this machine to reach it — so it never runs ahead of
+    #    local weights, only when those are absent or failed.
+    if s.ROBOFLOW_API_KEY:
+        rf_res = _try_roboflow_detection(path)
+        if rf_res is not None:
+            return rf_res
+    # 3. Opt-in contour heuristic for hosts that cannot afford PyTorch. Off by default:
     #    it is a shape signal, not a detector, and it is labelled as one.
     if s.DETECTOR_CV_FALLBACK:
         cv_res = _try_cv_detection(path)
         if cv_res is not None:
             return cv_res
-    # 3. No usable detector. Refusing to fall back to the stub: that would present
+    # 4. No usable detector. Refusing to fall back to the stub: that would present
     #    fake output as real (CLAUDE.md §2.2, §5).
     return _error_output()
 
