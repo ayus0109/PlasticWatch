@@ -247,8 +247,10 @@ function RoleSwitcher() {
         <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent">
           {displayName
             .split(" ")
-            .map((w) => w[0])
-            .slice(-2)
+            // Only words that start with a letter (a letter has distinct cases).
+            .filter((w) => w !== "" && w[0].toLowerCase() !== w[0].toUpperCase())
+            .map((w) => w[0].toUpperCase())
+            .slice(0, 2)
             .join("")}
         </span>
         <span className="hidden text-left leading-tight sm:block">
@@ -298,11 +300,30 @@ function RoleSwitcher() {
             }}
             className="flex min-h-11 w-full items-center gap-2 rounded-field px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
           >
-            <Icon name="logout" size={16} /> Sign out
+            <Icon name="logout" size={16} /> Log out
           </button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Always visible on signed-in pages: logging out should never be hidden in a menu. */
+function LogoutButton() {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        logout();
+        navigate("/");
+      }}
+      aria-label="Log out"
+      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95 sm:px-3"
+    >
+      <Icon name="logout" size={18} />
+      <span className="hidden sm:inline">Log out</span>
+    </button>
   );
 }
 
@@ -358,6 +379,7 @@ export function Shell({
           <div className="ml-auto flex items-center gap-1.5">
             <ThemeToggle />
             <RoleSwitcher />
+            <LogoutButton />
           </div>
         </div>
         {banner}

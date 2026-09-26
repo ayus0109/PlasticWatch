@@ -74,6 +74,10 @@ export async function loginAs(pick: { role?: UserRole; user_id?: string }): Prom
 export async function loginWithPassword(creds: {
   email: string;
   password: string;
+  /** The portal chosen: the server refuses an account of the other role. */
+  role?: UserRole;
+  /** Required for government accounts. */
+  centre_id?: string;
 }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/login", creds);
   const next = { token: res.token, user: res.user, expiresAt: res.expires_at };

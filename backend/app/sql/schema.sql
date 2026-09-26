@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password text;
+-- Government accounts only: the municipal centre / ward ID they sign in with.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS centre_id text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_simulated boolean NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (lower(email)) WHERE email IS NOT NULL;
 

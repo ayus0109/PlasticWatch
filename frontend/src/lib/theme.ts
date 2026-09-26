@@ -169,6 +169,16 @@ export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12
 /** Corner radii in px. */
 export const radius = { sm: 6, md: 10, lg: 14, xl: 20, pill: 999 } as const;
 
+/**
+ * The animated wave background behind signed-in pages (components/WavesBackground).
+ * Emerald only — the accent family — so it never competes with the warm priority ramp.
+ * Opacity stays low: it is atmosphere, and the text on top must read first.
+ */
+export const waves: Record<ThemeMode, { horizon: string; wave: string; crest: string; opacity: number }> = {
+  light: { horizon: "#d1fae5", wave: "#34d399", crest: "#059669", opacity: 0.38 },
+  dark: { horizon: "#064e3b", wave: "#059669", crest: "#34d399", opacity: 0.6 },
+};
+
 /** Elevation. Kept soft: data, not chrome, should stand out. */
 export const shadow = {
   card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.04)",

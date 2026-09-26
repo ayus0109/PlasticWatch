@@ -4,7 +4,7 @@ import type { DemoUser, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { HamburgerMenu } from "../components/HamburgerMenu";
 import { Icon, type IconName } from "../components/Icon";
-import { Logo, ThemeToggle } from "../components/Shell";
+import { Logo } from "../components/Shell";
 import { Button, cx, Spinner } from "../components/ui";
 import {
   homeFor,
@@ -76,6 +76,9 @@ export default function Login() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  // Citizens and officials sign in with different credentials: officials add a Centre ID.
+  const [portal, setPortal] = useState<"citizen" | "authority">("citizen");
+  const [loginCentreId, setLoginCentreId] = useState("");
 
   // Register form state
   const [regName, setRegName] = useState("");
@@ -89,6 +92,7 @@ export default function Login() {
   useEffect(() => {
     const roleParam = searchParams.get("role");
     if (roleParam === "citizen" || roleParam === "authority") {
+      setPortal(roleParam);
       fillDemoCredentials(roleParam);
       setRegRole(roleParam);
     }
@@ -102,6 +106,8 @@ export default function Login() {
       role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local",
     );
     setLoginPassword("password123");
+    setPortal(role === "authority" ? "authority" : "citizen");
+    setLoginCentreId(role === "authority" ? "PMC-CENTRE-401" : "");
     if (role === "authority") {
       setRegCentreId("PMC-CENTRE-401");
       setRegDepartment("Urban Solid Waste & Sanitation Bureau");
@@ -127,7 +133,11 @@ export default function Login() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim() || !loginPassword) {
-      setError("Please provide your email/username and password.");
+      setError("Please provide your email and password.");
+      return;
+    }
+    if (portal === "authority" && !loginCentreId.trim()) {
+      setError("Government sign-in needs your Municipal Centre / Ward ID.");
       return;
     }
     setBusy(true);
@@ -136,6 +146,8 @@ export default function Login() {
       const res = await loginWithPassword({
         email: loginEmail.trim(),
         password: loginPassword,
+        role: portal,
+        centre_id: portal === "authority" ? loginCentreId.trim() : undefined,
       });
       navigate(homeFor(res.user.role), { replace: true });
     } catch (err) {
@@ -186,23 +198,12 @@ export default function Login() {
     <div className="relative min-h-full bg-bg text-ink flex flex-col">
       {/* Top Header */}
       <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/" aria-label="Back to home" className="flex items-center gap-2">
             <Logo size="md" />
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 rounded-field px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors"
-            >
-              <Icon name="chevronLeft" size={14} />
-              <span>Back to Overview</span>
-            </Link>
-
-            <ThemeToggle />
-            <HamburgerMenu showSignInButton={false} />
-          </div>
+          <HamburgerMenu showLogin={false} />
         </div>
       </header>
 
@@ -211,7 +212,7 @@ export default function Login() {
         <div className="w-full max-w-md animate-rise">
           <div className="rounded-panel border border-line bg-surface p-6 shadow-raised sm:p-8">
             <div className="text-center sm:text-left">
-              <span className="inline-block rounded-full bg-accent-soft px-2.5 py-0.5 text-[11px] font-bold text-accent mb-2">
+              <span className="inline-block rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent mb-2">
                 Authentication Portal
               </span>
               <h1 className="font-display text-heading font-bold tracking-tight text-ink">
@@ -282,9 +283,40 @@ export default function Login() {
             {/* Tab 1: Email + Password Login */}
             {tab === "login" && (
               <form onSubmit={handlePasswordLogin} className="mt-5 space-y-4">
+                <fieldset>
+                  <legend className="mb-1.5 block text-sm font-semibold text-ink">I am signing in as</legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        { key: "citizen", label: "Citizen", icon: "camera" },
+                        { key: "authority", label: "Government", icon: "shield" },
+                      ] as const
+                    ).map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        aria-pressed={portal === p.key}
+                        onClick={() => {
+                          setPortal(p.key);
+                          setError(null);
+                        }}
+                        className={cx(
+                          "flex min-h-12 items-center justify-center gap-2 rounded-field border text-sm font-semibold transition-colors",
+                          portal === p.key
+                            ? "border-accent bg-accent-soft text-accent"
+                            : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink",
+                        )}
+                      >
+                        <Icon name={p.icon} size={17} />
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
                 <div>
-                  <label className="block text-xs font-semibold text-ink" htmlFor="login-email">
-                    Email Address or Centre ID
+                  <label className="block text-sm font-semibold text-ink" htmlFor="login-email">
+                    Email address
                   </label>
                   <input
                     id="login-email"
@@ -292,18 +324,36 @@ export default function Login() {
                     autoComplete="username"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="user@example.org or PMC-CENTRE-401"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    placeholder={portal === "authority" ? "officer@city.gov.in" : "you@example.org"}
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
-                  <p className="mt-1 text-[11px] text-muted">
-                    Citizens use email; Government officials can use their assigned Centre ID or email.
-                  </p>
                 </div>
+
+                {portal === "authority" ? (
+                  <div className="animate-rise">
+                    <label className="block text-sm font-semibold text-ink" htmlFor="login-centre-id">
+                      Municipal Centre / Ward ID
+                    </label>
+                    <input
+                      id="login-centre-id"
+                      type="text"
+                      autoComplete="off"
+                      value={loginCentreId}
+                      onChange={(e) => setLoginCentreId(e.target.value.toUpperCase())}
+                      placeholder="e.g. PMC-CENTRE-401"
+                      className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 font-mono text-base tracking-wide text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-muted">
+                      The ID your municipality issued with your government account.
+                    </p>
+                  </div>
+                ) : null}
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-ink" htmlFor="login-password">
+                    <label className="block text-sm font-semibold text-ink" htmlFor="login-password">
                       Password
                     </label>
                   </div>
@@ -314,7 +364,7 @@ export default function Login() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
@@ -323,14 +373,14 @@ export default function Login() {
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full !min-h-[46px] text-sm font-bold"
+                  className="w-full !min-h-12 text-base font-bold"
                 >
-                  Sign In
+                  {portal === "authority" ? "Sign in as government" : "Sign in as citizen"}
                 </Button>
 
                 {/* Quick Autofill helper for Presentation & Demo */}
                 <div className="mt-4 rounded-field border border-line/60 bg-surface-2 p-3 text-xs text-muted">
-                  <div className="font-semibold text-ink">Quick Role Fill:</div>
+                  <div className="font-semibold text-ink">Fill in a demo account:</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -338,7 +388,7 @@ export default function Login() {
                       className="flex-1 min-h-[38px] rounded border border-line bg-surface px-3 py-1.5 font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 text-center flex items-center justify-center gap-1.5"
                     >
                       <Icon name="camera" size={14} className="text-accent" />
-                      Citizen (Local)
+                      Citizen
                     </button>
                     <button
                       type="button"
@@ -346,7 +396,7 @@ export default function Login() {
                       className="flex-1 min-h-[38px] rounded border border-line bg-surface px-3 py-1.5 font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 text-center flex items-center justify-center gap-1.5"
                     >
                       <Icon name="shield" size={14} className="text-accent" />
-                      Authority (PMC-CENTRE-401)
+                      Government
                     </button>
                   </div>
                 </div>
@@ -357,7 +407,7 @@ export default function Login() {
             {tab === "register" && (
               <form onSubmit={handleRegister} className="mt-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-name">
+                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-name">
                     Full Name
                   </label>
                   <input
@@ -367,13 +417,13 @@ export default function Login() {
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
                     placeholder="Aarav Sharma"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-email">
+                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-email">
                     Email Address
                   </label>
                   <input
@@ -383,13 +433,13 @@ export default function Login() {
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="user@example.org"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-password">
+                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-password">
                     Password (min 6 characters)
                   </label>
                   <input
@@ -400,13 +450,13 @@ export default function Login() {
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="••••••••"
                     minLength={6}
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-ink mb-1.5">
+                  <label className="block text-sm font-semibold text-ink mb-1.5">
                     Account Role
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -423,7 +473,7 @@ export default function Login() {
                       <Icon name="camera" size={16} />
                       <div>
                         <div>Local Citizen</div>
-                        <div className="text-[10px] opacity-75">Report waste</div>
+                        <div className="text-xs opacity-75">Report waste</div>
                       </div>
                     </button>
 
@@ -440,7 +490,7 @@ export default function Login() {
                       <Icon name="shield" size={16} />
                       <div>
                         <div>Government</div>
-                        <div className="text-[10px] opacity-75">Verify & plan</div>
+                        <div className="text-xs opacity-75">Verify & plan</div>
                       </div>
                     </button>
                   </div>
@@ -455,7 +505,7 @@ export default function Login() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-ink" htmlFor="reg-centre-id">
+                      <label className="block text-sm font-semibold text-ink" htmlFor="reg-centre-id">
                         Municipal Centre / Ward ID <span className="text-accent">*</span>
                       </label>
                       <input
@@ -464,16 +514,16 @@ export default function Login() {
                         value={regCentreId}
                         onChange={(e) => setRegCentreId(e.target.value.toUpperCase())}
                         placeholder="e.g. PMC-CENTRE-401 or WARD-04"
-                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent font-mono tracking-wide"
+                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent font-mono tracking-wide"
                         required={regRole === "authority"}
                       />
-                      <p className="mt-1 text-[11px] text-muted">
+                      <p className="mt-1 text-xs text-muted">
                         Verification proof: Required municipal center or ward badge ID for authority triage.
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-ink" htmlFor="reg-department">
+                      <label className="block text-sm font-semibold text-ink" htmlFor="reg-department">
                         Department / Designation (optional)
                       </label>
                       <input
@@ -482,7 +532,7 @@ export default function Login() {
                         value={regDepartment}
                         onChange={(e) => setRegDepartment(e.target.value)}
                         placeholder="e.g. Solid Waste & Sanitation Bureau"
-                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
                   </div>
@@ -492,7 +542,7 @@ export default function Login() {
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full !min-h-[46px] text-sm font-bold mt-2"
+                  className="w-full !min-h-12 text-base font-bold mt-2"
                 >
                   Create Account
                 </Button>
@@ -556,9 +606,9 @@ export default function Login() {
           <div className="mt-6 text-center">
             <Link
               to="/"
-              className="inline-flex items-center justify-center gap-2 rounded-field px-4 py-2.5 text-sm sm:text-base font-semibold text-muted hover:text-ink hover:bg-surface-2 border border-transparent hover:border-line transition-all active:scale-95"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-field border border-line bg-surface px-5 text-base font-semibold text-ink shadow-card transition-all hover:border-line-strong hover:bg-surface-2 active:scale-[0.98] sm:w-auto"
             >
-              <Icon name="chevronLeft" size={17} />
+              <Icon name="chevronLeft" size={20} />
               <span>Return to PlasticWatch Overview</span>
             </Link>
           </div>

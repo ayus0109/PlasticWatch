@@ -60,6 +60,7 @@ async def lifespan(app: FastAPI):
             conn.execute(text("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_phone text"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email text"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password text"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS centre_id text"))
             conn.execute(
                 text(
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_simulated boolean DEFAULT false"

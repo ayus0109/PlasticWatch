@@ -186,6 +186,11 @@ class Settings(BaseSettings):
     # nothing sensitive — it exists so role violations return 403.
     DEMO_TOKEN_SECRET: str = "plasticwatch-demo-secret-change-me"
     DEMO_TOKEN_TTL_HOURS: int = 24
+    # Municipal centre / ward IDs a government account may register and sign in with,
+    # comma-separated. A stand-in for accounts issued by the municipality: the IDs are
+    # not secret, so this keeps casual sign-ups out of the authority role but is not
+    # identity verification.
+    AUTHORITY_CENTRE_IDS: str = "PMC-CENTRE-401,WARD-04"
 
 
 @lru_cache

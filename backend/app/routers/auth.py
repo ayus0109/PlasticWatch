@@ -14,8 +14,11 @@ from sqlalchemy.engine import Connection
 from app.auth_utils import (
     DEFAULT_DEMO_PASSWORD,
     DEMO_ACCOUNT_EMAILS,
+    DEMO_AUTHORITY_CENTRE_ID,
     DEMO_ROLE_SHORTCUTS,
     RESERVED_DEMO_NAMES,
+    normalize_centre_id,
+    recognised_centre_ids,
     verify_password,
 )
 from app.db import get_optional_conn
@@ -31,6 +34,33 @@ from app.schemas import (
 from app.services.users import create_user, get_user_by_email_or_name
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _authorise_portal(body: LoginRequest, user: DemoUser, stored_centre: str | None) -> None:
+    """After the password checks out: the account must match the portal chosen, and a
+    government account must also give its centre ID. Citizens and officials therefore
+    sign in with different credentials."""
+    if body.role is not None and user.role != body.role:
+        portal = "government" if user.role == UserRole.authority else "citizen"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This is a {portal} account. Use the {portal.capitalize()} sign-in.",
+        )
+    if user.role != UserRole.authority:
+        return
+    given = normalize_centre_id(body.centre_id)
+    if not given:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Government sign-in needs your Centre ID.",
+        )
+    expected = normalize_centre_id(stored_centre)
+    # Accounts made before centre IDs existed have none stored: any recognised ID works.
+    if given != expected if expected else given not in recognised_centre_ids():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email, password or Centre ID.",
+        )
 
 
 @router.get("/demo-users", response_model=list[DemoUser])
@@ -101,16 +131,23 @@ def register(
             detail="This name is reserved for demo accounts. Please pick another name.",
         )
 
-    # Government Officials can provide their assigned Municipal Centre / Ward ID
-    ward_id = body.ward_id
-    if body.role == UserRole.authority and body.centre_id:
-        import re
-        nums = re.findall(r"\d+", body.centre_id)
-        if nums and ward_id is None:
-            try:
-                ward_id = int(nums[0])
-            except ValueError:
-                pass
+    # A government account needs a municipal centre / ward ID the city has issued.
+    centre_id: str | None = None
+    if body.role == UserRole.authority:
+        centre_id = normalize_centre_id(body.centre_id)
+        if not centre_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Government accounts need a Municipal Centre / Ward ID.",
+            )
+        if centre_id not in recognised_centre_ids():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "That Centre ID is not recognised. "
+                    "Ask your municipal administrator for your centre's ID."
+                ),
+            )
 
     # Check if email is already registered in DB
     existing_by_email = get_user_by_email_or_name(conn, email)
@@ -134,7 +171,8 @@ def register(
         email=email,
         password=body.password,
         role=body.role,
-        ward_id=ward_id,
+        ward_id=body.ward_id,
+        centre_id=centre_id,
     )
     token, expires_at = create_demo_token(new_user)
     return TokenResponse(token=token, user=new_user, expires_at=expires_at)
@@ -172,6 +210,7 @@ def login(
                     reliability=float(db_user.get("reliability", 0.5)),
                     is_simulated=bool(db_user.get("is_simulated", False)),
                 )
+                _authorise_portal(body, user, db_user.get("centre_id"))
                 token, expires_at = create_demo_token(user)
                 return TokenResponse(token=token, user=user, expires_at=expires_at)
 
@@ -190,6 +229,11 @@ def login(
                 break
 
     if matched_demo and password in (DEFAULT_DEMO_PASSWORD, "password", "demo", "demo123"):
+        _authorise_portal(
+            body,
+            matched_demo,
+            DEMO_AUTHORITY_CENTRE_ID if matched_demo.role == UserRole.authority else None,
+        )
         token, expires_at = create_demo_token(matched_demo)
         return TokenResponse(token=token, user=matched_demo, expires_at=expires_at)
 

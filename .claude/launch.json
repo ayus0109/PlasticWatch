@@ -7,6 +7,20 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "frontend",
       "port": 5173
+    },
+    {
+      "name": "frontend-local-api",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set VITE_API_TARGET=http://localhost:8000&& npm run dev -- --port 5174"],
+      "cwd": "frontend",
+      "port": 5174
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8000"],
+      "cwd": "backend",
+      "port": 8000
     }
   ]
 }

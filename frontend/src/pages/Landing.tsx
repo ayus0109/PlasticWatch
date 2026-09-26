@@ -45,18 +45,6 @@ export default function Landing() {
   const navigate = useNavigate();
   const stats = useApi<PublicSummary>("/analytics/public");
 
-  const goToLogin = (role?: "citizen" | "authority") => {
-    if (session) {
-      navigate(homeFor(session.user.role));
-      return;
-    }
-    if (role) {
-      navigate(`/login?role=${role}`);
-    } else {
-      navigate("/login");
-    }
-  };
-
   return (
     <div className="relative min-h-full bg-bg text-ink flex flex-col">
       {/* ----------------------------------------------------------------- HERO ---- */}
@@ -85,7 +73,7 @@ export default function Landing() {
           {/* Top Bar with Logo & Hamburger Corner Menu */}
           <div className="flex items-center justify-between gap-4">
             <Logo onDark size="lg" />
-            <HamburgerMenu onDark showSignInButton={!session} />
+            <HamburgerMenu onDark />
           </div>
 
           {/* Hero Content */}
@@ -129,7 +117,7 @@ export default function Landing() {
                   key={t.key}
                   className="rounded-card border border-white/20 bg-black/25 p-4 backdrop-blur-md shadow-md"
                 >
-                  <div className="text-micro font-semibold text-white/70">{t.label}</div>
+                  <div className="text-xs font-semibold text-white/75">{t.label}</div>
                   <div className="font-display tabular mt-1.5 text-display font-bold text-white">
                     {stats.loading ? (
                       <span className="inline-block h-7 w-16 animate-pulse rounded-field bg-white/25" />
@@ -139,14 +127,14 @@ export default function Landing() {
                       value.toLocaleString()
                     )}
                   </div>
-                  <div className="mt-1 text-micro text-white/65">{t.hint}</div>
+                  <div className="mt-1 text-xs text-white/70">{t.hint}</div>
                 </div>
               );
             })}
           </div>
 
           {stats.error ? (
-            <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-micro text-white/70">
+            <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-xs text-white/75">
               <span>Live totals are syncing. Real-time metrics will update automatically.</span>
             </div>
           ) : null}
@@ -162,7 +150,7 @@ export default function Landing() {
           <h2 className="font-display mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-ink">
             How PlasticWatch Works
           </h2>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-base text-muted">
             From a single mobile photograph to synchronized municipal cleanup routes.
           </p>
         </div>
@@ -176,8 +164,8 @@ export default function Landing() {
               <div className="grid h-10 w-10 place-items-center rounded-field bg-surface-2 text-accent mb-4">
                 <Icon name={f.icon} size={20} />
               </div>
-              <h3 className="font-display text-sm font-bold text-ink">{f.title}</h3>
-              <p className="mt-2 text-xs text-muted leading-relaxed">{f.description}</p>
+              <h3 className="font-display text-base font-bold text-ink">{f.title}</h3>
+              <p className="mt-2 text-sm text-muted leading-relaxed">{f.description}</p>
             </div>
           ))}
         </div>
@@ -188,20 +176,13 @@ export default function Landing() {
             <Icon name="shield" size={20} />
           </div>
           <div className="flex-1">
-            <h4 className="font-bold text-sm text-ink">Strict Non-Attribution Architecture</h4>
-            <p className="mt-1 text-xs text-muted leading-relaxed">
+            <h4 className="font-bold text-base text-ink">Strict Non-Attribution Architecture</h4>
+            <p className="mt-1 text-sm text-muted leading-relaxed">
               Reports verify where plastic litter is present — <strong>never who discarded it</strong>.
               No citizen is surveilled or penalized. Machine learning accelerates spatial triage, but
               every enforcement and cleanup task requires human verification.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => goToLogin()}
-            className="shrink-0 rounded-field bg-surface border border-line px-4 py-2 text-xs font-bold text-ink hover:border-accent hover:text-accent transition-colors shadow-sm"
-          >
-            Access System
-          </button>
         </div>
       </section>
 
@@ -213,18 +194,10 @@ export default function Landing() {
             <span>· Eco-GIS Environmental Intelligence</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-micro">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
             <span>SDGs 11 · 12 · 14</span>
             <span>·</span>
             <span>Geo data © OpenStreetMap</span>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => goToLogin()}
-              className="font-semibold text-accent hover:underline"
-            >
-              Sign In to Portal »
-            </button>
           </div>
         </div>
       </footer>

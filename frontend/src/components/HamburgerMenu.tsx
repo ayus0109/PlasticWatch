@@ -1,22 +1,67 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import { applyTheme, currentTheme, type ThemeMode } from "../lib/theme";
+import { logout, useSession } from "../store/auth";
 import { Logo } from "./Shell";
 import { cx } from "./ui";
 
 interface HamburgerMenuProps {
   onDark?: boolean;
   className?: string;
-  showSignInButton?: boolean;
+  /** The landing page offers Login here, and ONLY here. The login page itself doesn't. */
+  showLogin?: boolean;
 }
 
-export function HamburgerMenu({
-  onDark = false,
-  className = "",
-  showSignInButton = true,
-}: HamburgerMenuProps) {
+function MenuItem({
+  icon,
+  title,
+  hint,
+  onClick,
+  trailing,
+  tone = "default",
+}: {
+  icon: IconName;
+  title: string;
+  hint?: string;
+  onClick: () => void;
+  trailing?: React.ReactNode;
+  tone?: "default" | "accent";
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className={cx(
+        "flex min-h-12 w-full items-center gap-3 rounded-field px-3 py-2 text-left transition-colors",
+        tone === "accent" ? "bg-accent text-accent-fg hover:bg-accent-hover" : "text-ink hover:bg-surface-2",
+      )}
+    >
+      <span
+        className={cx(
+          "grid h-9 w-9 shrink-0 place-items-center rounded-field",
+          tone === "accent" ? "bg-black/15" : "bg-surface-2 text-accent",
+        )}
+      >
+        <Icon name={icon} size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        {hint ? (
+          <span className={cx("block text-xs", tone === "accent" ? "opacity-85" : "text-muted")}>
+            {hint}
+          </span>
+        ) : null}
+      </span>
+      {trailing}
+    </button>
+  );
+}
+
+export function HamburgerMenu({ onDark = false, className = "", showLogin = true }: HamburgerMenuProps) {
   const navigate = useNavigate();
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [mode, setMode] = useState<ThemeMode>(currentTheme());
@@ -62,128 +107,74 @@ export function HamburgerMenu({
     window.dispatchEvent(new CustomEvent("pw-theme", { detail: next }));
   };
 
-  const handleLoginClick = (role?: "citizen" | "authority") => {
-    setOpen(false);
-    if (role) {
-      navigate(`/login?role=${role}`);
-    } else {
-      navigate("/login");
-    }
-  };
-
   return (
     <>
-      <div className={cx("relative flex items-center gap-2", className)} ref={menuRef}>
-        {/* Quick Nav Sign In Button (optional) */}
-        {showSignInButton && (
-          <button
-            type="button"
-            onClick={() => handleLoginClick()}
-            className={cx(
-              "inline-flex items-center gap-1.5 px-4 py-2 min-h-[40px] rounded-field text-xs sm:text-sm font-bold shadow-sm transition-all duration-150 active:scale-95",
-              onDark
-                ? "bg-accent text-accent-fg hover:bg-accent/90"
-                : "bg-accent text-accent-fg hover:bg-accent/90",
-            )}
-          >
-            <Icon name="shield" size={15} />
-            Sign In
-          </button>
-        )}
-
-        {/* Hamburger Corner Button */}
+      <div className={cx("relative", className)} ref={menuRef}>
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
           aria-expanded={open}
           aria-haspopup="true"
-          aria-label="Open navigation menu"
+          aria-label={open ? "Close menu" : "Open menu"}
           className={cx(
-            "grid h-10 w-10 place-items-center rounded-field border transition-all duration-150 active:scale-95",
+            "grid h-11 w-11 place-items-center rounded-field border transition-all duration-150 active:scale-95",
             open
               ? "border-accent bg-accent-soft text-accent shadow-sm"
               : onDark
-              ? "border-white/30 bg-white/10 text-white hover:bg-white/20 hover:border-white/50"
-              : "border-line bg-surface text-ink hover:border-line-strong hover:bg-surface-2",
+                ? "border-white/30 bg-white/10 text-white hover:border-white/50 hover:bg-white/20"
+                : "border-line bg-surface text-ink hover:border-line-strong hover:bg-surface-2",
           )}
         >
-          <Icon name={open ? "x" : "menu"} size={20} />
+          <Icon name={open ? "x" : "menu"} size={22} />
         </button>
 
-        {/* Hamburger Dropdown Panel */}
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-12 z-[1100] w-72 overflow-hidden rounded-card border border-line bg-surface p-2.5 shadow-pop animate-rise"
+            className="absolute right-0 top-14 z-[1100] w-[min(18rem,calc(100vw-2rem))] space-y-1 rounded-card border border-line bg-surface p-2 shadow-pop animate-rise"
           >
-            {/* Menu Header */}
-            <div className="flex items-center justify-between border-b border-line px-2.5 pb-2.5 pt-1">
-              <div className="flex items-center gap-2">
-                <Logo compact size="sm" />
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Menu
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="grid h-7 w-7 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
-              >
-                <Icon name="x" size={14} />
-              </button>
-            </div>
-
-            {/* ONLY: About & Theme Mode */}
-            <div className="mt-2 space-y-1">
-              {/* About Button */}
-              <button
-                type="button"
-                role="menuitem"
+            {session ? null : showLogin ? (
+              <MenuItem
+                icon="shield"
+                title="Login"
+                hint="Citizen or government account"
+                tone="accent"
                 onClick={() => {
                   setOpen(false);
-                  setAboutOpen(true);
+                  navigate("/login");
                 }}
-                className="flex min-h-11 w-full items-center gap-3 rounded-field px-3 text-left text-xs font-medium text-ink hover:bg-surface-2 transition-colors"
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-field bg-surface-2 text-accent">
-                  <Icon name="info" size={16} />
-                </span>
-                <span className="flex-1">
-                  <span className="block font-semibold">About PlasticWatch</span>
-                  <span className="block text-[11px] text-muted">
-                    Ethical mission, AI-GIS & SDGs 11, 12, 14
-                  </span>
-                </span>
-                <Icon name="chevronRight" size={14} className="text-faint" />
-              </button>
+              />
+            ) : null}
 
-              {/* Dark / Light Mode Option */}
-              <button
-                type="button"
-                role="menuitem"
-                onClick={flipTheme}
-                className="flex min-h-11 w-full items-center gap-3 rounded-field px-3 text-left text-xs font-medium text-ink hover:bg-surface-2 transition-colors"
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-field bg-surface-2 text-accent">
-                  <Icon name={mode === "dark" ? "sun" : "moon"} size={16} />
-                </span>
-                <span className="flex-1">
-                  <span className="block font-semibold">Theme Mode</span>
-                  <span className="block text-[11px] text-muted">
-                    Currently in {mode === "dark" ? "Dark mode" : "Light mode"}
-                  </span>
-                </span>
-                <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-muted">
-                  Toggle
-                </span>
-              </button>
-            </div>
+            <MenuItem
+              icon="info"
+              title="About"
+              hint="What PlasticWatch does"
+              onClick={() => {
+                setOpen(false);
+                setAboutOpen(true);
+              }}
+            />
 
-            {/* Footer Attribution strip */}
-            <div className="mt-2 border-t border-line px-2.5 pt-2 text-[10px] text-faint flex items-center justify-between">
-              <span>PlasticWatch v1.0</span>
-              <span>UN SDGs 11 · 12 · 14</span>
-            </div>
+            <MenuItem
+              icon={mode === "dark" ? "sun" : "moon"}
+              title={mode === "dark" ? "Light mode" : "Dark mode"}
+              hint={`Now using ${mode} mode`}
+              onClick={flipTheme}
+            />
+
+            {session ? (
+              <MenuItem
+                icon="logout"
+                title="Log out"
+                hint={session.user.email ?? session.user.name}
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                  navigate("/");
+                }}
+              />
+            ) : null}
           </div>
         )}
       </div>
@@ -193,6 +184,7 @@ export function HamburgerMenu({
         <div
           role="dialog"
           aria-modal="true"
+          aria-label="About PlasticWatch"
           className="fixed inset-0 z-[1200] grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm animate-rise"
         >
           <div className="relative w-full max-w-lg rounded-panel border border-line bg-surface p-6 shadow-pop">
@@ -200,32 +192,33 @@ export function HamburgerMenu({
               <div className="flex items-center gap-2.5">
                 <Logo compact size="sm" />
                 <div>
-                  <h3 className="text-base font-bold text-ink">About PlasticWatch</h3>
-                  <p className="text-micro text-muted">AI-GIS Urban Waterway Intelligence</p>
+                  <h3 className="text-lg font-bold text-ink">About PlasticWatch</h3>
+                  <p className="text-xs text-muted">AI-GIS Urban Waterway Intelligence</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setAboutOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
+                aria-label="Close"
+                className="grid h-11 w-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
               >
-                <Icon name="x" size={16} />
+                <Icon name="x" size={18} />
               </button>
             </div>
 
-            <div className="mt-4 space-y-3.5 text-xs text-ink leading-relaxed">
+            <div className="mt-4 space-y-4 text-sm leading-relaxed text-ink">
               <div className="rounded-field border border-accent/30 bg-accent-soft p-3 text-ink">
-                <div className="font-semibold text-accent mb-0.5 flex items-center gap-1.5">
-                  <Icon name="shield" size={14} />
+                <div className="mb-0.5 flex items-center gap-1.5 font-semibold text-accent">
+                  <Icon name="shield" size={15} />
                   Core Ethical Law (Non-Attribution)
                 </div>
                 Reports show waste is present — <strong>never who is responsible</strong>.
                 Nothing is verified or resolved until a human municipal authority confirms it.
-                The AI model prioritizes hotpots; it never has the final word.
+                The AI model prioritizes hotspots; it never has the final word.
               </div>
 
               <div>
-                <h4 className="font-bold text-ink mb-1">Dual-Engine AI Detection</h4>
+                <h4 className="mb-1 font-bold text-ink">Dual-Engine AI Detection</h4>
                 <p className="text-muted">
                   Ultralytics YOLO neural network trained on open datasets identifies plastic bottles,
                   bags, film, and packaging, paired with an OpenCV contour saliency engine for
@@ -234,7 +227,7 @@ export function HamburgerMenu({
               </div>
 
               <div>
-                <h4 className="font-bold text-ink mb-1">PostGIS Spatio-Temporal Clustering</h4>
+                <h4 className="mb-1 font-bold text-ink">PostGIS Spatio-Temporal Clustering</h4>
                 <p className="text-muted">
                   Autonomous spatial clustering merges multiple proximate citizen reports within 25m
                   into living hotspots, ranked by ecological urgency based on proximity to storm drains,
@@ -243,18 +236,18 @@ export function HamburgerMenu({
               </div>
 
               <div className="rounded-field border border-line bg-surface-2 p-3">
-                <h4 className="font-bold text-ink mb-1.5">UN Sustainable Development Goals</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-muted">
+                <h4 className="mb-1.5 font-bold text-ink">UN Sustainable Development Goals</h4>
+                <div className="grid grid-cols-1 gap-2 text-xs text-muted sm:grid-cols-3">
                   <div className="rounded border border-line bg-surface p-2">
-                    <strong className="block text-ink">SDG 11</strong>
+                    <strong className="block text-sm text-ink">SDG 11</strong>
                     Sustainable Cities
                   </div>
                   <div className="rounded border border-line bg-surface p-2">
-                    <strong className="block text-ink">SDG 12</strong>
+                    <strong className="block text-sm text-ink">SDG 12</strong>
                     Responsible Consumption
                   </div>
                   <div className="rounded border border-line bg-surface p-2">
-                    <strong className="block text-ink">SDG 14</strong>
+                    <strong className="block text-sm text-ink">SDG 14</strong>
                     Life Below Water
                   </div>
                 </div>
@@ -265,7 +258,7 @@ export function HamburgerMenu({
               <button
                 type="button"
                 onClick={() => setAboutOpen(false)}
-                className="rounded-field bg-surface-2 border border-line px-4 py-2 text-xs font-semibold text-ink hover:bg-surface transition-colors"
+                className="min-h-11 rounded-field border border-line bg-surface-2 px-5 text-sm font-semibold text-ink transition-colors hover:bg-surface"
               >
                 Close
               </button>

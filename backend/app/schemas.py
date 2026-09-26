@@ -194,7 +194,9 @@ class RegisterRequest(BaseModel):
     role: UserRole = UserRole.citizen
     ward_id: int | None = None
     centre_id: str | None = Field(
-        None, description="Assigned Municipal Centre / Ward ID for Government Officials"
+        None,
+        max_length=64,
+        description="Municipal Centre / Ward ID; required for government accounts",
     )
     department: str | None = Field(
         None, description="Department or Designation for Government Officials"
@@ -211,6 +213,11 @@ class LoginRequest(BaseModel):
         None, min_length=1, max_length=255, description="Username or email address"
     )
     password: str = Field(..., min_length=1, max_length=128)
+    # The portal the person chose. When set, an account of another role is refused,
+    # so citizen and government sign-ins stay separate.
+    role: UserRole | None = None
+    # Required for government accounts: the municipal centre / ward ID on the account.
+    centre_id: str | None = Field(None, max_length=64)
 
     @model_validator(mode="after")
     def _validate_identifier(self) -> LoginRequest:

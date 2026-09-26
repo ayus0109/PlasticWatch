@@ -15,6 +15,7 @@ from sqlalchemy.engine import Connection
 from app.auth_utils import (
     DEFAULT_DEMO_PASSWORD,
     DEMO_ACCOUNT_EMAILS,
+    DEMO_AUTHORITY_CENTRE_ID,
     hash_password,
 )
 from app.deps import demo_users
@@ -22,10 +23,12 @@ from app.schemas import DemoUser, UserRole
 
 _UPSERT = text(
     """
-    INSERT INTO users (id, name, email, hashed_password, role, ward_id, reliability, is_simulated)
+    INSERT INTO users (id, name, email, hashed_password, role, ward_id, reliability,
+                       is_simulated, centre_id)
     VALUES (:id, :name, :email, :hashed_password, :role,
-            (SELECT id FROM wards WHERE id = :ward_id), :reliability, true)
+            (SELECT id FROM wards WHERE id = :ward_id), :reliability, true, :centre_id)
     ON CONFLICT (id) DO UPDATE SET
+        centre_id = EXCLUDED.centre_id,
         name = EXCLUDED.name,
         email = COALESCE(EXCLUDED.email, users.email),
         hashed_password = COALESCE(EXCLUDED.hashed_password, users.hashed_password),
@@ -57,6 +60,7 @@ def ensure_demo_users(conn: Connection) -> int:
                 "role": u.role.value,
                 "ward_id": u.ward_id,
                 "reliability": u.reliability,
+                "centre_id": DEMO_AUTHORITY_CENTRE_ID if u.role == UserRole.authority else None,
             },
         )
     return len(users)
@@ -68,7 +72,8 @@ def get_user_by_email_or_name(conn: Connection, identifier: str) -> dict[str, An
     row = conn.execute(
         text(
             """
-            SELECT id, name, email, hashed_password, role, ward_id, reliability, is_simulated
+            SELECT id, name, email, hashed_password, role, ward_id, reliability, is_simulated,
+                   centre_id
             FROM users
             WHERE lower(email) = :clean OR lower(name) = :clean
             LIMIT 1
@@ -111,6 +116,7 @@ def create_user(
     password: str,
     role: UserRole = UserRole.citizen,
     ward_id: int | None = None,
+    centre_id: str | None = None,
 ) -> DemoUser:
     """Create a new registered user in the database."""
     user_id = uuid.uuid4()
@@ -123,10 +129,11 @@ def create_user(
         text(
             """
             INSERT INTO users (
-                id, name, email, hashed_password, role, ward_id, reliability, is_simulated
+                id, name, email, hashed_password, role, ward_id, reliability, is_simulated,
+                centre_id
             )
             VALUES (:id, :name, :email, :hashed_password, :role,
-                    (SELECT id FROM wards WHERE id = :ward_id), 0.5, false)
+                    (SELECT id FROM wards WHERE id = :ward_id), 0.5, false, :centre_id)
             """
         ),
         {
@@ -136,6 +143,7 @@ def create_user(
             "hashed_password": hashed,
             "role": role.value,
             "ward_id": ward_id,
+            "centre_id": centre_id,
         },
     )
 

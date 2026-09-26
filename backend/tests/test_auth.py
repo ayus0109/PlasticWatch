@@ -117,7 +117,7 @@ def test_login_with_demo_email():
 def test_login_with_demo_role_shortcut():
     res = client.post(
         "/auth/login",
-        json={"email": "authority", "password": "password123"},
+        json={"email": "authority", "password": "password123", "centre_id": "PMC-CENTRE-401"},
     )
     assert res.status_code == 200
     data = res.json()
@@ -228,6 +228,7 @@ def test_register_and_login_full_lifecycle(api):
             "email": "smith@gov.org",
             "password": "govPassword456",
             "role": "authority",
+            "centre_id": "PMC-CENTRE-401",
         },
     )
     assert auth_reg_res.status_code == 201
@@ -306,6 +307,7 @@ def mock_db_api():
                 ward_id INTEGER,
                 reliability REAL DEFAULT 0.5,
                 is_simulated BOOLEAN DEFAULT 0,
+                centre_id TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );"""
         )
@@ -386,6 +388,7 @@ def test_register_and_login_with_mock_db(mock_db_api):
         "email": "inspector@gov.org",
         "password": "authoritySecret123",
         "role": "authority",
+        "centre_id": "WARD-04",
     }
     auth_reg_res = mock_db_api.post("/auth/register", json=auth_payload)
     assert auth_reg_res.status_code == 201, auth_reg_res.text
@@ -500,3 +503,109 @@ def test_register_and_login_with_mock_db(mock_db_api):
     )
     assert unknown_login.status_code == 401
 
+
+# --------------------------------------------------------------------------
+# Separate citizen and government credentials (centre ID)
+# --------------------------------------------------------------------------
+
+
+def _login(api, **body):
+    return api.post("/auth/login", json={"password": "password123", **body})
+
+
+def test_government_sign_in_needs_the_centre_id():
+    base = {"email": "authority@plasticwatch.local", "role": "authority"}
+    missing = _login(client, **base)
+    assert missing.status_code == 401
+    assert "Centre ID" in missing.json()["detail"]
+
+    wrong = _login(client, **base, centre_id="WARD-99")
+    assert wrong.status_code == 401
+
+    # Case and stray spaces do not matter.
+    ok = _login(client, **base, centre_id="  pmc-centre-401 ")
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["user"]["role"] == "authority"
+
+
+def test_a_centre_id_is_not_a_username():
+    """The centre ID used to log straight into the shared official account."""
+    assert _login(client, email="PMC-CENTRE-401").status_code == 401
+
+
+def test_citizen_sign_in_needs_no_centre_id():
+    res = _login(client, email="citizen@plasticwatch.local", role="citizen")
+    assert res.status_code == 200
+    assert res.json()["user"]["role"] == "citizen"
+
+
+@pytest.mark.parametrize(
+    ("email", "portal", "extra"),
+    [
+        ("citizen@plasticwatch.local", "authority", {"centre_id": "PMC-CENTRE-401"}),
+        ("authority@plasticwatch.local", "citizen", {"centre_id": "PMC-CENTRE-401"}),
+    ],
+)
+def test_an_account_only_signs_in_through_its_own_portal(email, portal, extra):
+    res = _login(client, email=email, role=portal, **extra)
+    assert res.status_code == 403
+    assert "Use the" in res.json()["detail"]
+
+
+def test_government_registration_needs_a_recognised_centre_id(mock_db_api):
+    official = {
+        "name": "Officer Rao",
+        "email": "rao@pmc.gov.in",
+        "password": "govSecret789",
+        "role": "authority",
+    }
+    missing = mock_db_api.post("/auth/register", json=official)
+    assert missing.status_code == 422
+
+    unknown = mock_db_api.post("/auth/register", json={**official, "centre_id": "MADE-UP-1"})
+    assert unknown.status_code == 403
+    assert "not recognised" in unknown.json()["detail"]
+
+    ok = mock_db_api.post("/auth/register", json={**official, "centre_id": "ward-04"})
+    assert ok.status_code == 201, ok.text
+
+    # The account is tied to ITS centre: another recognised ID does not work.
+    login = {"email": "rao@pmc.gov.in", "password": "govSecret789", "role": "authority"}
+    other = mock_db_api.post("/auth/login", json={**login, "centre_id": "PMC-CENTRE-401"})
+    assert other.status_code == 401
+    own = mock_db_api.post("/auth/login", json={**login, "centre_id": "WARD-04"})
+    assert own.status_code == 200, own.text
+
+
+def test_citizen_registration_ignores_centre_id(mock_db_api):
+    res = mock_db_api.post(
+        "/auth/register",
+        json={
+            "name": "Meera Iyer",
+            "email": "meera@example.org",
+            "password": "citizenPass1",
+            "role": "citizen",
+            "centre_id": "PMC-CENTRE-401",
+        },
+    )
+    assert res.status_code == 201
+    login = mock_db_api.post(
+        "/auth/login",
+        json={"email": "meera@example.org", "password": "citizenPass1", "role": "citizen"},
+    )
+    assert login.status_code == 200
+
+
+def test_recognised_centre_ids_come_from_config(set_env, mock_db_api):
+    set_env(AUTHORITY_CENTRE_IDS="NMC-ZONE-7, pmc-centre-401")
+    res = mock_db_api.post(
+        "/auth/register",
+        json={
+            "name": "Officer Khan",
+            "email": "khan@nmc.gov.in",
+            "password": "govSecret789",
+            "role": "authority",
+            "centre_id": "nmc-zone-7",
+        },
+    )
+    assert res.status_code == 201, res.text
