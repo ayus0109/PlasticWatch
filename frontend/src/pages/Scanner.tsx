@@ -138,7 +138,7 @@ export default function Scanner() {
               </h1>
             </div>
             <p className="mt-1 text-sm text-muted">
-              Roboflow Computer Vision inference for <span className="font-semibold text-ink">plastic-bags-aenhn/1</span> and ensemble models.
+              Roboflow Computer Vision inference for <span className="font-semibold text-ink">plastic-management/1</span> and ensemble models.
             </p>
           </div>
 

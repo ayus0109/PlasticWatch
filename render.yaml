@@ -10,7 +10,7 @@ services:
       - key: DETECTOR_MODE
         value: roboflow
       - key: ROBOFLOW_MODEL_ID
-        value: plastic-bags-aenhn/1,waste-tfpi0/7,garbage-0q3db/10
+        value: plastic-management/1
       - key: CORS_ORIGINS
         value: "*"
 

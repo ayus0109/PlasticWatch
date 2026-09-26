@@ -485,6 +485,9 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
                   "lid", "tetra")
     ):
         return DetectionClass.plastic_packaging
+    # Handle disposable plastic tumblers/cups (e.g. "plastic glass" in plastic-management/1)
+    if "plastic glass" in raw_name or "plastic-glass" in raw_name or "plastic cup" in raw_name or "plastic tumbler" in raw_name:
+        return DetectionClass.plastic_packaging
     if any(
         k in raw_name
         for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")
@@ -574,16 +577,25 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
             img = ImageOps.exif_transpose(raw).convert("RGB")
         w, h = img.size
 
+        # Optimize payload size for fast, reliable network transport
+        max_dim = 1280
+        scale = min(1.0, max_dim / float(max(w, h)))
+        upload_img = img
+        if scale < 1.0:
+            upload_img = img.resize(
+                (round(w * scale), round(h * scale)), Image.Resampling.BILINEAR
+            )
+
         # Send the EXIF-corrected image, so the boxes we get back are in the same
         # orientation as the image we draw them on.
         buf = _io.BytesIO()
-        img.save(buf, format="JPEG", quality=90)
+        upload_img.save(buf, format="JPEG", quality=85)
         body = base64.b64encode(buf.getvalue())
 
         conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
         model_ids = [m.strip() for m in s.ROBOFLOW_MODEL_ID.split(",") if m.strip()]
         if not model_ids:
-            model_ids = ["waste-tfpi0/7", "garbage-0q3db/10"]
+            model_ids = ["plastic-management/1"]
 
         results_per_model: list[tuple[str, list[dict] | None]] = []
         if len(model_ids) == 1:
@@ -620,8 +632,10 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
                 target = resolve_roboflow_class(raw_name)
                 if target is None:
                     continue
-                cx, cy = float(pred.get("x", 0)), float(pred.get("y", 0))
-                bw, bh = float(pred.get("width", 0)), float(pred.get("height", 0))
+                cx = float(pred.get("x", 0)) / scale
+                cy = float(pred.get("y", 0)) / scale
+                bw = float(pred.get("width", 0)) / scale
+                bh = float(pred.get("height", 0)) / scale
                 raw_detections.append(
                     _box(target, float(pred.get("confidence", 0.0)),
                          cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2, w, h)
