@@ -15,9 +15,9 @@ import type {
   DetectionClass,
   LocationSource,
 } from "../api/client";
-import { GeoStamp } from "./GeoStamp";
 import { Icon } from "./Icon";
 import { PhotoFrame } from "./PhotoFrame";
+import { PhotoInfo } from "./PhotoInfo";
 import { Button, Card, SimulatedBadge, TierChip, cx } from "./ui";
 
 /** Reads as a sentence, and never says plain "plastic" (CLAUDE.md §2.1). */
@@ -138,14 +138,16 @@ export function ScanPreview({
             <SimulatedBadge title="The detector is in demo mode: these boxes are fabricated." />
           </div>
         ) : null}
-        <GeoStamp
-          lat={location.lat}
-          lon={location.lon}
-          source={location.source}
-          accuracyM={location.accuracyM}
-          capturedAt={scan.captured_at}
-        />
       </PhotoFrame>
+      {/* Below the photo, never on it: an overlay hid the very waste this screen shows. */}
+      <PhotoInfo
+        className="px-5 pt-3"
+        lat={location.lat}
+        lon={location.lon}
+        source={location.source}
+        accuracyM={location.accuracyM}
+        capturedAt={scan.captured_at}
+      />
 
       <div className="p-5">
         <div className="flex items-start gap-3">

@@ -5,9 +5,9 @@ import { mediaUrl } from "../api/client";
 import { getDatasetSampleForReport } from "../lib/images";
 import { plural } from "../lib/format";
 import { citizenStage } from "../lib/status";
-import { GeoStamp } from "./GeoStamp";
 import { Icon } from "./Icon";
 import { PhotoFrame } from "./PhotoFrame";
+import { PhotoInfo } from "./PhotoInfo";
 import { StageTracker } from "./StageTracker";
 import { Button, Card, Chip, TierChip } from "./ui";
 
@@ -27,24 +27,24 @@ export function ReportResult({
   return (
     <Card pad="none" className="overflow-hidden animate-rise">
       {imgSrc ? (
-        // The stored copy is metadata-free, so the stamp comes from what was RECORDED
-        // for this report, not from the file.
         <PhotoFrame
           src={imgSrc}
           alt="Your photo, annotated with likely-plastic detections"
           maxHeight="420px"
           onError={() => setImgSrc(fallback)}
-        >
-          <GeoStamp
-            lat={r.lat}
-            lon={r.lon}
-            source={r.location_source}
-            accuracyM={r.gps_accuracy_m}
-            capturedAt={r.captured_at}
-            reportedAt={r.created_at}
-          />
-        </PhotoFrame>
+        />
       ) : null}
+      {/* The stored copy is metadata-free, so these facts come from what was RECORDED
+          for this report, not from the file. Below the photo, never on it. */}
+      <PhotoInfo
+        className="px-6 pt-4"
+        lat={r.lat}
+        lon={r.lon}
+        source={r.location_source}
+        accuracyM={r.gps_accuracy_m}
+        capturedAt={r.captured_at}
+        reportedAt={r.created_at}
+      />
 
       <div className="space-y-4 p-6">
         <div className="flex items-start gap-3">

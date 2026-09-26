@@ -1,16 +1,16 @@
 /**
- * The location-and-time bar over a report photo, like a GPS-camera stamp.
+ * Where and when a report photo was taken, as a slim strip UNDER the photo.
  *
- * Deliberately an OVERLAY, never burned into the pixels. A baked-in bar would hide
- * the bottom of the scene from the detector (and its text could itself be detected),
- * and it would give two photos of the same pile different fingerprints, so duplicate
- * reports would stop merging (SPEC §12). The stored photo stays clean.
+ * Deliberately not on the image: an overlay covered the bottom of the scene, and the
+ * whole point of these screens is to show the waste. Nothing is burned into the pixels
+ * either — that would hide litter from the detector and give two photos of the same
+ * pile different fingerprints, so duplicate reports would stop merging (SPEC §12).
  *
  * It never claims more than it knows:
  *  - the source is named (phone GPS, the photo's own EXIF, or a pin the citizen placed);
  *  - coordinates carry only as many decimals as the fix supports;
- *  - "Taken" appears only when the photo recorded its time AND timezone — otherwise
- *    the stamp says "Reported", which is the one time we do know.
+ *  - "Taken" appears only when the photo recorded its time AND timezone — otherwise it
+ *    says "Reported", which is the one time we do know.
  */
 import type { LocationSource } from "../api/client";
 import { metres } from "../lib/format";
@@ -19,7 +19,7 @@ import { cx } from "./ui";
 
 const SOURCE_LABEL: Record<LocationSource, string> = {
   browser: "Phone GPS",
-  exif: "Photo's own GPS",
+  exif: "Photo EXIF",
   pin: "Map pin, placed by you",
 };
 
@@ -38,7 +38,7 @@ function coord(value: number, pos: string, neg: string, dp: number) {
   return `${Math.abs(value).toFixed(dp)}° ${value >= 0 ? pos : neg}`;
 }
 
-function stampTime(iso: string) {
+function longTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
     weekday: "short",
     day: "numeric",
@@ -51,7 +51,7 @@ function stampTime(iso: string) {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function GeoStamp({
+export function PhotoInfo({
   lat,
   lon,
   source,
@@ -83,38 +83,35 @@ export function GeoStamp({
   return (
     <div
       role="group"
-      aria-label="Where and when this photo was reported"
-      className={cx(
-        "pointer-events-none absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-white",
-        "backdrop-blur-[2px]",
-        className,
-      )}
+      aria-label="Where and when this photo was taken"
+      // Padding comes from the caller, so the strip lines up with its card's text column.
+      className={cx("space-y-0.5 text-micro text-muted", className)}
     >
-      <div className="flex items-center gap-1.5 text-micro">
-        <Icon name="pin" size={13} className="opacity-90" />
+      <div className="flex flex-wrap items-center gap-x-1.5">
+        <Icon name="pin" size={13} className="text-accent" />
         {located ? (
           <>
-            <span className="tabular font-mono font-medium">
+            <span className="tabular font-mono font-medium text-ink">
               {coord(lat, "N", "S", dp)}, {coord(lon, "E", "W", dp)}
             </span>
             {source === "browser" && accuracyM != null ? (
-              <span className="text-white/70">± {metres(accuracyM)}</span>
+              <span className="text-faint">± {metres(accuracyM)}</span>
             ) : null}
+            {source ? <span className="text-faint">· {SOURCE_LABEL[source]}</span> : null}
           </>
         ) : (
-          <span className="text-white/80">No location in this photo yet</span>
+          <span>No location in this photo's EXIF</span>
         )}
       </div>
 
-      <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-micro text-white/85">
-        <Icon name="clock" size={13} className="opacity-90" />
+      <div className="flex flex-wrap items-center gap-x-1.5">
+        <Icon name="clock" size={13} className="text-accent" />
         <span>
-          {capturedAt ? "Taken" : "Reported"} {stampTime(capturedAt ?? reported)}
+          {capturedAt ? "Taken" : "Reported"} {longTime(capturedAt ?? reported)}
         </span>
-        {source ? <span className="text-white/60">· {SOURCE_LABEL[source]}</span> : null}
         {lagDays >= 1 ? (
-          <span className="font-semibold text-white">
-            · reported {lagDays} day{lagDays === 1 ? "" : "s"} later
+          <span className="font-semibold text-ink">
+            · {lagDays} day{lagDays === 1 ? "" : "s"} before reporting
           </span>
         ) : null}
       </div>
