@@ -414,7 +414,7 @@ export default function Report() {
 
         <Button
           variant="primary"
-          icon="sparkle"
+          icon="detect"
           className="w-full !min-h-12 text-base"
           disabled={!file || !locationReady}
           loading={scanning}

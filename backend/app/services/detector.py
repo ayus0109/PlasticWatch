@@ -477,7 +477,7 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
             if "glass" in raw_name
             else DetectionClass.plastic_bottle
         )
-    if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly")):
+    if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly", "polythene", "sachet")):
         return DetectionClass.plastic_bag_film
     if any(
         k in raw_name
@@ -534,7 +534,10 @@ def _query_single_roboflow_model(
     api_key: str,
     api_url: str,
 ) -> tuple[str, list[dict] | None]:
-    url = f"{api_url.rstrip('/')}/{model_id}?confidence={conf_floor}&format=json"
+    normalized_id = model_id.strip()
+    if "/" not in normalized_id:
+        normalized_id = f"{normalized_id}/1"
+    url = f"{api_url.rstrip('/')}/{normalized_id}?confidence={conf_floor}&format=json"
     req = urllib.request.Request(
         url,
         data=body,

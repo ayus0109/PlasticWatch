@@ -60,21 +60,40 @@ export function ScanPreview({
         />
         {result.detections.map((d: Detection, i: number) => {
           const plastic = PLASTIC_CLASSES.includes(d.class_name);
+          const leftPct = (d.x1 / scan.image_width) * 100;
+          const topPct = (d.y1 / scan.image_height) * 100;
+          const widthPct = ((d.x2 - d.x1) / scan.image_width) * 100;
+          const heightPct = ((d.y2 - d.y1) / scan.image_height) * 100;
+          const labelText = plastic ? `Plastic: ${CLASS_LABEL[d.class_name]}` : CLASS_LABEL[d.class_name];
           return (
-            <span
+            <div
               key={`${d.x1}-${d.y1}-${i}`}
               aria-hidden
-              className={cx(
-                "pointer-events-none absolute rounded-[3px] border-2",
-                plastic ? "border-accent" : "border-faint",
-              )}
+              className="pointer-events-none absolute"
               style={{
-                left: `${(d.x1 / scan.image_width) * 100}%`,
-                top: `${(d.y1 / scan.image_height) * 100}%`,
-                width: `${((d.x2 - d.x1) / scan.image_width) * 100}%`,
-                height: `${((d.y2 - d.y1) / scan.image_height) * 100}%`,
+                left: `${leftPct}%`,
+                top: `${topPct}%`,
+                width: `${widthPct}%`,
+                height: `${heightPct}%`,
               }}
-            />
+            >
+              <span
+                className={cx(
+                  "block h-full w-full rounded-[3px] border-2",
+                  plastic ? "border-accent shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "border-faint",
+                )}
+              />
+              <span
+                className={cx(
+                  "absolute -top-5 left-0 z-10 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold tracking-tight shadow",
+                  plastic
+                    ? "bg-accent text-accent-fg"
+                    : "bg-surface-3 text-muted",
+                )}
+              >
+                {labelText} · {Math.round(d.confidence * 100)}%
+              </span>
+            </div>
           );
         })}
         {scan.is_simulated ? (
@@ -92,7 +111,7 @@ export function ScanPreview({
               found ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted",
             )}
           >
-            <Icon name={found ? "sparkle" : "eye"} size={20} />
+            <Icon name={found ? "detect" : "eye"} size={20} />
           </span>
           <div className="min-w-0">
             <h2 className="font-display text-heading font-bold tracking-tight">

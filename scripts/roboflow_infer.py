@@ -20,7 +20,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-DEFAULT_MODELS = "waste-tfpi0/7,garbage-0q3db/10"
+DEFAULT_MODELS = "plastic-bags-aenhn/1,waste-tfpi0/7,garbage-0q3db/10"
 DEFAULT_API_URL = "https://serverless.roboflow.com"
 
 
@@ -29,20 +29,27 @@ def run_inference_sdk(image_path: str, api_key: str, model_id: str, api_url: str
     try:
         from inference_sdk import InferenceConfiguration, InferenceHTTPClient
 
+        mid = model_id.strip()
+        if "/" not in mid:
+            mid = f"{mid}/1"
+
         client = InferenceHTTPClient(
             api_url=api_url,
             api_key=api_key,
         ).configure(InferenceConfiguration(
             api_key_transport="header"  # header-based auth (inference v1.5.0+)
         ))
-        return client.infer(image_path, model_id=model_id)
+        return client.infer(image_path, model_id=mid)
     except ImportError:
         return None
 
 
 def run_inference_http(image_path: str, api_key: str, model_id: str, api_url: str = DEFAULT_API_URL):
     """Zero-dependency fallback: runs inference using standard library urllib with Header Bearer auth."""
-    url = f"{api_url.rstrip('/')}/{model_id}?format=json"
+    mid = model_id.strip()
+    if "/" not in mid:
+        mid = f"{mid}/1"
+    url = f"{api_url.rstrip('/')}/{mid}?format=json"
     with open(image_path, "rb") as f:
         img_bytes = f.read()
     b64_data = base64.b64encode(img_bytes)

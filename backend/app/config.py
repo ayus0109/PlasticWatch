@@ -55,9 +55,12 @@ class Settings(BaseSettings):
     # detector.TACO_TO_CONTRACT maps onto the frozen five (SPEC §6). Person/vehicle
     # labels are dropped by the same filter as every other path (CLAUDE.md §2.4).
     ROBOFLOW_API_KEY: str = ""
-    # One model (e.g. "waste-tfpi0/7") or a comma-separated ensemble
-    # (e.g. "waste-tfpi0/7,garbage-0q3db/10").
-    ROBOFLOW_MODEL_ID: str = "waste-tfpi0/7,garbage-0q3db/10"
+    # One model (e.g. "plastic-bags-aenhn/1" or "waste-tfpi0/7") or a comma-separated ensemble
+    # (e.g. "plastic-bags-aenhn/1,waste-tfpi0/7,garbage-0q3db/10").
+    # Supports models from Roboflow Universe:
+    # - https://universe.roboflow.com/margo-k/plastic-bags-aenhn ("plastic-bags-aenhn/1")
+    # - https://universe.roboflow.com/aditya-raj-kmypu/waste-tfpi0 ("waste-tfpi0/7")
+    ROBOFLOW_MODEL_ID: str = "plastic-bags-aenhn/1,waste-tfpi0/7,garbage-0q3db/10"
     ROBOFLOW_URL: str = "https://serverless.roboflow.com"
     ROBOFLOW_TIMEOUT_S: float = 12.0
 

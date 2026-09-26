@@ -213,3 +213,40 @@ team_only = require_role(UserRole.team)
 authority_or_team = require_role(UserRole.authority, UserRole.team)
 citizen_or_authority = require_role(UserRole.citizen, UserRole.authority)
 any_role = require_role(UserRole.citizen, UserRole.authority, UserRole.team)
+
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> DemoUser | None:
+    """Optional bearer token authentication for testing interfaces and public previews."""
+    if credentials is None:
+        return None
+    try:
+        claims = decode_demo_token(credentials.credentials)
+    except ValueError:
+        return None
+
+    try:
+        user_id = UUID(claims["sub"])
+    except (KeyError, ValueError, TypeError):
+        return None
+
+    user = find_demo_user(user_id=user_id)
+    if user is not None:
+        return user
+
+    if "role" in claims and "name" in claims:
+        try:
+            return DemoUser(
+                id=user_id,
+                name=claims["name"],
+                email=claims.get("email"),
+                role=UserRole(claims["role"]),
+                ward_id=claims.get("ward_id"),
+                reliability=float(claims.get("reliability", 0.5)),
+                is_simulated=bool(claims.get("is_simulated", False)),
+            )
+        except Exception:
+            return None
+    return None
+

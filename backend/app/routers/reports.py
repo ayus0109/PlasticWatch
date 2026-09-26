@@ -9,7 +9,7 @@ from PIL import Image, ImageOps
 from sqlalchemy.engine import Connection
 
 from app.db import get_conn
-from app.deps import citizen_only, citizen_or_authority
+from app.deps import citizen_only, citizen_or_authority, get_current_user_optional
 from app.schemas import (
     AiStatus,
     DemoUser,
@@ -32,7 +32,7 @@ router = APIRouter(tags=["reports"])
 @router.post("/detect", response_model=DetectPreview)
 def detect_preview(
     image: UploadFile = File(..., description="Photo to preview. Not saved."),
-    _user: DemoUser = Depends(citizen_only),
+    _user: DemoUser | None = Depends(get_current_user_optional),
 ) -> DetectPreview:
     """Preview likely-plastic detection without saving a report.
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import type { DemoUser, PublicSummary, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
@@ -60,7 +60,7 @@ const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] 
 ];
 
 const PRINCIPLES: { icon: IconName; text: string }[] = [
-  { icon: "sparkle", text: "The AI flags likely plastic — it never has the last word." },
+  { icon: "detect", text: "The AI flags likely plastic — it never has the last word." },
   { icon: "shield", text: "Nothing is verified or resolved until a person confirms it." },
   { icon: "users", text: "Reports show waste is present, never who is responsible." },
 ];
@@ -228,7 +228,7 @@ export default function Login() {
 
           <div className="animate-rise">
             <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm shadow-sm">
-              <Icon name="sparkle" size={13} />
+              <Icon name="detect" size={13} />
               AI-assisted spatial triage
             </span>
 
@@ -259,6 +259,13 @@ export default function Login() {
                 <Icon name="shield" size={17} />
                 Sign in as authority
               </button>
+              <Link
+                to="/scanner"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-black/40 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-black/60 active:translate-y-0 active:scale-[0.98]"
+              >
+                <Icon name="detect" size={17} />
+                Try AI Plastic Scanner
+              </Link>
             </div>
 
             <ul className="mt-8 flex flex-col gap-2 text-label text-white/80 sm:flex-row sm:flex-wrap sm:gap-x-6">

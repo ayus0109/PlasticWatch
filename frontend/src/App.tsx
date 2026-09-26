@@ -9,6 +9,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Report = lazy(() => import("./pages/Report"));
 const MyReports = lazy(() => import("./pages/MyReports"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Scanner = lazy(() => import("./pages/Scanner"));
 
 function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const session = useSession();
@@ -81,6 +82,8 @@ export default function App() {
             <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
             <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />
             <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
+            <Route path="/scanner" element={<Scanner />} />
+            <Route path="/detect" element={<Navigate to="/scanner" replace />} />
             {/* The old fragmented authority tabs all live on the dashboard now. */}
             {["/map", "/queue", "/tasks", "/reviews", "/hotspots/:id", "/team/tasks", "/team/tasks/:id"].map(
               (path) => (
