@@ -875,6 +875,26 @@ export interface components {
              * @description Height the detector measured boxes against.
              */
             image_height: number;
+            /**
+             * Detection Tiers
+             * @description Tier of each detection, aligned with result.
+             */
+            detection_tiers?: components["schemas"]["ConfidenceTier"][];
+            /**
+             * Exif Lat
+             * @description Latitude from the photo's EXIF GPS.
+             */
+            exif_lat?: number | null;
+            /**
+             * Exif Lon
+             * @description Longitude from the photo's EXIF GPS.
+             */
+            exif_lon?: number | null;
+            /**
+             * Captured At
+             * @description When the photo was taken - only when its EXIF also records the timezone. Null otherwise, never a guessed zone.
+             */
+            captured_at?: string | null;
         };
         /**
          * Detection

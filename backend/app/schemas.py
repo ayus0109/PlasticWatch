@@ -290,6 +290,23 @@ class DetectPreview(BaseModel):
     # the two disagree. Not part of the frozen DetectorOutput contract (SPEC §6).
     image_width: int = Field(..., gt=0, description="Width the detector measured boxes against.")
     image_height: int = Field(..., gt=0, description="Height the detector measured boxes against.")
+    # What the PHOTO says about itself, read before anything is stored (the stored copy
+    # is metadata-free). Lets the preview stamp a gallery photo whose GPS is in its EXIF.
+    # One tier per box, same order as result.detections. Computed here from the live
+    # CONF_TIER_* settings so the browser never duplicates thresholds that are tunable
+    # (CLAUDE.md §2.7: a box's raw confidence is never shown without its tier).
+    detection_tiers: list[ConfidenceTier] = Field(
+        default_factory=list, description="Tier of each detection, aligned with result."
+    )
+    exif_lat: float | None = Field(None, description="Latitude from the photo's EXIF GPS.")
+    exif_lon: float | None = Field(None, description="Longitude from the photo's EXIF GPS.")
+    captured_at: datetime | None = Field(
+        None,
+        description=(
+            "When the photo was taken - only when its EXIF also records the timezone. "
+            "Null otherwise, never a guessed zone."
+        ),
+    )
 
 
 # --------------------------------------------------------------------------

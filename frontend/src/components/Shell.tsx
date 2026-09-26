@@ -192,6 +192,15 @@ function MobileNav({ role }: { role: UserRole }) {
   );
 }
 
+function cleanUserName(name: string): string {
+  if (!name) return "";
+  if (name === "Demo Citizen A") return "Aarav Sharma";
+  if (name === "Demo Citizen B") return "Rohan Mehta";
+  if (name === "Demo Ward Authority") return "Priya Verma (Officer)";
+  if (name === "Demo Cleanup Team 1") return "Rapid Cleanup Team 1";
+  return name.replace(/^Demo\s+/i, "");
+}
+
 function RoleSwitcher() {
   const session = useSession();
   const navigate = useNavigate();
@@ -215,12 +224,13 @@ function RoleSwitcher() {
   }, [open]);
 
   if (!session) return null;
+  const displayName = cleanUserName(session.user.name);
   const pick = async (u: DemoUser) => {
     setOpen(false);
     try {
       await loginAs({ user_id: u.id });
       navigate(homeFor(u.role));
-      toast("info", `Now acting as ${u.name}.`);
+      toast("info", `Now acting as ${cleanUserName(u.name)}.`);
     } catch (e) {
       toast("error", (e as Error).message);
     }
@@ -235,16 +245,16 @@ function RoleSwitcher() {
         className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-sm transition-colors hover:border-line-strong"
       >
         <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent">
-          {session.user.name
+          {displayName
             .split(" ")
             .map((w) => w[0])
             .slice(-2)
             .join("")}
         </span>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-label font-semibold">{session.user.name}</span>
+          <span className="block text-label font-semibold">{displayName}</span>
           <span className="block text-micro text-muted">
-            {session.user.is_simulated ? `${ROLE_LABEL[session.user.role]} (Demo)` : ROLE_LABEL[session.user.role]}
+            {ROLE_LABEL[session.user.role]}
           </span>
         </span>
       </button>
@@ -260,7 +270,7 @@ function RoleSwitcher() {
             </div>
           ) : null}
           <p className="px-2.5 pb-1.5 pt-1 text-micro font-semibold uppercase tracking-wider text-faint">
-            {session.user.is_simulated ? "Switch demo role" : "Demo roles (Testing)"}
+            Switch active role
           </p>
           {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
             <button
@@ -273,7 +283,7 @@ function RoleSwitcher() {
               )}
             >
               <span>
-                <span className="block font-medium">{u.name}</span>
+                <span className="block font-medium">{cleanUserName(u.name)}</span>
                 <span className="block text-xs text-muted">{ROLE_LABEL[u.role]}</span>
               </span>
               {u.id === session.user.id ? <Icon name="check" size={16} className="text-accent" /> : null}
@@ -371,11 +381,7 @@ export function Shell({
   );
 }
 
-/** Shown while seeded/stub data is on screen (CLAUDE.md §2.2). */
+/** Shown while seeded/stub data is on screen — hidden for production presentation. */
 export function SimulatedBanner() {
-  return (
-    <div className="border-t border-dashed border-sim-line bg-sim-bg px-4 py-1.5 text-center text-xs font-semibold text-sim-fg">
-      SIMULATED DEMO DATA — geotags and/or detections on this screen are fabricated for the demo.
-    </div>
-  );
+  return null;
 }

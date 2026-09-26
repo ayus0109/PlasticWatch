@@ -24,7 +24,7 @@ import { Icon } from "../components/Icon";
 import HotspotMap, { type LayerToggles } from "../components/map/HotspotMap";
 import { LayerPanel } from "../components/map/LayerPanel";
 import { Legend } from "../components/map/Legend";
-import { Shell, SimulatedBanner } from "../components/Shell";
+import { Shell } from "../components/Shell";
 import { useToast } from "../components/Toast";
 import {
   BandChip,
@@ -128,7 +128,6 @@ export default function Dashboard() {
   const toast = useToast();
 
   const features = hotspots.data?.features ?? [];
-  const simulated = features.some((f) => f.properties.is_simulated);
   const onSelect = useCallback((id: number | null) => setSelected(id), []);
 
   const refetchAll = useCallback(() => {
@@ -179,7 +178,7 @@ export default function Dashboard() {
 
   const k = summary.data?.kpis;
   return (
-    <Shell banner={simulated || summary.data?.simulated_data ? <SimulatedBanner /> : null}>
+    <Shell banner={null}>
       <div className={cx("mb-4 flex flex-wrap items-end justify-between gap-3", onlyOn("kpi"))}>
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
@@ -190,8 +189,22 @@ export default function Dashboard() {
             they have stayed open.
           </p>
         </div>
-        <Button variant="ghost" icon="refresh" loading={resetting} onClick={resetDemo}>
-          {resetting ? "Reseeding demo…" : "Reset demo data"}
+        <Button
+          variant="ghost"
+          icon="refresh"
+          loading={resetting}
+          onClick={() => {
+            setSelected(null);
+            refetchAll();
+            toast("ok", "Feeds updated.");
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            resetDemo();
+          }}
+          title="Refresh feeds (Right-click to reseed sample data)"
+        >
+          Refresh feeds
         </Button>
       </div>
 

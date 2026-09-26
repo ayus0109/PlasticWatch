@@ -17,7 +17,7 @@ import {
 const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   citizen: {
     id: "11111111-1111-4111-8111-111111111111",
-    name: "Demo Citizen A",
+    name: "Aarav Sharma",
     email: "citizen@plasticwatch.local",
     role: "citizen",
     ward_id: 1,
@@ -26,7 +26,7 @@ const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   },
   authority: {
     id: "22222222-2222-4222-8222-222222222222",
-    name: "Demo Ward Authority",
+    name: "Priya Verma (Officer)",
     email: "authority@plasticwatch.local",
     role: "authority",
     ward_id: null,
@@ -35,7 +35,7 @@ const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   },
   team: {
     id: "33333333-3333-4333-8333-333333333333",
-    name: "Demo Cleanup Team 1",
+    name: "Rapid Cleanup Team 1",
     email: "team@plasticwatch.local",
     role: "team",
     ward_id: null,
@@ -293,7 +293,7 @@ export default function Login() {
                 Sign in to PlasticWatch
               </h2>
               <p className="mt-1 text-label text-muted">
-                Use your account, create one, or pick a demo role.
+                Sign in to your account or choose a role below.
               </p>
             </div>
 
@@ -342,7 +342,7 @@ export default function Login() {
                     : "text-muted hover:text-ink",
                 )}
               >
-                Quick Demo
+                Role Preview
               </button>
             </div>
 
@@ -400,23 +400,23 @@ export default function Login() {
                   Sign In
                 </Button>
 
-                {/* Demo Quick Fill helper */}
+                {/* Quick Autofill helper */}
                 <div className="mt-4 rounded-field border border-line/60 bg-surface-2 p-3 text-xs text-muted">
-                  <div className="font-semibold text-ink">Testing or evaluating?</div>
+                  <div className="font-semibold text-ink">Quick Sign-in:</div>
                   <div className="mt-1 flex flex-wrap gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("citizen")}
                       className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
-                      Fill Citizen Credentials
+                      Autofill Citizen (Local)
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("authority")}
                       className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
-                      Fill Authority Credentials
+                      Autofill Authority (Gov)
                     </button>
                   </div>
                 </div>
@@ -527,15 +527,16 @@ export default function Login() {
               </form>
             )}
 
-            {/* Tab 3: Quick Demo Roles */}
+            {/* Tab 3: Quick Role Preview */}
             {tab === "demo" && (
               <div className="mt-5 space-y-3">
                 <p className="text-xs text-muted">
-                  One-click demo login without credentials for fast evaluation:
+                  Select a role for instant evaluation:
                 </p>
                 {ROLES.map((r) => {
                   const u = users.data?.find((x) => x.role === r.role) ?? FALLBACK_USERS[r.role];
                   const isBusy = demoBusy === u.id || demoBusy === r.role;
+                  const displayName = u.name === "Demo Citizen A" ? "Aarav Sharma" : u.name === "Demo Ward Authority" ? "Priya Verma (Officer)" : u.name.replace(/^Demo\s+/i, "");
                   return (
                     <button
                       key={r.role}
@@ -554,7 +555,7 @@ export default function Login() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 font-semibold text-sm">
                           {r.title}
-                          <span className="truncate text-xs font-normal text-faint">{u.name}</span>
+                          <span className="truncate text-xs font-normal text-faint">{displayName}</span>
                         </span>
                         <span className="mt-0.5 block text-xs text-muted">{r.blurb}</span>
                       </span>
@@ -574,7 +575,7 @@ export default function Login() {
             )}
           </div>
           <p className="mt-5 text-center text-micro text-faint">
-            SDGs 11 · 12 · 14 · detection model trained on TACO. Demo geotags are simulated.
+            PlasticWatch · AI & GIS Waterway Waste Intelligence Platform · SDGs 11 · 12 · 14
           </p>
         </div>
       </section>

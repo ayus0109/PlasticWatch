@@ -10,7 +10,7 @@ import {
   type ReportCreateResponse,
 } from "../api/client";
 import { Icon } from "../components/Icon";
-import { ScanPreview } from "../components/ScanPreview";
+import { ScanPreview, type StampLocation } from "../components/ScanPreview";
 import { PinPicker, type LatLon } from "../components/PinPicker";
 import { ReportResult } from "../components/ReportResult";
 import { Shell } from "../components/Shell";
@@ -191,6 +191,19 @@ export default function Report() {
 
   // Detector ran: show what it saw and let the citizen decide before anything is saved.
   if (scan && preview) {
+    // Exactly the location submitting will record: browser GPS and pins are sent from
+    // here; in EXIF mode nothing is sent and the server reads the photo's own GPS,
+    // which /detect has already told us (null when the photo carries none).
+    const stampLocation: StampLocation =
+      loc.mode === "gps"
+        ? { lat: loc.lat, lon: loc.lon, source: "browser", accuracyM: loc.accuracy }
+        : loc.mode === "pin"
+          ? { lat: loc.lat, lon: loc.lon, source: "pin" }
+          : {
+              lat: scan.exif_lat ?? null,
+              lon: scan.exif_lon ?? null,
+              source: scan.exif_lat != null ? "exif" : null,
+            };
     return (
       <Shell>
         <div className="mx-auto max-w-xl space-y-4">
@@ -213,6 +226,7 @@ export default function Report() {
           <ScanPreview
             scan={scan}
             imageUrl={preview}
+            location={stampLocation}
             sending={busy}
             onSend={submit}
             onRetake={() => {

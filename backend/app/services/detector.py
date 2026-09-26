@@ -477,7 +477,11 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
             if "glass" in raw_name
             else DetectionClass.plastic_bottle
         )
-    if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly", "polythene", "sachet")):
+    if any(
+        k in raw_name
+        for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly",
+                  "polythene", "sachet")
+    ):
         return DetectionClass.plastic_bag_film
     if any(
         k in raw_name
@@ -486,7 +490,10 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
     ):
         return DetectionClass.plastic_packaging
     # Handle disposable plastic tumblers/cups (e.g. "plastic glass" in plastic-management/1)
-    if "plastic glass" in raw_name or "plastic-glass" in raw_name or "plastic cup" in raw_name or "plastic tumbler" in raw_name:
+    if any(
+        k in raw_name
+        for k in ("plastic glass", "plastic-glass", "plastic cup", "plastic tumbler")
+    ):
         return DetectionClass.plastic_packaging
     if any(
         k in raw_name

@@ -3,7 +3,9 @@ import type { ReportCreateResponse } from "../api/client";
 import { mediaUrl } from "../api/client";
 import { plural } from "../lib/format";
 import { citizenStage } from "../lib/status";
+import { GeoStamp } from "./GeoStamp";
 import { Icon } from "./Icon";
+import { PhotoFrame } from "./PhotoFrame";
 import { StageTracker } from "./StageTracker";
 import { Button, Card, Chip, SimulatedBadge, TierChip } from "./ui";
 
@@ -22,10 +24,23 @@ export function ReportResult({
   return (
     <Card pad="none" className="overflow-hidden animate-rise">
       {img ? (
-        <div className="relative bg-surface-2">
-          <img src={img} alt="Your photo, annotated with likely-plastic detections" className="max-h-[420px] w-full object-contain" />
-          {r.is_simulated ? <SimulatedBadge className="absolute bottom-3 left-3" /> : null}
-        </div>
+        // The stored copy is metadata-free, so the stamp comes from what was RECORDED
+        // for this report, not from the file.
+        <PhotoFrame
+          src={img}
+          alt="Your photo, annotated with likely-plastic detections"
+          maxHeight="420px"
+        >
+          {r.is_simulated ? <SimulatedBadge className="absolute left-3 top-3" /> : null}
+          <GeoStamp
+            lat={r.lat}
+            lon={r.lon}
+            source={r.location_source}
+            accuracyM={r.gps_accuracy_m}
+            capturedAt={r.captured_at}
+            reportedAt={r.created_at}
+          />
+        </PhotoFrame>
       ) : null}
 
       <div className="space-y-4 p-6">

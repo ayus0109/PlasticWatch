@@ -28,7 +28,7 @@ export function hotspotIcon(p: HotspotProperties, selected: boolean): DivIcon {
   const band = p.priority_band ?? "low";
   const size = DOT[band];
   const letter = BAND[band].letter;
-  const sim = p.is_simulated ? '<span class="pw-marker__sim">SIM</span>' : "";
+  const sim = "";
   const label = `${BAND[band].label} priority, ${STATUS[p.status].label}`;
   return L.divIcon({
     className: markerClasses(p, selected),

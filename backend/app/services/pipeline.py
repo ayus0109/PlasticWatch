@@ -22,7 +22,7 @@ from __future__ import annotations
 import io
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -100,6 +100,40 @@ def exif_gps(img: Image.Image) -> tuple[float, float] | None:
     return lat, lon
 
 
+_EXIF_IFD = 0x8769
+_DATETIME_ORIGINAL = 0x9003
+_OFFSET_TIME_ORIGINAL = 0x9011
+# Cameras with an unset clock report 1970 or 2000-01-01; anything this old is noise.
+_EARLIEST_PLAUSIBLE_CAPTURE = datetime(2005, 1, 1, tzinfo=UTC)
+
+
+def exif_captured_at(img: Image.Image) -> datetime | None:
+    """When the photo was taken, but ONLY if the photo also says which timezone.
+
+    EXIF DateTimeOriginal is the camera's local wall-clock time with no zone. Current
+    Android and iOS also write OffsetTimeOriginal ("+05:30"); with it the moment is
+    exact. Without it we return None rather than guess a zone: storing a naive time
+    in a timestamptz column silently shifts it by the server's offset, which would
+    state a capture time the photo never had. None falls back to "reported at".
+    """
+    try:
+        exif = img.getexif().get_ifd(_EXIF_IFD)
+        raw = exif.get(_DATETIME_ORIGINAL)
+        offset = exif.get(_OFFSET_TIME_ORIGINAL)
+        if not raw or not offset:
+            return None
+        taken = datetime.strptime(
+            f"{str(raw).strip(chr(0) + ' ')}{str(offset).strip(chr(0) + ' ')}",
+            "%Y:%m:%d %H:%M:%S%z",
+        )
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return None
+    # A clock that was never set, or one running in the future, is not evidence.
+    if not (_EARLIEST_PLAUSIBLE_CAPTURE <= taken <= datetime.now(UTC) + timedelta(days=1)):
+        return None
+    return taken
+
+
 def _store_photo(img: Image.Image, report_id: UUID) -> str:
     """Save an EXIF-rotated, metadata-free JPEG. Returns its public path."""
     clean = ImageOps.exif_transpose(img).convert("RGB")
@@ -116,11 +150,13 @@ def _store_photo(img: Image.Image, report_id: UUID) -> str:
 _INSERT_REPORT = text(
     """
     INSERT INTO reports (id, reporter_id, image_path, image_phash, geom, gps_accuracy_m,
-                         location_source, created_at, note, reporter_name, reporter_phone,
+                         location_source, captured_at, created_at, note,
+                         reporter_name, reporter_phone,
                          ai_status, report_confidence,
                          plastic_count, plastic_area_frac, severity, is_simulated)
     VALUES (:id, :reporter, :image_path, :phash, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
-            :accuracy, :source, :created_at, :note, :reporter_name, :reporter_phone,
+            :accuracy, :source, :captured_at, :created_at, :note,
+            :reporter_name, :reporter_phone,
             :ai_status, :confidence,
             :count, :area, :severity, :simulated)
     """
@@ -161,6 +197,8 @@ def process_report(
     s = get_settings()
     created_at = created_at or datetime.now(UTC)
     img = decode_photo(image_bytes)
+    # Read before _store_photo, which writes a metadata-free copy (privacy).
+    captured_at = exif_captured_at(img)
 
     # Location: browser GPS / pin from the form, else EXIF, else ask for a pin.
     if lat is None or lon is None:
@@ -199,7 +237,8 @@ def process_report(
         {
             "id": report_id, "reporter": reporter_id, "image_path": image_path,
             "phash": phash, "lon": lon, "lat": lat, "accuracy": accuracy_m,
-            "source": source.value, "created_at": created_at, "note": note,
+            "source": source.value, "captured_at": captured_at,
+            "created_at": created_at, "note": note,
             "reporter_name": reporter_name, "reporter_phone": reporter_phone,
             "ai_status": det.ai_status.value, "confidence": det.report_confidence,
             "count": det.plastic_count, "area": det.plastic_area_frac,

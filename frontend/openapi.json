@@ -1992,6 +1992,51 @@
             "exclusiveMinimum": 0.0,
             "title": "Image Height",
             "description": "Height the detector measured boxes against."
+          },
+          "detection_tiers": {
+            "items": {
+              "$ref": "#/components/schemas/ConfidenceTier"
+            },
+            "type": "array",
+            "title": "Detection Tiers",
+            "description": "Tier of each detection, aligned with result."
+          },
+          "exif_lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exif Lat",
+            "description": "Latitude from the photo's EXIF GPS."
+          },
+          "exif_lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exif Lon",
+            "description": "Longitude from the photo's EXIF GPS."
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At",
+            "description": "When the photo was taken - only when its EXIF also records the timezone. Null otherwise, never a guessed zone."
           }
         },
         "type": "object",
