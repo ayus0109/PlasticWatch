@@ -15,6 +15,7 @@ export function PhotoFrame({
   width,
   height,
   maxHeight = "46dvh",
+  onError,
   children,
 }: {
   src: string | undefined;
@@ -24,6 +25,7 @@ export function PhotoFrame({
   height?: number;
   /** Any CSS length. */
   maxHeight?: string;
+  onError?: () => void;
   children?: ReactNode;
 }) {
   const [measured, setMeasured] = useState<{ w: number; h: number } | null>(null);
@@ -48,6 +50,7 @@ export function PhotoFrame({
             const { naturalWidth: nw, naturalHeight: nh } = e.currentTarget;
             if (nw && nh) setMeasured({ w: nw, h: nh });
           }}
+          onError={onError}
         />
         {children}
       </div>

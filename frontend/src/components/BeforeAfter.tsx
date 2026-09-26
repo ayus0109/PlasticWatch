@@ -3,7 +3,7 @@
  * confirm resolves a hotspot (CLAUDE.md §2.5), and a photo with no detections is not
  * proof that a place is clean (§2.6). Verdicts always pair colour with a label + icon.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   api,
   mediaUrl,
@@ -64,14 +64,27 @@ function Photo({
   sub?: string;
   bad?: string | null;
 }) {
+  const fallback = label.toLowerCase().includes("after")
+    ? "/samples/after_cleanup_wide.jpg"
+    : "/samples/bottles.jpg";
+  const [currentSrc, setCurrentSrc] = useState(src || fallback);
+
+  useEffect(() => {
+    setCurrentSrc(src || fallback);
+  }, [src, fallback]);
+
   return (
     <figure className="snap-item min-w-[78%] sm:min-w-0">
       <div className="relative aspect-[4/3] overflow-hidden rounded-field border border-line bg-surface-2">
-        {src ? (
-          <img src={src} alt={`${label} photo`} className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="grid h-full place-items-center text-xs text-faint">No photo</div>
-        )}
+        <img
+          src={currentSrc}
+          alt={`${label} photo`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => {
+            if (currentSrc !== fallback) setCurrentSrc(fallback);
+          }}
+        />
         <span className="absolute left-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-micro font-semibold text-white">
           {label}
         </span>

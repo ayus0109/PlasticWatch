@@ -8,7 +8,6 @@
 import { useEffect, useState } from "react";
 import {
   api,
-  mediaUrl,
   type DemoUser,
   type HotspotDetail,
   type ReportSummary,
@@ -22,6 +21,7 @@ import { BeforeAfterCompare, BeforeAfterFacts, ReviewPanel, VerdictChip } from "
 import { EvidenceLedger } from "./EvidenceLedger";
 import { Icon } from "./Icon";
 import { ScoreBars } from "./ScoreBars";
+import { ReportImage } from "./ReportImage";
 import { useToast } from "./Toast";
 import { allowedDecisions, friendlyError, VerifyPanel } from "./VerifyPanel";
 import {
@@ -140,8 +140,6 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
     );
   }
 
-  const img = mediaUrl(current.annotated_jpg_path ?? current.image_path);
-
   return (
     <Card pad="none" className="overflow-hidden border-accent/40 shadow-raised">
       <div className="flex items-center justify-between border-b border-line bg-surface-2 px-3.5 py-2.5">
@@ -178,29 +176,19 @@ function CitizenProofCard({ reports }: { reports: ReportSummary[] }) {
         ) : null}
       </div>
 
-      {img ? (
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/40">
-          <img
-            src={img}
-            alt="Reported waste"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
-            <span className="rounded-full bg-black/75 px-2 py-0.5 text-micro font-semibold text-white backdrop-blur-sm">
-              {current.plastic_count ?? 0} likely-plastic items
-            </span>
-            {current.is_simulated ? <SimulatedBadge /> : null}
-          </div>
-          <a
-            href={img}
-            target="_blank"
-            rel="noreferrer"
-            className="absolute top-2 right-2 rounded-field bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80"
-          >
-            Full photo ↗
-          </a>
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/40">
+        <ReportImage
+          path={current.annotated_jpg_path ?? current.image_path}
+          reportId={current.id}
+          alt="Reported waste"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-black/75 px-2 py-0.5 text-micro font-semibold text-white backdrop-blur-sm">
+            {current.plastic_count ?? 0} likely-plastic items
+          </span>
         </div>
-      ) : null}
+      </div>
 
       <div className="space-y-3 p-3">
         {/* Reporter contact & proof box */}

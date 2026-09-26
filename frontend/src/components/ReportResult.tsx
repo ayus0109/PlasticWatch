@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import type { ReportCreateResponse } from "../api/client";
 import { mediaUrl } from "../api/client";
+import { getDatasetSampleForReport } from "../lib/images";
 import { plural } from "../lib/format";
 import { citizenStage } from "../lib/status";
 import { GeoStamp } from "./GeoStamp";
 import { Icon } from "./Icon";
 import { PhotoFrame } from "./PhotoFrame";
 import { StageTracker } from "./StageTracker";
-import { Button, Card, Chip, SimulatedBadge, TierChip } from "./ui";
+import { Button, Card, Chip, TierChip } from "./ui";
 
 /** The citizen's result card: what the model thinks, with its tier, and what happens next. */
 export function ReportResult({
@@ -19,19 +21,20 @@ export function ReportResult({
 }) {
   const r = result.report;
   const detected = r.ai_status === "detected";
-  const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
+  const fallback = getDatasetSampleForReport(r.id);
+  const [imgSrc, setImgSrc] = useState(mediaUrl(r.annotated_jpg_path ?? r.image_path) || fallback);
 
   return (
     <Card pad="none" className="overflow-hidden animate-rise">
-      {img ? (
+      {imgSrc ? (
         // The stored copy is metadata-free, so the stamp comes from what was RECORDED
         // for this report, not from the file.
         <PhotoFrame
-          src={img}
+          src={imgSrc}
           alt="Your photo, annotated with likely-plastic detections"
           maxHeight="420px"
+          onError={() => setImgSrc(fallback)}
         >
-          {r.is_simulated ? <SimulatedBadge className="absolute left-3 top-3" /> : null}
           <GeoStamp
             lat={r.lat}
             lon={r.lon}

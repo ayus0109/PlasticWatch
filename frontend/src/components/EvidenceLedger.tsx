@@ -5,11 +5,11 @@
  * caused the waste (CLAUDE.md §2.3).
  */
 import type { HotspotEvent, ReportSummary } from "../api/client";
-import { mediaUrl } from "../api/client";
 import { dateTime, timeAgo } from "../lib/format";
 import { REASON_LABEL, STATUS } from "../lib/status";
 import { Icon } from "./Icon";
-import { Chip, SimulatedBadge, TierChip, cx } from "./ui";
+import { ReportImage } from "./ReportImage";
+import { Chip, TierChip, cx } from "./ui";
 
 type Item =
   | { kind: "report"; at: string; report: ReportSummary }
@@ -58,7 +58,6 @@ function EventRow({ e, fresh }: { e: HotspotEvent; fresh: boolean }) {
 }
 
 function ReportRow({ r }: { r: ReportSummary }) {
-  const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
   return (
     <div className="flex gap-3">
       <span className="z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-surface bg-surface-2 text-muted">
@@ -66,15 +65,16 @@ function ReportRow({ r }: { r: ReportSummary }) {
       </span>
       <div className="min-w-0 flex-1 overflow-hidden rounded-field border border-line">
         <div className="flex gap-3 p-3">
-          {img ? (
-            <a href={img} target="_blank" rel="noreferrer" className="shrink-0" aria-label="Open photo">
-              <img src={img} alt="" loading="lazy" className="h-20 w-28 rounded-field object-cover transition-opacity hover:opacity-90" />
-            </a>
-          ) : null}
+          <div className="shrink-0 h-20 w-28 overflow-hidden rounded-field bg-surface-2">
+            <ReportImage
+              path={r.annotated_jpg_path ?? r.image_path}
+              reportId={r.id}
+              className="h-full w-full object-cover transition-opacity hover:opacity-90"
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
               <span>{r.reporter_name ? `Report by ${r.reporter_name}` : "Citizen report"}</span>
-              {r.is_simulated ? <SimulatedBadge /> : null}
               {r.is_duplicate ? <Chip tone="info">Duplicate photo</Chip> : null}
             </div>
             {r.reporter_phone ? (

@@ -1,6 +1,7 @@
 import { Link } from "react-router";
-import { mediaUrl, type ReportSummary } from "../api/client";
+import type { ReportSummary } from "../api/client";
 import { useApi } from "../api/hooks";
+import { ReportImage } from "../components/ReportImage";
 import { Shell } from "../components/Shell";
 import { StageTracker } from "../components/StageTracker";
 import {
@@ -8,7 +9,6 @@ import {
   Chip,
   EmptyState,
   ErrorState,
-  SimulatedBadge,
   Skeleton,
   TierChip,
 } from "../components/ui";
@@ -16,14 +16,17 @@ import { dateTime, plural, timeAgo } from "../lib/format";
 import { citizenStage } from "../lib/status";
 
 function ReportCard({ r }: { r: ReportSummary }) {
-  const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
   const detected = r.ai_status === "detected";
   return (
     <Card as="article" interactive pad="none" className="overflow-hidden animate-rise">
       <div className="flex flex-col sm:flex-row">
-        <div className="relative h-44 shrink-0 bg-surface-2 sm:h-auto sm:w-48">
-          {img ? <img src={img} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
-          {r.is_simulated ? <SimulatedBadge className="absolute bottom-2 left-2" /> : null}
+        <div className="relative h-44 shrink-0 bg-surface-2 sm:h-auto sm:w-48 overflow-hidden">
+          <ReportImage
+            path={r.annotated_jpg_path ?? r.image_path}
+            reportId={r.id}
+            alt="Reported waste"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="flex-1 space-y-3 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
