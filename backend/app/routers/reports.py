@@ -67,7 +67,10 @@ def detect_preview(
             else:
                 raise HTTPException(
                     status_code=400,
-                    detail={"code": "not_an_image", "message": "That file is not a readable image."},
+                    detail={
+                        "code": "not_an_image",
+                        "message": "That file is not a readable image.",
+                    },
                 ) from exc
 
     result = result.model_copy(update={"annotated_jpg_path": None})
