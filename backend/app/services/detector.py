@@ -30,6 +30,7 @@ import random
 import re
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from pathlib import Path
 
@@ -455,19 +456,95 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
         return None
 
 
+def resolve_roboflow_class(raw: str) -> DetectionClass | None:
+    """Map raw class names from arbitrary Roboflow models onto the five SPEC §6 classes."""
+    raw_name = raw.lower().strip()
+    if is_forbidden_label(raw_name):
+        return None
+    # 1. Exact match against 5 contract classes
+    if raw_name in ALLOWED_CLASS_NAMES:
+        return DetectionClass(raw_name)
+    # 2. Known TACO mapping
+    if raw_name in TACO_TO_CONTRACT:
+        return TACO_TO_CONTRACT[raw_name]
+    # 3. Known COCO mapping
+    if raw_name in COCO_TO_CONTRACT:
+        return COCO_TO_CONTRACT[raw_name]
+    # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, etc.)
+    if "bottle" in raw_name:
+        return DetectionClass.non_plastic_litter if "glass" in raw_name else DetectionClass.plastic_bottle
+    if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly")):
+        return DetectionClass.plastic_bag_film
+    if any(k in raw_name for k in ("cup", "can", "bowl", "box", "pack", "container", "tub", "carton", "lid", "tetra")):
+        return DetectionClass.plastic_packaging
+    if any(k in raw_name for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")):
+        return DetectionClass.plastic_other
+    if any(k in raw_name for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe", "textile", "cloth", "wood", "battery", "litter", "trash", "waste", "garbage", "rubbish")):
+        return DetectionClass.non_plastic_litter
+    return None
+
+
+def _box_iou(b1: Detection, b2: Detection) -> float:
+    ix1, iy1 = max(b1.x1, b2.x1), max(b1.y1, b2.y1)
+    ix2, iy2 = min(b1.x2, b2.x2), min(b1.y2, b2.y2)
+    iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+    inter = iw * ih
+    if inter <= 0.0:
+        return 0.0
+    a1 = (b1.x2 - b1.x1) * (b1.y2 - b1.y1)
+    a2 = (b2.x2 - b2.x1) * (b2.y2 - b2.y1)
+    union = a1 + a2 - inter
+    return inter / union if union > 0.0 else 0.0
+
+
+def _nms(detections: list[Detection], iou_threshold: float = 0.45) -> list[Detection]:
+    """Non-maximum suppression across predictions from single or multiple models."""
+    if not detections:
+        return []
+    sorted_dets = sorted(detections, key=lambda d: d.confidence, reverse=True)
+    kept: list[Detection] = []
+    for d in sorted_dets:
+        if any(_box_iou(d, k) > iou_threshold for k in kept):
+            continue
+        kept.append(d)
+    return kept
+
+
+def _query_single_roboflow_model(
+    model_id: str,
+    body: bytes,
+    conf_floor: float,
+    timeout_s: float,
+    api_key: str,
+    api_url: str,
+) -> tuple[str, list[dict] | None]:
+    url = f"{api_url.rstrip('/')}/{model_id}?confidence={conf_floor}&format=json"
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            # Header transport: the key never goes in a URL, where it would land
+            # in logs and proxy history.
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        return model_id, payload.get("predictions", [])
+    except Exception as exc:
+        logger.warning("Roboflow query failed for model '%s': %s", model_id, exc)
+        return model_id, None
+
+
 def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
-    """Hosted inference on Roboflow: a REAL model, but someone else's, and reaching it
-    means UPLOADING THE CITIZEN'S PHOTO off this machine. Everything else in
-    PlasticWatch stays local, so this is opt-in (ROBOFLOW_API_KEY) and is tried only
-    after local weights have been ruled out.
+    """Hosted inference on Roboflow: supports single model or multi-model ensemble.
 
-    None means "could not run" — not configured, network down, bad response — so the
-    caller falls through to the next detector. It never turns a failure into output.
-
-    The hosted model is trained on TACO and returns TACO category names, which
-    TACO_TO_CONTRACT maps onto the five SPEC §6 classes; an unmapped name is dropped
-    rather than guessed, and the §2.4 person/vehicle filter runs first, exactly as on
-    the local path. A model that ran and matched nothing is not_detected, not an error.
+    Models are configured in ROBOFLOW_MODEL_ID (comma-separated, e.g.
+    'waste-tfpi0/7,garbage-0q3db/10'). When multiple models are specified, they
+    run concurrently and their predictions are fused via Non-Maximum Suppression (NMS).
     """
     s = get_settings()
     if not s.ROBOFLOW_API_KEY:
@@ -485,41 +562,52 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
         body = base64.b64encode(buf.getvalue())
 
         conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
-        url = (
-            f"{s.ROBOFLOW_URL.rstrip('/')}/{s.ROBOFLOW_MODEL_ID}"
-            f"?confidence={conf_floor}&format=json"
-        )
-        req = urllib.request.Request(
-            url,
-            data=body,
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                # Header transport: the key never goes in a URL, where it would land
-                # in logs and proxy history.
-                "Authorization": f"Bearer {s.ROBOFLOW_API_KEY}",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=s.ROBOFLOW_TIMEOUT_S) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
+        model_ids = [m.strip() for m in s.ROBOFLOW_MODEL_ID.split(",") if m.strip()]
+        if not model_ids:
+            model_ids = ["waste-tfpi0/7", "garbage-0q3db/10"]
 
-        detections: list[Detection] = []
-        for pred in payload.get("predictions", []):
-            raw_name = str(pred.get("class", "")).lower().strip()
-            if is_forbidden_label(raw_name):
-                continue
-            target = TACO_TO_CONTRACT.get(raw_name)
-            if target is None and raw_name in ALLOWED_CLASS_NAMES:
-                target = DetectionClass(raw_name)
-            if target is None:
-                continue
-            # Roboflow gives the box centre plus its size, in pixels.
-            cx, cy = float(pred.get("x", 0)), float(pred.get("y", 0))
-            bw, bh = float(pred.get("width", 0)), float(pred.get("height", 0))
-            detections.append(
-                _box(target, float(pred.get("confidence", 0.0)),
-                     cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2, w, h)
+        results_per_model: list[tuple[str, list[dict] | None]] = []
+        if len(model_ids) == 1:
+            results_per_model.append(
+                _query_single_roboflow_model(
+                    model_ids[0], body, conf_floor, s.ROBOFLOW_TIMEOUT_S, s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL
+                )
             )
+        else:
+            with ThreadPoolExecutor(max_workers=min(4, len(model_ids))) as executor:
+                futures = [
+                    executor.submit(
+                        _query_single_roboflow_model,
+                        mid, body, conf_floor, s.ROBOFLOW_TIMEOUT_S, s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL
+                    )
+                    for mid in model_ids
+                ]
+                for fut in as_completed(futures):
+                    results_per_model.append(fut.result())
+
+        # If every model query failed (network down, bad key, etc.), fail through
+        if all(preds is None for _, preds in results_per_model):
+            logger.error("All Roboflow models (%s) failed for %s", model_ids, path)
+            return None
+
+        raw_detections: list[Detection] = []
+        for _mid, preds in results_per_model:
+            if not preds:
+                continue
+            for pred in preds:
+                raw_name = str(pred.get("class", ""))
+                target = resolve_roboflow_class(raw_name)
+                if target is None:
+                    continue
+                cx, cy = float(pred.get("x", 0)), float(pred.get("y", 0))
+                bw, bh = float(pred.get("width", 0)), float(pred.get("height", 0))
+                raw_detections.append(
+                    _box(target, float(pred.get("confidence", 0.0)),
+                         cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2, w, h)
+                )
+
+        # Fuse detections across models with Non-Maximum Suppression (NMS)
+        detections = _nms(raw_detections)
 
         annotated = (
             _write_annotated(img, detections, _annotated_path(path), simulated=False)

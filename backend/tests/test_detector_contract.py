@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -229,6 +230,205 @@ def test_real_mode_finding_nothing_is_not_detected_never_an_error(
     assert out.plastic_count == 0 and out.report_confidence == 0.0
     assert out.detections == []
     DetectorOutput.model_validate(out.model_dump())
+
+
+def test_forbidden_filter_matches_words_not_substrings():
+    """§2.4 must drop people and vehicles — and ONLY those.
+
+    Regression: a substring test on "car" also discarded "carton", "cardboard",
+    "carded" and "carrier bag" — seven TACO categories, one of them a plastic bag.
+    """
+    for name in ("person", "a person", "car", "cars", "bus", "buses", "horse",
+                 "motorcycle", "licence plate", "face"):
+        assert detector.is_forbidden_label(name), f"{name!r} must be dropped"
+    for name in ("Single-use carrier bag", "Egg carton", "Other carton",
+                 "Corrugated carton", "Meal carton", "Drink carton",
+                 "Carded blister pack", "Clear plastic bottle"):
+        assert not detector.is_forbidden_label(name), f"{name!r} must be kept"
+
+
+class _FakeResponse:
+    def __init__(self, payload: dict):
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def _fake_roboflow(monkeypatch, payload, captured=None):
+    def _urlopen(req, timeout=None):
+        if captured is not None:
+            captured["url"] = req.full_url
+            captured["headers"] = dict(req.headers)
+        if isinstance(payload, Exception):
+            raise payload
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr(detector.urllib.request, "urlopen", _urlopen)
+
+
+def test_roboflow_is_off_without_a_key(set_env, tmp_path, monkeypatch):
+    """No key configured means the path does not run at all."""
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt", ROBOFLOW_API_KEY="")
+    called = {"n": 0}
+    monkeypatch.setattr(
+        detector, "_try_roboflow_detection",
+        lambda p: called.__setitem__("n", called["n"] + 1),
+    )
+    detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert called["n"] == 0
+
+
+def test_roboflow_maps_taco_names_and_never_puts_the_key_in_the_url(
+    set_env, tmp_path, monkeypatch
+):
+    """TACO category names become the frozen five, and the key travels in a header."""
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt",
+            ROBOFLOW_API_KEY="secret-key", UPLOAD_DIR=tmp_path / "uploads")
+    captured: dict = {}
+    _fake_roboflow(monkeypatch, {
+        "predictions": [
+            {"class": "Clear plastic bottle", "confidence": 0.81, "x": 60, "y": 60,
+             "width": 40, "height": 40},
+            {"class": "Single-use carrier bag", "confidence": 0.62, "x": 120, "y": 90,
+             "width": 30, "height": 30},
+            {"class": "Glass bottle", "confidence": 0.55, "x": 30, "y": 30,
+             "width": 20, "height": 20},
+        ]
+    }, captured)
+
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert [d.class_name.value for d in out.detections] == [
+        "plastic_bottle", "plastic_bag_film", "non_plastic_litter",
+    ]
+    assert out.ai_status == AiStatus.detected
+    assert out.plastic_count == 2  # the glass bottle is litter, not plastic
+    assert "secret-key" not in captured["url"]
+    assert captured["headers"].get("Authorization") == "Bearer secret-key"
+    DetectorOutput.model_validate(out.model_dump())
+
+
+def test_roboflow_mode_routes_to_the_hosted_model_and_is_not_simulated(
+    set_env, tmp_path, monkeypatch
+):
+    """DETECTOR_MODE=roboflow must reach the hosted model, NOT the stub.
+
+    is_stub_mode() gates the dispatch AND the API's `is_simulated` flag, so if it
+    treated any non-"real" mode as stub, this mode would quietly serve fabricated
+    boxes while the UI claimed a real model (CLAUDE.md §2.2 inverted).
+    """
+    set_env(DETECTOR_MODE="roboflow", ROBOFLOW_API_KEY="k",
+            UPLOAD_DIR=tmp_path / "uploads")
+    assert detector.is_stub_mode() is False
+    _fake_roboflow(monkeypatch, {
+        "predictions": [
+            {"class": "Plastic film", "confidence": 0.77, "x": 50, "y": 50,
+             "width": 24, "height": 24}
+        ]
+    })
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert [d.class_name.value for d in out.detections] == ["plastic_bag_film"]
+    assert out.ai_status == AiStatus.detected
+
+
+def test_roboflow_mode_without_a_key_errors_rather_than_falling_back_to_the_stub(
+    set_env, tmp_path
+):
+    """Asking for the hosted model and not getting it is an error, never fake output."""
+    set_env(DETECTOR_MODE="roboflow", ROBOFLOW_API_KEY="")
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert out.ai_status == AiStatus.error
+    assert out.detections == []
+
+
+def test_roboflow_drops_people_and_vehicles(set_env, tmp_path, monkeypatch):
+    """CLAUDE.md §2.4 applies to a third party's model exactly as to ours."""
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt",
+            ROBOFLOW_API_KEY="k", UPLOAD_DIR=tmp_path / "uploads")
+    _fake_roboflow(monkeypatch, {
+        "predictions": [
+            {"class": "person", "confidence": 0.99, "x": 10, "y": 10, "width": 8, "height": 8},
+            {"class": "car", "confidence": 0.98, "x": 20, "y": 20, "width": 8, "height": 8},
+            {"class": "Other plastic bottle", "confidence": 0.7, "x": 40, "y": 40,
+             "width": 20, "height": 20},
+        ]
+    })
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert [d.class_name.value for d in out.detections] == ["plastic_bottle"]
+
+
+def test_roboflow_failure_falls_through_and_never_fabricates(set_env, tmp_path, monkeypatch):
+    """A dead network is an error, not an excuse to emit stub output."""
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt",
+            ROBOFLOW_API_KEY="k", DETECTOR_CV_FALLBACK=False)
+    _fake_roboflow(monkeypatch, detector.urllib.error.URLError("no route to host"))
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert out.ai_status == AiStatus.error
+    assert out.detections == []
+
+
+def test_local_weights_take_precedence_over_the_hosted_model(
+    set_env, tmp_path, monkeypatch
+):
+    """The photo must not leave the machine when we can answer locally."""
+    weights = tmp_path / "best.pt"
+    weights.write_bytes(b"fake")
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=weights, ROBOFLOW_API_KEY="k",
+            UPLOAD_DIR=tmp_path / "uploads")
+    _fake_model(monkeypatch, {0: "plastic_bottle"}, [
+        SimpleNamespace(cls=0, conf=0.9, xyxy=[SimpleNamespace(tolist=lambda: [5, 5, 50, 50])])
+    ])
+    reached = {"n": 0}
+    monkeypatch.setattr(
+        detector, "_try_roboflow_detection",
+        lambda p: reached.__setitem__("n", reached["n"] + 1),
+    )
+    out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
+    assert out.ai_status == AiStatus.detected
+    assert reached["n"] == 0, "hosted inference ran even though local weights answered"
+
+
+def test_roboflow_multi_model_ensemble_and_nms(set_env, tmp_path, monkeypatch):
+    """Ensemble of multiple Roboflow models runs concurrently and fuses boxes with NMS."""
+    set_env(
+        DETECTOR_MODE="roboflow",
+        ROBOFLOW_API_KEY="test-key",
+        ROBOFLOW_MODEL_ID="waste-tfpi0/7,garbage-0q3db/10",
+        UPLOAD_DIR=tmp_path / "uploads",
+    )
+    calls = []
+
+    def _mock_query(model_id, body, conf_floor, timeout_s, api_key, api_url):
+        calls.append(model_id)
+        if "waste-tfpi0" in model_id:
+            return model_id, [
+                {"class": "plastic bottle", "confidence": 0.85, "x": 100, "y": 100, "width": 50, "height": 50},
+                {"class": "plastic bag", "confidence": 0.70, "x": 200, "y": 200, "width": 40, "height": 40},
+            ]
+        else:
+            return model_id, [
+                # Overlapping bottle with higher confidence -> NMS should keep this one and not duplicate
+                {"class": "plastic bottle", "confidence": 0.95, "x": 102, "y": 98, "width": 48, "height": 52},
+                # Separate unique detection from model 2 -> should be merged into result
+                {"class": "drink can", "confidence": 0.80, "x": 300, "y": 300, "width": 30, "height": 30},
+            ]
+
+    monkeypatch.setattr(detector, "_query_single_roboflow_model", _mock_query)
+    out = detector.run_detection(textured_photo(tmp_path / "ensemble.jpg"))
+    assert set(calls) == {"waste-tfpi0/7", "garbage-0q3db/10"}
+    assert len(out.detections) == 3  # bottle (fused to 0.95), bag (0.70), can (0.80)
+    classes = [d.class_name.value for d in out.detections]
+    assert "plastic_bottle" in classes
+    assert "plastic_bag_film" in classes
+    # Verify highest confidence was kept
+    bottle = next(d for d in out.detections if d.class_name.value == "plastic_bottle")
+    assert bottle.confidence == 0.95
 
 
 def test_real_mode_only_forbidden_classes_is_not_detected_not_an_error(
