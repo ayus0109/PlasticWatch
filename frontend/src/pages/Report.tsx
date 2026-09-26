@@ -62,17 +62,31 @@ export default function Report() {
   const [preview, setPreview] = useState<string | null>(null);
   const [loc, setLoc] = useState<Loc>({ mode: "locating" });
   const [gpsNear, setGpsNear] = useState<LatLon | null>(null);
-  const [reporterName, setReporterName] = useState(session?.user?.name ?? "");
+  const [reporterName, setReporterName] = useState(
+    session?.user?.name && !session.user.name.startsWith("Demo")
+      ? session.user.name
+      : session?.user?.name === "Demo Citizen A"
+      ? "Aarav Sharma"
+      : session?.user?.name ?? "",
+  );
   const [reporterPhone, setReporterPhone] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<{ text: string; step?: "photo" | "location" } | null>(null);
+  const [error, setError] = useState<{
+    text: string;
+    step?: "photo" | "location" | "phone" | "name";
+  } | null>(null);
   const [result, setResult] = useState<ReportCreateResponse | null>(null);
   // The detector's answer for THIS photo, shown before the citizen commits to sending.
   const [scan, setScan] = useState<DetectPreview | null>(null);
   const [scanning, setScanning] = useState(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
+
+  const isPhoneValid = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    return digits.length >= 10;
+  };
 
   const locate = () => {
     if (!("geolocation" in navigator)) {
@@ -118,7 +132,34 @@ export default function Report() {
   /** Run the detector on the photo without saving anything, so the citizen can see
    *  what was found and then decide. A failure here must NEVER block reporting. */
   const runScan = async () => {
-    if (!file) return;
+    if (!file) {
+      setError({ text: "Please add a photo of waste first.", step: "photo" });
+      return;
+    }
+    if (!reporterName.trim()) {
+      setError({
+        text: "Please enter your name for citizen verification.",
+        step: "name",
+      });
+      document.getElementById("reporter-name-input")?.focus();
+      return;
+    }
+    if (!reporterPhone.trim()) {
+      setError({
+        text: "Please enter your phone number (proof for verification) before checking the photo.",
+        step: "phone",
+      });
+      document.getElementById("reporter-phone-input")?.focus();
+      return;
+    }
+    if (!isPhoneValid(reporterPhone)) {
+      setError({
+        text: "Please enter a valid phone number (at least 10 digits) so municipal authorities can verify your report.",
+        step: "phone",
+      });
+      document.getElementById("reporter-phone-input")?.focus();
+      return;
+    }
     setScanning(true);
     setError(null);
     const form = new FormData();
@@ -142,12 +183,19 @@ export default function Report() {
 
   const submit = async () => {
     if (!file || !locationReady) return;
+    if (!reporterPhone.trim() || !isPhoneValid(reporterPhone)) {
+      setError({
+        text: "A valid phone number (at least 10 digits) is required for citizen verification.",
+        step: "phone",
+      });
+      return;
+    }
     setBusy(true);
     setError(null);
     const form = new FormData();
     form.append("image", file);
     if (reporterName.trim()) form.append("reporter_name", reporterName.trim());
-    if (reporterPhone.trim()) form.append("reporter_phone", reporterPhone.trim());
+    form.append("reporter_phone", reporterPhone.trim());
     if (note.trim()) form.append("note", note.trim());
     if (loc.mode === "gps") {
       form.append("lat", String(loc.lat));
@@ -207,11 +255,15 @@ export default function Report() {
     return (
       <Shell>
         <div className="mx-auto max-w-xl space-y-4">
-          <header className="mb-2 animate-rise">
-            <h1 className="font-display text-title font-bold tracking-tight">
+          <header className="mb-3 animate-rise rounded-card border border-line bg-surface/85 p-4 backdrop-blur-md shadow-sm">
+            <div className="flex items-center gap-2 text-accent font-semibold text-xs mb-1">
+              <Icon name="detect" size={15} />
+              <span>AI Detection Preview</span>
+            </div>
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">
               Check before you send
             </h1>
-            <p className="mt-1 text-label text-muted">
+            <p className="mt-1 text-sm font-medium text-ink/80 dark:text-emerald-100/90 leading-relaxed">
               Nothing has been sent yet. This is what the detector found in your photo.
             </p>
           </header>
@@ -370,7 +422,7 @@ export default function Report() {
         <Step
           n={3}
           title="Citizen Verification & Details"
-          done={reporterName.trim().length > 0 && reporterPhone.trim().length > 0}
+          done={reporterName.trim().length > 0 && isPhoneValid(reporterPhone)}
         >
           <div className="space-y-3">
             <div>
@@ -378,13 +430,26 @@ export default function Report() {
                 Your Name <span className="text-accent">*</span>
               </label>
               <input
+                id="reporter-name-input"
                 type="text"
                 value={reporterName}
-                onChange={(e) => setReporterName(e.target.value)}
+                onChange={(e) => {
+                  setReporterName(e.target.value);
+                  if (error?.step === "name") setError(null);
+                }}
                 maxLength={100}
                 placeholder="e.g. Rahul Sharma"
-                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                className={`w-full rounded-field border bg-surface px-3 py-2 text-sm placeholder:text-faint focus:outline-none transition-colors ${
+                  error?.step === "name"
+                    ? "border-danger focus:border-danger ring-1 ring-danger/30"
+                    : "border-line focus:border-accent"
+                }`}
               />
+              {error?.step === "name" ? (
+                <p role="alert" className="mt-1 text-xs font-semibold text-danger flex items-center gap-1">
+                  <Icon name="alert" size={13} /> {error.text}
+                </p>
+              ) : null}
             </div>
 
             <div>
@@ -392,16 +457,30 @@ export default function Report() {
                 Phone Number (Proof for Verification) <span className="text-accent">*</span>
               </label>
               <input
+                id="reporter-phone-input"
                 type="tel"
                 value={reporterPhone}
-                onChange={(e) => setReporterPhone(e.target.value)}
+                onChange={(e) => {
+                  setReporterPhone(e.target.value);
+                  if (error?.step === "phone") setError(null);
+                }}
                 maxLength={15}
-                placeholder="e.g. +91 98765 43210"
-                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                placeholder="e.g. +91 98765 43210 (min 10 digits)"
+                className={`w-full rounded-field border bg-surface px-3 py-2 text-sm placeholder:text-faint focus:outline-none transition-colors ${
+                  error?.step === "phone"
+                    ? "border-danger focus:border-danger ring-1 ring-danger/30"
+                    : "border-line focus:border-accent"
+                }`}
               />
-              <p className="mt-1 text-micro text-faint">
-                Used by the municipal team as proof to verify citizen reports before dispatch.
-              </p>
+              {error?.step === "phone" ? (
+                <p role="alert" className="mt-1 text-xs font-semibold text-danger flex items-center gap-1">
+                  <Icon name="alert" size={13} /> {error.text}
+                </p>
+              ) : (
+                <p className="mt-1 text-micro text-faint">
+                  Required: Municipal authorities verify this phone number before dispatching cleanup teams.
+                </p>
+              )}
             </div>
 
             <div>

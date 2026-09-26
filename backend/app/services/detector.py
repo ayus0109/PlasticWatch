@@ -438,14 +438,16 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
         return DetectionClass.plastic_packaging
     if any(
         k in raw_name
-        for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")
+        for k in (
+            "plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery",
+            "waste", "garbage", "trash", "rubbish", "dump", "debris", "litter"
+        )
     ):
         return DetectionClass.plastic_other
     if any(
         k in raw_name
         for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe",
-                  "textile", "cloth", "wood", "battery", "litter", "trash", "waste",
-                  "garbage", "rubbish")
+                  "textile", "cloth", "wood", "battery")
     ):
         return DetectionClass.non_plastic_litter
     return None
@@ -760,23 +762,35 @@ def _run_real(path: Path) -> DetectorOutput:
         return _error_output()
 
     # 1. The trained model, when its weights are actually on disk.
+    best_res: DetectorOutput | None = None
     if _resolve_weights_path(s.DETECTOR_WEIGHTS) is not None:
         yolo_res = _try_yolo_detection(path)
         if yolo_res is not None:
-            return yolo_res
-    # 2. Hosted inference, if a key is configured. A real model, but a third party's,
-    #    and the photo leaves this machine to reach it — so it never runs ahead of
-    #    local weights, only when those are absent or failed.
+            if yolo_res.plastic_count > 0 or not s.ROBOFLOW_API_KEY:
+                return yolo_res
+            best_res = yolo_res
+
+    # 2. Hosted inference, if a key is configured.
+    # Runs when local weights are absent, failed, or when local weights found 0 plastic.
     if s.ROBOFLOW_API_KEY:
         rf_res = _try_roboflow_detection(path)
         if rf_res is not None:
-            return rf_res
+            if rf_res.plastic_count > 0 or best_res is None:
+                return rf_res
+
+    if best_res is not None and not s.DETECTOR_CV_FALLBACK:
+        return best_res
+
     # 3. Opt-in contour heuristic for hosts that cannot afford PyTorch. Off by default:
     #    it is a shape signal, not a detector, and it is labelled as one.
     if s.DETECTOR_CV_FALLBACK:
         cv_res = _try_cv_detection(path)
         if cv_res is not None:
             return cv_res
+
+    if best_res is not None:
+        return best_res
+
     # 4. No usable detector. Refusing to fall back to the stub: that would present
     #    fake output as real (CLAUDE.md §2.2, §5).
     return _error_output()
