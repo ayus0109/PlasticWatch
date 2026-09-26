@@ -472,14 +472,30 @@ def resolve_roboflow_class(raw: str) -> DetectionClass | None:
         return COCO_TO_CONTRACT[raw_name]
     # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, etc.)
     if "bottle" in raw_name:
-        return DetectionClass.non_plastic_litter if "glass" in raw_name else DetectionClass.plastic_bottle
+        return (
+            DetectionClass.non_plastic_litter
+            if "glass" in raw_name
+            else DetectionClass.plastic_bottle
+        )
     if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly")):
         return DetectionClass.plastic_bag_film
-    if any(k in raw_name for k in ("cup", "can", "bowl", "box", "pack", "container", "tub", "carton", "lid", "tetra")):
+    if any(
+        k in raw_name
+        for k in ("cup", "can", "bowl", "box", "pack", "container", "tub", "carton",
+                  "lid", "tetra")
+    ):
         return DetectionClass.plastic_packaging
-    if any(k in raw_name for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")):
+    if any(
+        k in raw_name
+        for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")
+    ):
         return DetectionClass.plastic_other
-    if any(k in raw_name for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe", "textile", "cloth", "wood", "battery", "litter", "trash", "waste", "garbage", "rubbish")):
+    if any(
+        k in raw_name
+        for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe",
+                  "textile", "cloth", "wood", "battery", "litter", "trash", "waste",
+                  "garbage", "rubbish")
+    ):
         return DetectionClass.non_plastic_litter
     return None
 
@@ -570,7 +586,8 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
         if len(model_ids) == 1:
             results_per_model.append(
                 _query_single_roboflow_model(
-                    model_ids[0], body, conf_floor, s.ROBOFLOW_TIMEOUT_S, s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL
+                    model_ids[0], body, conf_floor, s.ROBOFLOW_TIMEOUT_S,
+                    s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL,
                 )
             )
         else:
@@ -578,7 +595,8 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
                 futures = [
                     executor.submit(
                         _query_single_roboflow_model,
-                        mid, body, conf_floor, s.ROBOFLOW_TIMEOUT_S, s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL
+                        mid, body, conf_floor, s.ROBOFLOW_TIMEOUT_S,
+                        s.ROBOFLOW_API_KEY, s.ROBOFLOW_URL,
                     )
                     for mid in model_ids
                 ]

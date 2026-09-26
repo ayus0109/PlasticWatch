@@ -865,6 +865,16 @@ export interface components {
              * @default false
              */
             is_simulated: boolean;
+            /**
+             * Image Width
+             * @description Width the detector measured boxes against.
+             */
+            image_width: number;
+            /**
+             * Image Height
+             * @description Height the detector measured boxes against.
+             */
+            image_height: number;
         };
         /**
          * Detection

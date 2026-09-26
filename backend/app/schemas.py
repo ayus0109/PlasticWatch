@@ -284,6 +284,12 @@ class DetectPreview(BaseModel):
     is_simulated: bool = Field(
         False, description="True while the detector runs in stub mode (fabricated output)."
     )
+    # Detection boxes are in PIXELS of the image the detector saw (after EXIF rotation).
+    # The preview draws them over the citizen's own photo, so it needs that size to
+    # scale them; guessing from the browser's natural size misplaces every box when
+    # the two disagree. Not part of the frozen DetectorOutput contract (SPEC §6).
+    image_width: int = Field(..., gt=0, description="Width the detector measured boxes against.")
+    image_height: int = Field(..., gt=0, description="Height the detector measured boxes against.")
 
 
 # --------------------------------------------------------------------------

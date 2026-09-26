@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from PIL import Image, ImageOps
 from sqlalchemy.engine import Connection
 
 from app.db import get_conn
@@ -20,7 +21,7 @@ from app.schemas import (
     UserRole,
 )
 from app.services.confidence import confidence_tier
-from app.services.detector import is_stub_mode, run_detection
+from app.services.detector import STUB_DEFAULT_SIZE, is_stub_mode, run_detection
 from app.services.hotspot_views import hotspot_summary
 from app.services.pipeline import PipelineError, PipelineResult, process_report
 from app.services.report_views import my_reports, report_detail
@@ -52,6 +53,22 @@ def detect_preview(
         preview_path = Path(tmp) / f"preview{suffix}"
         preview_path.write_bytes(raw)
         result = run_detection(preview_path)
+        # The size the detector measured boxes against, AFTER EXIF rotation — the
+        # same transform every detector path applies before inference.
+        try:
+            with Image.open(preview_path) as raw_img:
+                width, height = ImageOps.exif_transpose(raw_img).size
+        except Exception as exc:
+            if is_stub_mode():
+                # The stub still emits boxes for a file Pillow cannot open, and sizes
+                # them against STUB_DEFAULT_SIZE — so the preview must scale by that
+                # exact constant or every box lands in the wrong place.
+                width, height = STUB_DEFAULT_SIZE
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail={"code": "not_an_image", "message": "That file is not a readable image."},
+                ) from exc
 
     result = result.model_copy(update={"annotated_jpg_path": None})
     return DetectPreview(
@@ -59,6 +76,8 @@ def detect_preview(
         # Raw confidence is never shown without its tier (CLAUDE.md §2.7).
         confidence_tier=confidence_tier(result.report_confidence),
         is_simulated=is_stub_mode(),
+        image_width=width,
+        image_height=height,
     )
 
 

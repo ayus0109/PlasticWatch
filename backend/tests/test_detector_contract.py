@@ -408,15 +408,19 @@ def test_roboflow_multi_model_ensemble_and_nms(set_env, tmp_path, monkeypatch):
         calls.append(model_id)
         if "waste-tfpi0" in model_id:
             return model_id, [
-                {"class": "plastic bottle", "confidence": 0.85, "x": 100, "y": 100, "width": 50, "height": 50},
-                {"class": "plastic bag", "confidence": 0.70, "x": 200, "y": 200, "width": 40, "height": 40},
+                {"class": "plastic bottle", "confidence": 0.85,
+                 "x": 100, "y": 100, "width": 50, "height": 50},
+                {"class": "plastic bag", "confidence": 0.70,
+                 "x": 200, "y": 200, "width": 40, "height": 40},
             ]
         else:
             return model_id, [
-                # Overlapping bottle with higher confidence -> NMS should keep this one and not duplicate
-                {"class": "plastic bottle", "confidence": 0.95, "x": 102, "y": 98, "width": 48, "height": 52},
-                # Separate unique detection from model 2 -> should be merged into result
-                {"class": "drink can", "confidence": 0.80, "x": 300, "y": 300, "width": 30, "height": 30},
+                # Overlapping bottle, higher confidence: NMS keeps this one
+                {"class": "plastic bottle", "confidence": 0.95,
+                 "x": 102, "y": 98, "width": 48, "height": 52},
+                # Unique to model 2: must be merged into the result
+                {"class": "drink can", "confidence": 0.80,
+                 "x": 300, "y": 300, "width": 30, "height": 30},
             ]
 
     monkeypatch.setattr(detector, "_query_single_roboflow_model", _mock_query)

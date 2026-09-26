@@ -29,6 +29,9 @@ export type ReportSummary = S["ReportSummary"];
 export type ReportDetail = S["ReportDetail"];
 export type ReportCreateResponse = S["ReportCreateResponse"];
 export type Detection = S["Detection"];
+export type DetectionClass = S["DetectionClass"];
+/** POST /detect — what the detector saw, before anything is saved. */
+export type DetectPreview = S["DetectPreview"];
 export type GeoFeatureCollection = S["GeoFeatureCollection"];
 export type WardFeatureCollection = S["WardFeatureCollection"];
 export type VerifyRequest = S["VerifyRequest"];

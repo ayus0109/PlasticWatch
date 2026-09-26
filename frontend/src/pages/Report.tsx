@@ -3,8 +3,14 @@
  * a map pin) -> optional note -> result card with the confidence TIER and status.
  */
 import { useEffect, useRef, useState } from "react";
-import { ApiError, api, type ReportCreateResponse } from "../api/client";
+import {
+  ApiError,
+  api,
+  type DetectPreview,
+  type ReportCreateResponse,
+} from "../api/client";
 import { Icon } from "../components/Icon";
+import { ScanPreview } from "../components/ScanPreview";
 import { PinPicker, type LatLon } from "../components/PinPicker";
 import { ReportResult } from "../components/ReportResult";
 import { Shell } from "../components/Shell";
@@ -62,6 +68,9 @@ export default function Report() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ text: string; step?: "photo" | "location" } | null>(null);
   const [result, setResult] = useState<ReportCreateResponse | null>(null);
+  // The detector's answer for THIS photo, shown before the citizen commits to sending.
+  const [scan, setScan] = useState<DetectPreview | null>(null);
+  const [scanning, setScanning] = useState(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
 
@@ -84,6 +93,8 @@ export default function Report() {
 
   useEffect(locate, []);
   useEffect(() => {
+    // A different photo means the previous detection no longer describes it.
+    setScan(null);
     if (!file) return setPreview(null);
     const url = URL.createObjectURL(file);
     setPreview(url);
@@ -95,6 +106,7 @@ export default function Report() {
     setNote("");
     setReporterPhone("");
     setResult(null);
+    setScan(null);
     setError(null);
     locate();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -102,6 +114,31 @@ export default function Report() {
 
   const locationReady =
     loc.mode === "gps" || loc.mode === "exif" || (loc.mode === "pin" && loc.lat !== null);
+
+  /** Run the detector on the photo without saving anything, so the citizen can see
+   *  what was found and then decide. A failure here must NEVER block reporting. */
+  const runScan = async () => {
+    if (!file) return;
+    setScanning(true);
+    setError(null);
+    const form = new FormData();
+    form.append("image", file);
+    try {
+      setScan(await api.upload<DetectPreview>("/detect", form));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      const err = e as ApiError;
+      if (err.code === "low_quality" || err.code === "not_an_image") {
+        setError({ text: err.message, step: "photo" });
+      } else {
+        setError({
+          text: `${err.message} The check could not run, but you can still send the report.`,
+        });
+      }
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const submit = async () => {
     if (!file || !locationReady) return;
@@ -147,6 +184,42 @@ export default function Report() {
       <Shell>
         <div className="mx-auto max-w-xl">
           <ReportResult result={result} onAnother={reset} />
+        </div>
+      </Shell>
+    );
+  }
+
+  // Detector ran: show what it saw and let the citizen decide before anything is saved.
+  if (scan && preview) {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-xl space-y-4">
+          <header className="mb-2 animate-rise">
+            <h1 className="font-display text-title font-bold tracking-tight">
+              Check before you send
+            </h1>
+            <p className="mt-1 text-label text-muted">
+              Nothing has been sent yet. This is what the detector found in your photo.
+            </p>
+          </header>
+          {error && !error.step ? (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-field bg-danger-soft p-3 text-label text-danger"
+            >
+              <Icon name="alert" size={16} className="mt-0.5" /> {error.text}
+            </p>
+          ) : null}
+          <ScanPreview
+            scan={scan}
+            imageUrl={preview}
+            sending={busy}
+            onSend={submit}
+            onRetake={() => {
+              setScan(null);
+              setFile(null);
+            }}
+          />
         </div>
       </Shell>
     );
@@ -341,15 +414,19 @@ export default function Report() {
 
         <Button
           variant="primary"
-          icon="upload"
+          icon="sparkle"
           className="w-full !min-h-12 text-base"
           disabled={!file || !locationReady}
-          loading={busy}
-          onClick={submit}
+          loading={scanning}
+          onClick={runScan}
         >
-          {busy ? "Checking the photo…" : "Send report"}
+          {scanning ? "Looking at your photo…" : "Check this photo"}
         </Button>
-        {!file ? <p className="text-center text-xs text-faint">Add a photo to send a report.</p> : null}
+        <p className="text-center text-micro text-faint">
+          {!file
+            ? "Add a photo to report waste."
+            : "You will see what the detector found, and can still change your mind."}
+        </p>
       </div>
     </Shell>
   );

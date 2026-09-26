@@ -56,8 +56,18 @@ def run_inference_http(image_path: str, api_key: str, model_id: str, api_url: st
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        err_msg = exc.read().decode("utf-8", errors="ignore")
+        return {
+            "error": f"HTTP {exc.code}: {exc.reason}",
+            "details": err_msg,
+            "tip": "Check your ROBOFLOW_API_KEY from https://app.roboflow.com/settings/api",
+        }
+    except urllib.error.URLError as exc:
+        return {"error": f"Connection error: {exc.reason}"}
 
 
 def query_model(image_path: str, api_key: str, model_id: str, api_url: str):
