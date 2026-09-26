@@ -52,7 +52,9 @@ export function evidence(score: number | null | undefined): string {
 }
 
 export function conf(c: number | null | undefined): string {
-  return c === null || c === undefined ? "—" : c.toFixed(2);
+  if (c === null || c === undefined) return "—";
+  const val = c <= 1.0 && c >= 0.0 ? Math.round(c * 100) : Math.round(c);
+  return `${val}%`;
 }
 
 export function plural(n: number, one: string, many = `${one}s`): string {

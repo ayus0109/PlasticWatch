@@ -97,7 +97,7 @@ function FactorRow({
       <div className="min-w-0">
         <div className="truncate text-sm font-medium">{FACTOR_LABEL[f.factor] ?? f.factor}</div>
         <div className="tabular text-micro text-faint">
-          {f.value.toFixed(2)} × {f.weight.toFixed(2)}
+          {f.factor === "mean_report_confidence" ? `${Math.round(f.value * 100)}%` : f.value.toFixed(2)} × {f.weight.toFixed(2)}
         </div>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-surface-2" title={f.explanation ?? undefined}>

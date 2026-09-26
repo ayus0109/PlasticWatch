@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import type { DemoUser, PublicSummary, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
@@ -259,13 +259,6 @@ export default function Login() {
                 <Icon name="shield" size={17} />
                 Sign in as authority
               </button>
-              <Link
-                to="/scanner"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-black/40 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-black/60 active:translate-y-0 active:scale-[0.98]"
-              >
-                <Icon name="detect" size={17} />
-                Try AI Plastic Scanner
-              </Link>
             </div>
 
             <ul className="mt-8 flex flex-col gap-2 text-label text-white/80 sm:flex-row sm:flex-wrap sm:gap-x-6">

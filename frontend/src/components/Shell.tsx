@@ -12,14 +12,10 @@ import { cx } from "./ui";
 const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
   citizen: [
     { to: "/report", label: "Report", icon: "camera" },
-    { to: "/scanner", label: "AI Detector", icon: "detect" },
     { to: "/my-reports", label: "My reports", icon: "list" },
   ],
   // The government portal is one page: no tabs to fragment it (PS-08).
-  authority: [
-    { to: "/dashboard", label: "Dashboard", icon: "map" },
-    { to: "/scanner", label: "AI Detector", icon: "detect" },
-  ],
+  authority: [],
   team: [],
 };
 
@@ -30,14 +26,12 @@ const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
 const MOBILE_NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
   citizen: [
     { to: "/report", label: "Report", icon: "camera" },
-    { to: "/scanner", label: "Detector", icon: "detect" },
     { to: "/my-reports", label: "My reports", icon: "list" },
   ],
   authority: [
     { to: "/dashboard?view=map", label: "Map", icon: "map" },
     { to: "/dashboard?view=list", label: "Priorities", icon: "list" },
     { to: "/dashboard?view=kpi", label: "KPIs", icon: "chart" },
-    { to: "/scanner", label: "Detector", icon: "detect" },
   ],
   team: [],
 };

@@ -79,6 +79,7 @@ def set_env(monkeypatch):
 
     get_settings() is cached, so the cache is cleared on the way in and out.
     """
+    monkeypatch.setenv("ROBOFLOW_API_KEY", "")
 
     def _set(**values) -> None:
         for key, value in values.items():
