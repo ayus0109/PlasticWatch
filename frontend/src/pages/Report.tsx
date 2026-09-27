@@ -255,17 +255,29 @@ export default function Report() {
     return (
       <Shell>
         <div className="mx-auto max-w-xl space-y-4">
-          <header className="mb-3 animate-rise rounded-card border border-line bg-surface/85 p-4 backdrop-blur-md shadow-sm">
-            <div className="flex items-center gap-2 text-accent font-semibold text-xs mb-1">
+          <header
+            className="mb-4 animate-rise rounded-card border border-line p-5 shadow-card bg-surface"
+            style={{ backgroundColor: "var(--pw-surface)", borderColor: "var(--pw-border)" }}
+          >
+            <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-wider mb-1.5">
               <Icon name="detect" size={15} />
               <span>AI Detection Preview</span>
             </div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">
+            <h1 className="font-display text-2xl font-black tracking-tight text-ink">
               Check before you send
             </h1>
-            <p className="mt-1 text-sm font-medium text-ink/80 dark:text-emerald-100/90 leading-relaxed">
-              Nothing has been sent yet. This is what the detector found in your photo.
-            </p>
+            <div
+              className="mt-3 flex items-start gap-2.5 rounded-field p-3.5 border bg-accent-soft"
+              style={{
+                backgroundColor: "var(--pw-accent-soft)",
+                borderColor: "var(--pw-border-strong)",
+              }}
+            >
+              <Icon name="info" size={18} className="mt-0.5 shrink-0 text-accent" />
+              <p className="text-sm font-semibold text-ink leading-relaxed">
+                <strong className="font-bold text-accent">Nothing has been sent yet.</strong> This is what the detector found in your photo.
+              </p>
+            </div>
           </header>
           {error && !error.step ? (
             <p

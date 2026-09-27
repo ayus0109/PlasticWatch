@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router";
+import Dock from "../components/Dock/Dock";
+import { VscHome, VscArchive, VscAccount, VscSettingsGear } from "react-icons/vsc";
 import type { PublicSummary } from "../api/client";
 import { useApi } from "../api/hooks";
 import { HamburgerMenu } from "../components/HamburgerMenu";
@@ -201,6 +203,12 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      <Dock
+        items={[{ icon: <VscHome size={18} />, label: 'Home', onClick: () => alert('Home!') },{ icon: <VscArchive size={18} />, label: 'Archive', onClick: () => alert('Archive!') },{ icon: <VscAccount size={18} />, label: 'Profile', onClick: () => alert('Profile!') },{ icon: <VscSettingsGear size={18} />, label: 'Settings', onClick: () => alert('Settings!') }]}
+        panelHeight={68}
+        baseItemSize={50}
+        magnification={70}
+      />
     </div>
   );
 }

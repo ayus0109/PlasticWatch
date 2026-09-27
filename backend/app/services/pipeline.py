@@ -187,12 +187,12 @@ def process_report(
     created_at: datetime | None = None,
     simulated_location: bool = False,
     known_detections: list[dict] | None = None,
+    simulated_detection: bool = False,
 ) -> PipelineResult:
     """Run one report through the whole pipeline.
 
-    `known_detections` is for the demo seed only: boxes of a synthetic scene whose
-    objects we drew ourselves, used instead of the detector. They are simulated
-    data and the report is flagged so.
+    `known_detections` is for the demo seed only: boxes of known scenes,
+    used instead of the detector.
     """
     s = get_settings()
     created_at = created_at or datetime.now(UTC)
@@ -228,7 +228,7 @@ def process_report(
     det = (
         detector.run_detection(stored)
         if known_detections is None
-        else detector.from_known(stored, known_detections, simulated=True)
+        else detector.from_known(stored, known_detections, simulated=simulated_detection)
     )
 
     low_accuracy = accuracy_m is not None and accuracy_m > s.GPS_ACCURACY_WIDEN_M

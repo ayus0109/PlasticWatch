@@ -271,10 +271,25 @@ def from_known(path: Path, known: list[dict], simulated: bool = True) -> Detecto
     return summarise(dets, annotated)
 
 
+def _resolve_cache_path(cache_path: str) -> Path | None:
+    if not cache_path:
+        return None
+    p = Path(cache_path)
+    if p.is_file():
+        return p
+    bp = Path(__file__).resolve().parent.parent.parent / cache_path
+    if bp.is_file():
+        return bp
+    rp = Path(__file__).resolve().parents[3] / "seed" / "demo_images" / "detections.json"
+    if rp.is_file():
+        return rp
+    return None
+
+
 @lru_cache
 def _load_cache(cache_path: str) -> tuple[tuple[imagehash.ImageHash, list[dict], bool], ...]:
-    p = Path(cache_path)
-    if not cache_path or not p.is_file():
+    p = _resolve_cache_path(cache_path)
+    if p is None or not p.is_file():
         return ()
     data = json.loads(p.read_text(encoding="utf-8"))
     return tuple(

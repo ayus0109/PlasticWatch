@@ -1,0 +1,45 @@
+/* Dock component CSS */
+.dock-outer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin: 0 auto;
+}
+
+.dock-panel {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: #120f17;
+  border: 1px solid #222;
+  border-radius: 1rem;
+  position: relative;
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #120f17;
+  border: 1px solid #222;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-label {
+  margin-top: -0.5rem;
+  font-size: 0.75rem;
+  color: #fff;
+  background: #120f17;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #222;
+}
