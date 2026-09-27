@@ -71,11 +71,32 @@ export default function Landing() {
           }}
         />
 
-        <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 md:py-12">
-          {/* Top Bar with Logo & Hamburger Corner Menu */}
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 md:py-8 lg:px-8">
+          {/* Top Bar with Logo & Actions: Login + Hamburger Corner Menu side-by-side */}
           <div className="flex items-center justify-between gap-4">
             <Logo onDark size="lg" />
-            <HamburgerMenu onDark />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              {session ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(homeFor(session.user.role))}
+                  className="flex min-h-11 items-center gap-2 rounded-field border border-emerald-400/40 bg-emerald-500/25 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-white shadow-sm backdrop-blur-md transition-all duration-150 hover:bg-emerald-500/35 active:scale-[0.98]"
+                >
+                  <Icon name="shield" size={16} className="text-emerald-300" />
+                  <span>{session.user.role === "authority" ? "Government Portal" : "Citizen Portal"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="flex min-h-11 items-center gap-2 rounded-field border border-white/30 bg-white/15 px-4 sm:px-5 text-sm font-bold text-white shadow-sm backdrop-blur-md transition-all duration-150 hover:border-white/50 hover:bg-white/25 active:scale-[0.98]"
+                >
+                  <Icon name="shield" size={16} className="text-emerald-300" />
+                  <span>Login</span>
+                </button>
+              )}
+              <HamburgerMenu onDark showLogin={false} />
+            </div>
           </div>
 
           {/* Hero Content */}
