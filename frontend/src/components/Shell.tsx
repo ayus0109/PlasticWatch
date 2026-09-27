@@ -370,13 +370,13 @@ export function Shell({
   const role = session?.user.role ?? "citizen";
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 items-center gap-6 px-4 sm:px-6">
-          <NavLink to="/" aria-label="PlasticWatch home" className="-mx-2 flex min-h-11 items-center px-2">
-            <Logo />
+      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/92 backdrop-blur-md">
+        <div className="mx-auto flex h-14 items-center gap-3 sm:gap-6 px-3 sm:px-6">
+          <NavLink to="/" aria-label="PlasticWatch home" className="-mx-1 sm:-mx-2 flex min-h-11 items-center px-1 sm:px-2">
+            <Logo size="md" />
           </NavLink>
           <Tabs role={role} />
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
             <ThemeToggle />
             <RoleSwitcher />
             <LogoutButton />
@@ -384,8 +384,8 @@ export function Shell({
         </div>
         {banner}
         {role === "authority" ? (
-          <p className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-1 text-center text-micro text-muted">
-            <Icon name="info" size={12} className="shrink-0 text-accent" />
+          <p className="flex items-center justify-center gap-1.5 border-t border-line px-3 py-1.5 text-center text-micro text-muted">
+            <Icon name="info" size={13} className="shrink-0 text-accent" />
             {NON_ATTRIBUTION_NOTE}
           </p>
         ) : null}
@@ -393,7 +393,7 @@ export function Shell({
       <main
         className={cx(
           "flex-1",
-          fullBleed ? "relative" : "pb-nav mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 sm:pt-6 md:pb-12",
+          fullBleed ? "relative" : "pb-nav mx-auto w-full max-w-7xl px-3 pt-4 sm:px-6 sm:pt-6 md:pb-12",
         )}
       >
         {children}

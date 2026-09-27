@@ -82,7 +82,7 @@
   --text-eyebrow--line-height: 1.4;
   --text-eyebrow--letter-spacing: 0.06em;
 
-  --text-micro: 0.6875rem;
+  --text-micro: 0.75rem;
   --text-micro--line-height: 1.35;
   --text-micro--letter-spacing: 0.02em;
 
@@ -182,6 +182,20 @@
   }
   .snap-item {
     scroll-snap-align: center;
+  }
+  /* Responsive orientation rules for Indian ecological artwork */
+  .app-eco-bg {
+    background-position: center bottom;
+  }
+  @media (orientation: landscape) and (min-width: 768px) {
+    .app-eco-bg {
+      background-position: center center;
+    }
+  }
+  @media (orientation: portrait) {
+    .app-eco-bg {
+      background-position: center bottom !important;
+    }
   }
 }
 

@@ -97,7 +97,7 @@ export function Card({
   return (
     <Tag
       className={cx(
-        "rounded-card border border-line bg-surface",
+        "rounded-card border border-line bg-surface/95 backdrop-blur-md",
         CARD_PAD[pad],
         /* Elevation carries meaning: flat = information you read, raised = a surface
            you can act on. Floating chrome (map panels, sheets) uses shadow-pop directly. */

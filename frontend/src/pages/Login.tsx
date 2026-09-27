@@ -197,8 +197,8 @@ export default function Login() {
   return (
     <div className="relative min-h-full bg-bg text-ink flex flex-col">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/92 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-3 sm:px-6">
           <Link to="/" aria-label="Back to home" className="flex items-center gap-2">
             <Logo size="md" />
           </Link>
@@ -208,9 +208,9 @@ export default function Login() {
       </header>
 
       {/* Main Authentication Card */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-10">
+      <main className="flex-1 flex items-center justify-center p-3 sm:p-6 md:p-10">
         <div className="w-full max-w-md animate-rise">
-          <div className="rounded-panel border border-line bg-surface p-6 shadow-raised sm:p-8">
+          <div className="rounded-panel border border-line bg-surface/95 backdrop-blur-md p-5 shadow-raised sm:p-8">
             <div className="text-center sm:text-left">
               <span className="inline-block rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent mb-2">
                 Authentication Portal
