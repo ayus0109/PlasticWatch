@@ -49,24 +49,37 @@ export function Logo({
   compact = false,
   className = "",
   onDark = false,
+  size = "md",
 }: {
   compact?: boolean;
   className?: string;
-  /** For the landing hero, whose scrim stays dark in BOTH themes. The lockup goes
-   *  mono there: the two-tone accent is unreadable on a dark green photograph. */
   onDark?: boolean;
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
+  const isLarge = size === "lg" || size === "xl";
   return (
-    <span className={cx("flex items-center gap-2.5 select-none", className)}>
+    <span className={cx("flex items-center select-none", isLarge ? "gap-3 sm:gap-3.5" : "gap-2.5", className)}>
       <img
         src="/logo-icon.png"
         alt="PlasticWatch"
-        className="h-8 w-8 object-contain shrink-0 drop-shadow-sm transition-transform hover:scale-105"
+        className={cx(
+          "object-contain shrink-0 drop-shadow-sm transition-transform hover:scale-105",
+          size === "xl"
+            ? "h-12 w-12 sm:h-14 sm:w-14"
+            : size === "lg"
+              ? "h-10 w-10 sm:h-12 sm:w-12"
+              : "h-9 w-9 sm:h-10 sm:w-10",
+        )}
       />
       {compact ? null : (
         <span
           className={cx(
-            "font-display text-[17px] font-extrabold tracking-tight",
+            "font-display font-extrabold tracking-tight",
+            size === "xl"
+              ? "text-2xl sm:text-3xl"
+              : size === "lg"
+                ? "text-xl sm:text-2xl"
+                : "text-lg sm:text-xl",
             onDark ? "text-white" : "text-ink",
           )}
         >
