@@ -12,6 +12,7 @@
  *  - the address is a LABEL from OpenStreetMap for the coordinates; if the lookup
  *    fails the coordinates still show, and nothing depends on the address.
  */
+import { useEffect, useState } from "react";
 import type { LocationSource, ReverseGeocode } from "../api/client";
 import { useApi } from "../api/hooks";
 import { metres } from "../lib/format";
@@ -33,6 +34,49 @@ function decimalsFor(source: LocationSource | null, accuracyM: number | null | u
   }
   // A photo's GPS carries no accuracy, and a pin is only as precise as the map zoom.
   return 4;
+}
+
+// Same order as backend/app/services/geocode.py: place, area, city.
+const PLACE_KEYS = ["amenity", "building", "road", "pedestrian", "footway", "path"];
+const AREA_KEYS = ["neighbourhood", "quarter", "suburb", "hamlet", "village", "city_district"];
+const CITY_KEYS = ["city", "town", "municipality", "county", "state_district"];
+
+/** Short address from a Nominatim reverse response (mirror of the backend format). */
+function formatAddress(payload: { address?: Record<string, string>; display_name?: string }) {
+  const addr = payload.address ?? {};
+  const parts: string[] = [];
+  for (const group of [PLACE_KEYS, AREA_KEYS, CITY_KEYS]) {
+    const hit = group.map((k) => addr[k]?.trim()).find((v) => v && !parts.includes(v));
+    if (hit) parts.push(hit);
+  }
+  if (parts.length) return parts.join(", ");
+  const display = (payload.display_name ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  return display.slice(0, 3).join(", ") || null;
+}
+
+/**
+ * Fallback when our API cannot give an address (an older deploy without /geo/reverse,
+ * or the server's lookup failed): ask OpenStreetMap directly from the browser, once.
+ * Nominatim allows this at low volume; only the coordinates are sent.
+ */
+function useDirectAddress(lat: number | null | undefined, lon: number | null | undefined, enabled: boolean) {
+  const [address, setAddress] = useState<string | null>(null);
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!enabled || lat == null || lon == null) return;
+    setSettled(false);
+    const ctrl = new AbortController();
+    const url =
+      "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1" +
+      `&accept-language=en&lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}`;
+    fetch(url, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && !j.error ? setAddress(formatAddress(j)) : null))
+      .catch(() => {})
+      .finally(() => setSettled(true));
+    return () => ctrl.abort();
+  }, [lat, lon, enabled]);
+  return { address, pending: enabled && !settled };
 }
 
 function coord(value: number, pos: string, neg: string, dp: number) {
@@ -71,6 +115,11 @@ export function PhotoInfo({
 }) {
   const located = lat != null && lon != null;
   const geo = useApi<ReverseGeocode>(located ? "/geo/reverse" : null, located ? { lat, lon } : undefined);
+  const serverAddress = geo.data?.address ?? null;
+  const direct = useDirectAddress(lat, lon, located && !geo.loading && !serverAddress);
+  const address = serverAddress ?? direct.address;
+  // Shimmer only while a lookup is actually in flight; after that, coordinates alone.
+  const lookingUp = located && !address && (geo.loading || direct.pending);
   const dp = decimalsFor(source, accuracyM);
   const when = capturedAt ?? reportedAt ?? new Date().toISOString();
 
@@ -85,10 +134,10 @@ export function PhotoInfo({
         <Icon name="pin" size={15} className="mt-px shrink-0 text-accent" />
         {located ? (
           <div className="min-w-0">
-            {geo.loading && !geo.data ? (
+            {address ? (
+              <p className="text-sm font-semibold leading-snug text-ink">{address}</p>
+            ) : lookingUp ? (
               <span className="inline-block h-3.5 w-48 animate-pulse rounded bg-surface-2 align-middle" />
-            ) : geo.data?.address ? (
-              <p className="text-sm font-semibold leading-snug text-ink">{geo.data.address}</p>
             ) : null}
             <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5">
               <span className="tabular font-mono text-ink/80">
@@ -112,7 +161,7 @@ export function PhotoInfo({
         </span>
       </div>
 
-      {located && geo.data?.address ? (
+      {located && address ? (
         <p className="pl-[23px] text-[11px] text-faint">Address © OpenStreetMap contributors</p>
       ) : null}
     </div>
