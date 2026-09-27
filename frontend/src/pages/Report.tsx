@@ -18,6 +18,12 @@ import { Button, Card, cx } from "../components/ui";
 import { formatUserName, metres } from "../lib/format";
 import { useSession } from "../store/auth";
 
+/**
+ * A fix rougher than this is refused. Phones outdoors are ~5-20 m; a laptop has no GPS
+ * chip and the browser guesses from the network, often hundreds of km off.
+ */
+const MAX_GPS_ACCURACY_M = 1000;
+
 type Loc =
   | { mode: "locating" }
   | { mode: "gps"; lat: number; lon: number; accuracy: number }
@@ -94,6 +100,17 @@ export default function Report() {
       (pos) => {
         const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
         setGpsNear(p);
+        // A fix this rough would file the report in the wrong neighbourhood or even the
+        // wrong city, so the citizen places a pin instead of it being silently accepted.
+        if (pos.coords.accuracy > MAX_GPS_ACCURACY_M) {
+          setLoc({
+            mode: "pin",
+            lat: null,
+            lon: null,
+            reason: `This device could only place you within about ${metres(pos.coords.accuracy)} — too rough to find the waste. Tap the map where it is, or report from your phone.`,
+          });
+          return;
+        }
         setLoc({ mode: "gps", ...p, accuracy: pos.coords.accuracy });
       },
       () => setLoc({ mode: "exif" }),
@@ -233,6 +250,20 @@ export default function Report() {
           <ScanPreview
             scan={scan}
             imageUrl={preview}
+            location={
+              // Exactly what submitting will record: phone GPS and pins are sent from
+              // here; otherwise the server reads the photo's own GPS, which /detect has
+              // already reported (null when the photo carries none).
+              loc.mode === "gps"
+                ? { lat: loc.lat, lon: loc.lon, source: "browser", accuracyM: loc.accuracy }
+                : loc.mode === "pin"
+                  ? { lat: loc.lat, lon: loc.lon, source: "pin" }
+                  : {
+                      lat: scan.exif_lat ?? null,
+                      lon: scan.exif_lon ?? null,
+                      source: scan.exif_lat != null ? "exif" : null,
+                    }
+            }
             sending={busy}
             onSend={submit}
             onRetake={() => {
@@ -453,7 +484,7 @@ export default function Report() {
 
         <Button
           variant="primary"
-          icon="sparkle"
+          icon="detect"
           className="w-full !min-h-12 text-base cursor-pointer"
           disabled={!file || !locationReady || !isPhoneValid || !reporterName.trim()}
           loading={scanning}

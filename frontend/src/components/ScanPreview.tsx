@@ -8,8 +8,9 @@
  * Nothing here decides anything. It is a preview: the citizen still chooses to send,
  * and a person still verifies afterwards (CLAUDE.md §2.5).
  */
-import type { DetectPreview, Detection, DetectionClass } from "../api/client";
+import type { DetectPreview, Detection, DetectionClass, LocationSource } from "../api/client";
 import { Icon } from "./Icon";
+import { PhotoInfo } from "./PhotoInfo";
 import { Button, Card, TierChip, cx } from "./ui";
 
 /** Reads as a sentence, and never says plain "plastic" (CLAUDE.md §2.1). */
@@ -28,15 +29,25 @@ const PLASTIC_CLASSES: DetectionClass[] = [
   "plastic_other",
 ];
 
+/** Where the report will say the photo was taken — exactly what submitting sends. */
+export type StampLocation = {
+  lat: number | null;
+  lon: number | null;
+  source: LocationSource | null;
+  accuracyM?: number | null;
+};
+
 export function ScanPreview({
   scan,
   imageUrl,
+  location,
   sending,
   onSend,
   onRetake,
 }: {
   scan: DetectPreview;
   imageUrl: string;
+  location: StampLocation;
   sending: boolean;
   onSend: () => void;
   onRetake: () => void;
@@ -78,6 +89,14 @@ export function ScanPreview({
           );
         })}
       </div>
+      {/* Under the photo, never on it: an overlay would hide the waste this screen shows. */}
+      <PhotoInfo
+        className="px-5 pt-4"
+        lat={location.lat}
+        lon={location.lon}
+        source={location.source}
+        accuracyM={location.accuracyM}
+      />
 
       <div className="p-5">
         <div className="flex items-start gap-3">
@@ -87,7 +106,7 @@ export function ScanPreview({
               found ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted",
             )}
           >
-            <Icon name={found ? "sparkle" : "eye"} size={20} />
+            <Icon name={found ? "detect" : "eye"} size={20} />
           </span>
           <div className="min-w-0">
             <h2 className="font-display text-heading font-bold tracking-tight">

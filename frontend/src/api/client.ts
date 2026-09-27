@@ -18,6 +18,7 @@ export type RejectReason = S["RejectReason"];
 export type VerifyDecision = S["VerifyDecision"];
 export type UserRole = S["UserRole"];
 export type LocationSource = S["LocationSource"];
+export type ReverseGeocode = S["ReverseGeocode"];
 export type HotspotFeatureCollection = S["HotspotFeatureCollection"];
 export type HotspotFeature = S["HotspotFeature"];
 export type HotspotProperties = S["HotspotProperties"];

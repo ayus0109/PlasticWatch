@@ -61,6 +61,14 @@ class Settings(BaseSettings):
     ROBOFLOW_URL: str = "https://serverless.roboflow.com"
     ROBOFLOW_TIMEOUT_S: float = 12.0
 
+    # --- Reverse geocoding (address shown under a report photo) ------------
+    # OpenStreetMap Nominatim: free, no key, 1 request/second, identify yourself.
+    # PRIVACY: sends only the report's coordinates to OSM. Off = coordinates only.
+    GEOCODE_ENABLED: bool = True
+    GEOCODE_URL: str = "https://nominatim.openstreetmap.org/reverse"
+    GEOCODE_TIMEOUT_S: float = 4.0
+    GEOCODE_USER_AGENT: str = "PlasticWatch/1.0 (civic plastic-waste reporting, SDG 11/12/14)"
+
     # --- Confidence tiers (CLAUDE.md §2.7) ----------------------------------
     # Raw confidence is not a calibrated probability; the UI always shows a tier.
     # [0, MEDIUM) low, [MEDIUM, HIGH) medium, [HIGH, 1] high.

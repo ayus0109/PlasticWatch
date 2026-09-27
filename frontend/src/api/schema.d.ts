@@ -875,6 +875,16 @@ export interface components {
              * @description Height the detector measured boxes against.
              */
             image_height: number;
+            /**
+             * Exif Lat
+             * @description Latitude from the photo's EXIF GPS.
+             */
+            exif_lat?: number | null;
+            /**
+             * Exif Lon
+             * @description Longitude from the photo's EXIF GPS.
+             */
+            exif_lon?: number | null;
         };
         /**
          * Detection
@@ -1322,6 +1332,22 @@ export interface components {
          * @enum {string}
          */
         RejectReason: "not_plastic" | "no_waste_visible" | "wrong_location" | "duplicate" | "already_cleaned" | "other";
+        /**
+         * ReverseGeocode
+         * @description GET /geo/reverse — a short, human address for a point, for display only.
+         */
+        ReverseGeocode: {
+            /**
+             * Address
+             * @description e.g. "Navle Bridge, Vadgaon Budruk, Pune". Null if unknown.
+             */
+            address?: string | null;
+            /**
+             * Attribution
+             * @default © OpenStreetMap contributors
+             */
+            attribution: string;
+        };
         /**
          * ReportCreateResponse
          * @description Result of POST /reports: detect -> dedupe -> context -> score (SPEC §8).

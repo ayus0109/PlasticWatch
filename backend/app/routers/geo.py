@@ -51,8 +51,15 @@ from sqlalchemy.engine import Connection
 
 from app.db import get_conn
 from app.deps import any_role
-from app.schemas import DemoUser, GeoFeatureCollection, GeoFeatureKind, WardFeatureCollection
+from app.schemas import (
+    DemoUser,
+    GeoFeatureCollection,
+    GeoFeatureKind,
+    ReverseGeocode,
+    WardFeatureCollection,
+)
 from app.services import geo_views
+from app.services.geocode import reverse_geocode
 
 router = APIRouter(tags=["geo"])
 
@@ -72,3 +79,15 @@ def wards(
 ) -> WardFeatureCollection:
     """Ward boundaries with per-ward hotspot stats, for the choropleth."""
     return geo_views.wards(conn)
+
+
+@router.get("/geo/reverse", response_model=ReverseGeocode)
+def geo_reverse(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    _user: DemoUser = Depends(any_role),
+) -> ReverseGeocode:
+    """Short address for a point ("Navle Bridge, Vadgaon Budruk, Pune"), shown under a
+    report photo. Display only: nothing is stored and nothing depends on it. Proxied
+    here (not called from the browser) so the rate limit and cache are shared."""
+    return ReverseGeocode(address=reverse_geocode(lat, lon))

@@ -290,6 +290,19 @@ class DetectPreview(BaseModel):
     # the two disagree. Not part of the frozen DetectorOutput contract (SPEC §6).
     image_width: int = Field(..., gt=0, description="Width the detector measured boxes against.")
     image_height: int = Field(..., gt=0, description="Height the detector measured boxes against.")
+    # What the PHOTO says about where it was taken, read before anything is stored (the
+    # stored copy is metadata-free). Null when the photo carries no GPS — never guessed.
+    exif_lat: float | None = Field(None, description="Latitude from the photo's EXIF GPS.")
+    exif_lon: float | None = Field(None, description="Longitude from the photo's EXIF GPS.")
+
+
+class ReverseGeocode(BaseModel):
+    """GET /geo/reverse — a short, human address for a point, for display only."""
+
+    address: str | None = Field(
+        None, description='e.g. "Navle Bridge, Vadgaon Budruk, Pune". Null if unknown.'
+    )
+    attribution: str = "© OpenStreetMap contributors"
 
 
 # --------------------------------------------------------------------------

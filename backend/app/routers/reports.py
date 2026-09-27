@@ -23,7 +23,7 @@ from app.schemas import (
 from app.services.confidence import confidence_tier
 from app.services.detector import STUB_DEFAULT_SIZE, is_stub_mode, run_detection
 from app.services.hotspot_views import hotspot_summary
-from app.services.pipeline import PipelineError, PipelineResult, process_report
+from app.services.pipeline import PipelineError, PipelineResult, exif_gps, process_report
 from app.services.report_views import my_reports, report_detail
 
 router = APIRouter(tags=["reports"])
@@ -55,8 +55,11 @@ def detect_preview(
         result = run_detection(preview_path)
         # The size the detector measured boxes against, AFTER EXIF rotation — the
         # same transform every detector path applies before inference.
+        gps = None
         try:
             with Image.open(preview_path) as raw_img:
+                # Read GPS from the ORIGINAL file: it is lost once the photo is re-saved.
+                gps = exif_gps(raw_img)
                 width, height = ImageOps.exif_transpose(raw_img).size
         except Exception as exc:
             if is_stub_mode():
@@ -67,7 +70,10 @@ def detect_preview(
             else:
                 raise HTTPException(
                     status_code=400,
-                    detail={"code": "not_an_image", "message": "That file is not a readable image."},
+                    detail={
+                        "code": "not_an_image",
+                        "message": "That file is not a readable image.",
+                    },
                 ) from exc
 
     result = result.model_copy(update={"annotated_jpg_path": None})
@@ -78,6 +84,8 @@ def detect_preview(
         is_simulated=is_stub_mode(),
         image_width=width,
         image_height=height,
+        exif_lat=gps[0] if gps else None,
+        exif_lon=gps[1] if gps else None,
     )
 
 

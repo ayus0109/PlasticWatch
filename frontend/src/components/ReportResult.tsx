@@ -4,6 +4,7 @@ import { mediaUrl } from "../api/client";
 import { plural } from "../lib/format";
 import { citizenStage } from "../lib/status";
 import { Icon } from "./Icon";
+import { PhotoInfo } from "./PhotoInfo";
 import { StageTracker } from "./StageTracker";
 import { Button, Card, Chip, SimulatedBadge, TierChip } from "./ui";
 
@@ -27,6 +28,16 @@ export function ReportResult({
           {r.is_simulated ? <SimulatedBadge className="absolute bottom-3 left-3" /> : null}
         </div>
       ) : null}
+      {/* What was RECORDED for this report (the stored photo is metadata-free). */}
+      <PhotoInfo
+        className="px-6 pt-4"
+        lat={r.lat}
+        lon={r.lon}
+        source={r.location_source}
+        accuracyM={r.gps_accuracy_m}
+        capturedAt={r.captured_at}
+        reportedAt={r.created_at}
+      />
 
       <div className="space-y-4 p-6">
         <div className="flex items-start gap-3">
