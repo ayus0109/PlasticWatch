@@ -85,6 +85,7 @@ export function Card({
   as: Tag = "section",
   interactive = false,
   pad = "default",
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
@@ -93,11 +94,13 @@ export function Card({
   interactive?: boolean;
   /** Use the scale — never pass a p-* through className. */
   pad?: CardPad;
+  onClick?: () => void;
 }) {
   return (
     <Tag
+      onClick={onClick}
       className={cx(
-        "rounded-card border border-line bg-surface",
+        "rounded-card border border-line bg-surface/95 backdrop-blur-md shadow-sm",
         CARD_PAD[pad],
         /* Elevation carries meaning: flat = information you read, raised = a surface
            you can act on. Floating chrome (map panels, sheets) uses shadow-pop directly. */

@@ -313,8 +313,25 @@ export function Shell({
 }) {
   const session = useSession();
   const role = session?.user.role ?? "citizen";
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
+
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="relative flex min-h-full flex-col">
+      {!isLanding && !fullBleed ? (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 pointer-events-none -z-10 overflow-hidden"
+        >
+          <img
+            src="/eco-india-bg.jpg"
+            alt=""
+            className="h-full w-full object-cover object-bottom sm:object-center opacity-90 transition-opacity"
+          />
+          {/* Soft tint overlay ensures text contrast is always crystal clear in both light and dark themes */}
+          <div className="absolute inset-0 bg-gradient-to-b from-surface/85 via-surface/65 to-surface/80 backdrop-blur-[0.5px]" />
+        </div>
+      ) : null}
       <header className="sticky top-0 z-[1000] border-b border-line bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 items-center gap-6 px-4 sm:px-6">
           <NavLink to="/" aria-label="PlasticWatch home" className="-mx-2 flex min-h-11 items-center px-2">

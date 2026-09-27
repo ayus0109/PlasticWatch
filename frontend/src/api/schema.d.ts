@@ -1421,6 +1421,7 @@ export interface components {
              * @default []
              */
             detections: components["schemas"]["Detection"][];
+            before_after?: components["schemas"]["BeforeAfterRecord"] | null;
         };
         /**
          * ReportSummary

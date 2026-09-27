@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
 import { warmupApi, type UserRole } from "./api/client";
 import { EmptyState, Skeleton } from "./components/ui";
-import { EarthBackground } from "./components/EarthBackground";
 import { homeFor, loginAs, useSession } from "./store/auth";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -72,7 +71,6 @@ export default function App() {
 
   return (
     <HashRouter>
-      <EarthBackground />
       <div className="relative z-10 min-h-full">
         <Suspense fallback={<PageLoading />}>
           <Routes>
