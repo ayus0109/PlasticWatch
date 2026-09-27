@@ -4,6 +4,7 @@ import { warmupApi, type UserRole } from "./api/client";
 import { EmptyState, Skeleton } from "./components/ui";
 import { homeFor, loginAs, useSession } from "./store/auth";
 
+const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Report = lazy(() => import("./pages/Report"));
 const MyReports = lazy(() => import("./pages/MyReports"));
@@ -30,11 +31,6 @@ function RequireRole({ role, children }: { role: UserRole; children: ReactNode }
   }
 
   return <>{children}</>;
-}
-
-function Home() {
-  const session = useSession();
-  return <Navigate to={session ? homeFor(session.user.role) : "/login"} replace />;
 }
 
 function NotFound() {
@@ -74,7 +70,7 @@ export default function App() {
       <div className="relative z-10 min-h-full">
         <Suspense fallback={<PageLoading />}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
             <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />

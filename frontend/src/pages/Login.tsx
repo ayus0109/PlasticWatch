@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router";
-import type { DemoUser, PublicSummary, UserRole } from "../api/client";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
+import type { DemoUser, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
 import { Icon, type IconName } from "../components/Icon";
 import { Logo, ThemeToggle } from "../components/Shell";
@@ -60,23 +60,13 @@ const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] 
   },
 ];
 
-
-/** Live civic totals. Only counts the public endpoint actually returns — no
- *  accuracy or tonnage claims, because nothing here can measure those. */
-const HERO_TILES: { key: keyof PublicSummary; label: string; hint: string }[] = [
-  { key: "active_hotspots", label: "Active hotspots", hint: "open and tracked" },
-  { key: "awaiting_verification", label: "Awaiting review", hint: "queued for a person" },
-  { key: "total_reports", label: "Citizen reports", hint: "photos submitted" },
-  { key: "resolved_hotspots", label: "Resolved", hint: "closed by an authority" },
-];
-
 type AuthTab = "login" | "register" | "demo";
 
 export default function Login() {
   const session = useSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const users = useApi<DemoUser[]>("/auth/demo-users");
-  const stats = useApi<PublicSummary>("/analytics/public");
 
   const [tab, setTab] = useState<AuthTab>("login");
   const [busy, setBusy] = useState<boolean>(false);
@@ -92,6 +82,24 @@ export default function Login() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState<UserRole>("citizen");
+
+  const fillDemoCredentials = (role: UserRole) => {
+    setTab("login");
+    setLoginEmail(role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local");
+    setLoginPassword("password123");
+    setError(null);
+  };
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role") as UserRole | null;
+    const tabParam = searchParams.get("tab") as AuthTab | null;
+    if (tabParam && ["login", "register", "demo"].includes(tabParam)) {
+      setTab(tabParam);
+    }
+    if (roleParam === "citizen" || roleParam === "authority") {
+      fillDemoCredentials(roleParam);
+    }
+  }, [searchParams]);
 
   if (session) return <Navigate to={homeFor(session.user.role)} replace />;
 
@@ -164,132 +172,50 @@ export default function Login() {
     }
   };
 
-  /** Hero CTAs do not sign anyone in: they carry you to the access panel with the
-   *  matching demo credentials filled, so the click does exactly what it says. */
-  const goToAccess = (role: UserRole) => {
-    fillDemoCredentials(role);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document
-      .getElementById("access")
-      ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-  };
-
-  const fillDemoCredentials = (role: UserRole) => {
-    setTab("login");
-    setLoginEmail(role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local");
-    setLoginPassword("password123");
-    setError(null);
-  };
-
   return (
-    <div className="relative min-h-full">
-      {/* ----------------------------------------------------------------- hero ---- */}
-      <section className="relative isolate overflow-hidden text-white">
-        {/* Underlay tone */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-30 bg-[#042019]"
+    <div className="relative min-h-full flex flex-col justify-between">
+      {/* Background eco-india image */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none -z-10 overflow-hidden"
+      >
+        <img
+          src="/eco-india-bg.jpg"
+          alt=""
+          className="h-full w-full object-cover object-bottom sm:object-center opacity-90 transition-opacity"
         />
-        {/* Background waterway photograph */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat transition-all duration-700"
-          style={{ backgroundImage: "url('/hero-waterway.jpg')" }}
-        />
-        {/* Semi-transparent scrim: deeper on the left for text readability,
-            gentler on the right so the waterway, park, and city skyline remain clearly visible */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(108deg, rgba(4, 38, 28, 0.88) 0%, rgba(4, 38, 28, 0.72) 42%, rgba(6, 60, 48, 0.38) 78%, rgba(15, 23, 42, 0.48) 100%)",
-          }}
-        />
-        {/* Vertical vignette to anchor bottom cards */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(0, 0, 0, 0.20) 0%, transparent 40%, rgba(4, 25, 20, 0.55) 100%)",
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-surface/85 via-surface/65 to-surface/85 backdrop-blur-[0.5px]" />
+      </div>
 
-        <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 md:py-16">
-          <div className="flex items-center justify-between gap-4">
-            <Logo onDark size="lg" />
-            <ThemeToggle onDark />
-          </div>
-
-          <div className="animate-rise">
-            <h1 className="font-display mt-8 sm:mt-12 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
-              AI and GIS for urban waterway and waste intelligence
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-body leading-relaxed text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
-              Citizens photograph likely plastic waste. Duplicate reports merge into hotspots,
-              ranked by impact near drains and water — then a person, not the model, decides
-              what happens next.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => goToAccess("citizen")}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field bg-accent px-5 text-label font-semibold text-accent-fg transition-transform duration-150 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer"
-              >
-                <Icon name="camera" size={17} />
-                Sign in to report waste
-              </button>
-              <button
-                type="button"
-                onClick={() => goToAccess("authority")}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-white/10 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-white/20 active:translate-y-0 active:scale-[0.98] cursor-pointer"
-              >
-                <Icon name="shield" size={17} />
-                Sign in as authority
-              </button>
-            </div>
-          </div>
-
-          {/* Live counts from /analytics/public — totals only, no session required. */}
-          <div className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {HERO_TILES.map((t) => {
-              const value = stats.data ? (stats.data[t.key] as number) : null;
-              return (
-                <div
-                  key={t.key}
-                  className="rounded-card border border-white/20 bg-black/25 p-4 backdrop-blur-md shadow-md"
-                >
-                  <div className="text-micro font-semibold text-white/70">{t.label}</div>
-                  <div className="font-display tabular mt-1.5 text-display font-bold">
-                    {stats.loading ? (
-                      <span className="inline-block h-7 w-16 animate-pulse rounded-field bg-white/25" />
-                    ) : value === null ? (
-                      "—"
-                    ) : (
-                      value.toLocaleString()
-                    )}
-                  </div>
-                  <div className="mt-1 text-micro text-white/65">{t.hint}</div>
-                </div>
-              );
-            })}
+      {/* Header bar */}
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/80 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" aria-label="PlasticWatch home" className="flex items-center">
+            <Logo />
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-field px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors"
+            >
+              <Icon name="chevronLeft" size={14} />
+              Back to Home
+            </Link>
+            <ThemeToggle />
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* --------------------------------------------------------------- access ---- */}
-      <section id="access" className="bg-bg">
-        <div className="mx-auto w-full max-w-lg px-5 py-12 sm:px-8 md:py-16">
+      {/* Main Login Card */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-md animate-rise">
           <div className="rounded-panel border border-line bg-surface p-6 shadow-raised sm:p-7">
             <div>
-              <h2 className="font-display text-heading font-bold tracking-tight text-ink">
+              <h1 className="font-display text-heading font-bold tracking-tight text-ink">
                 Sign in to PlasticWatch
-              </h2>
+              </h1>
               <p className="mt-1 text-label text-muted">
-                Use your account, create one, or select a role profile.
+                Access your citizen reporting dashboard or municipal command portal.
               </p>
             </div>
 
@@ -302,7 +228,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all cursor-pointer",
                   tab === "login"
                     ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
@@ -317,7 +243,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all cursor-pointer",
                   tab === "register"
                     ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
@@ -332,7 +258,7 @@ export default function Login() {
                   setError(null);
                 }}
                 className={cx(
-                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all",
+                  "flex-1 rounded-field py-2.5 min-h-[42px] text-center transition-all cursor-pointer",
                   tab === "demo"
                     ? "bg-surface font-semibold text-ink shadow-card"
                     : "text-muted hover:text-ink",
@@ -403,14 +329,14 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("citizen")}
-                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 cursor-pointer"
                     >
                       Fill Citizen Credentials
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("authority")}
-                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 cursor-pointer"
                     >
                       Fill Authority Credentials
                     </button>
@@ -480,7 +406,7 @@ export default function Login() {
                       type="button"
                       onClick={() => setRegRole("citizen")}
                       className={cx(
-                        "flex items-center gap-2.5 rounded-field border p-2.5 text-left text-xs transition-colors",
+                        "flex items-center gap-2.5 rounded-field border p-2.5 text-left text-xs transition-colors cursor-pointer",
                         regRole === "citizen"
                           ? "border-accent bg-accent-soft text-accent font-semibold"
                           : "border-line bg-surface text-muted hover:border-line-strong",
@@ -497,7 +423,7 @@ export default function Login() {
                       type="button"
                       onClick={() => setRegRole("authority")}
                       className={cx(
-                        "flex items-center gap-2.5 rounded-field border p-2.5 text-left text-xs transition-colors",
+                        "flex items-center gap-2.5 rounded-field border p-2.5 text-left text-xs transition-colors cursor-pointer",
                         regRole === "authority"
                           ? "border-accent bg-accent-soft text-accent font-semibold"
                           : "border-line bg-surface text-muted hover:border-line-strong",
@@ -539,7 +465,7 @@ export default function Login() {
                       onClick={() => handleDemoSignIn(u)}
                       disabled={demoBusy !== null}
                       className={cx(
-                        "group flex w-full items-center gap-4 rounded-card border border-line bg-surface p-3.5 text-left",
+                        "group flex w-full items-center gap-4 rounded-card border border-line bg-surface p-3.5 text-left cursor-pointer",
                         "transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-accent hover:shadow-raised",
                         "disabled:opacity-60",
                       )}
@@ -573,7 +499,9 @@ export default function Login() {
             UN Sustainable Development Goals 11 · 12 · 14 · AI-GIS Municipal Sanitation Platform
           </p>
         </div>
-      </section>
+      </main>
+
+      <div className="h-6" />
     </div>
   );
 }

@@ -36,6 +36,8 @@ const PATHS = {
   scale: "M12 4v16M7 20h10M5 8h14M5 8l-2.5 5.5a3 3 0 0 0 5 0zM19 8l-2.5 5.5a3 3 0 0 0 5 0z",
   phone: "M7 4.5h2.8l1.4 3.6-1.9 1.4a11.5 11.5 0 0 0 5.2 5.2l1.4-1.9 3.6 1.4V17a2 2 0 0 1-2 2A13.5 13.5 0 0 1 5 6.5a2 2 0 0 1 2-2z",
   arrowRight: "M4.5 12h15M13.5 6l6 6-6 6",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  lock: "M7 11V7a5 5 0 0 1 10 0v4m-12 0h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z",
 } as const;
 
 export type IconName = keyof typeof PATHS;
