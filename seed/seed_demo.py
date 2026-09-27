@@ -34,6 +34,8 @@ import zlib
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from PIL import Image
+
 SEED_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SEED_DIR))
 try:  # in the api container PYTHONPATH=/app; from the repo root we add backend/
@@ -130,9 +132,82 @@ def _jpeg(img) -> bytes:
     return buf.getvalue()
 
 
+REAL_PHOTOS_DIR = SEED_DIR / "real_photos"
+USER_PHOTOS_DIR = SEED_DIR.parent / "data" / "real_photos"
+REAL_DETECTIONS_FILE = REAL_PHOTOS_DIR / "detections.json"
+
+_CACHED_REAL_DETS: dict | None = None
+
+
+def _load_real_detections() -> dict:
+    global _CACHED_REAL_DETS
+    if _CACHED_REAL_DETS is not None:
+        return _CACHED_REAL_DETS
+    if REAL_DETECTIONS_FILE.is_file():
+        try:
+            _CACHED_REAL_DETS = json.loads(REAL_DETECTIONS_FILE.read_text(encoding="utf-8"))
+            return _CACHED_REAL_DETS
+        except Exception:
+            pass
+    _CACHED_REAL_DETS = {}
+    return _CACHED_REAL_DETS
+
+
+def _select_real_photo(key: str, idx: int) -> tuple[bytes, list[dict]] | None:
+    """Select a real photograph matching the hotspot context, returning (image_bytes, detections).
+    Prioritizes user custom dataset in data/real_photos/, then curated seed/real_photos/."""
+    # 1. Check user custom dataset directory
+    if USER_PHOTOS_DIR.is_dir():
+        user_files = sorted(
+            [f for f in USER_PHOTOS_DIR.iterdir() if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")]
+        )
+        if user_files:
+            chosen = user_files[zlib.crc32(f"{key}-{idx}".encode()) % len(user_files)]
+            real_dets = _load_real_detections()
+            dets = [dict(d) for d in real_dets.get(chosen.name, [])]
+            return chosen.read_bytes(), dets
+
+    # 2. Check curated real photos pool
+    if REAL_PHOTOS_DIR.is_dir():
+        real_dets = _load_real_detections()
+        k_upper = key.upper()
+        if "REJECTED" in k_upper:
+            category = ["clean_01.jpg", "clean_02.jpg", "clean_03.jpg"]
+        elif k_upper in ("H01", "H04"):  # Drains & Grates
+            category = ["drain_01.jpg", "drain_02.jpg", "drain_03.jpg"]
+        elif k_upper in ("H02",):  # Market lane
+            category = ["market_01.jpg", "market_02.jpg", "market_03.jpg"]
+        elif k_upper in ("H03", "H12", "H15"):  # Waterways, Lakes, River
+            category = ["water_01.jpg", "water_02.jpg", "water_03.jpg"]
+        elif k_upper in ("H05", "H11", "H14"):  # School gate, Bus stop, Tea stall
+            category = ["packets_01.jpg", "packets_02.jpg", "bottles_01.jpg"]
+        elif k_upper in ("H06", "H07", "H08", "H16"):  # Roads, Curbs, Sacks
+            category = ["user_waste_01.jpg", "bottles_02.jpg", "bottles_03.jpg", "packets_03.jpg"]
+        else:
+            category = [f for f in real_dets.keys() if not f.startswith("clean")]
+
+        available = [f for f in category if (REAL_PHOTOS_DIR / f).is_file()]
+        if not available:
+            available = [f for f in real_dets.keys() if (REAL_PHOTOS_DIR / f).is_file()]
+        if available:
+            chosen_name = available[zlib.crc32(f"{key}-{idx}".encode()) % len(available)]
+            chosen_path = REAL_PHOTOS_DIR / chosen_name
+            dets = [dict(d) for d in real_dets.get(chosen_name, [])]
+            return chosen_path.read_bytes(), dets
+
+    return None
+
+
 def _after_photos(seed: int, left: int) -> tuple[dict[str, bytes], dict[str, list[dict]]]:
-    """Wide + close after-photos of the SAME street (same scene seed), `left` likely-
-    plastic items remaining, with the boxes carried through the re-photographing."""
+    """Wide + close after-photos of the SAME street, `left` likely-plastic items remaining."""
+    clean_p = REAL_PHOTOS_DIR / "clean_01.jpg"
+    if clean_p.is_file():
+        base = Image.open(clean_p).convert("RGB")
+        wide, _ = retake(base, [], seed)
+        close, _ = close_up(wide, [], seed)
+        dets: list[dict] = []
+        return {"wide": _jpeg(wide), "close": _jpeg(close)}, {"wide": dets, "close": dets}
+
     scene, dets = make_scene(seed, left, 1)
     wide, wide_dets = retake(scene, dets, seed)
     close, close_dets = close_up(wide, wide_dets, seed)
@@ -140,6 +215,16 @@ def _after_photos(seed: int, left: int) -> tuple[dict[str, bytes], dict[str, lis
 
 
 def _photo(key: str, idx: int, plastic: int, other: int, conf: list[float] | None):
+    real = _select_real_photo(key, idx)
+    if real is not None:
+        img_bytes, dets = real
+        if conf and dets:
+            lo, hi = conf
+            for d in dets:
+                d["confidence"] = round(lo + (d.get("confidence", 0.7) - 0.3) / 0.7 * (hi - lo), 3)
+                d["confidence"] = max(0.01, min(0.99, d["confidence"]))
+        return img_bytes, dets
+
     img, dets = make_scene(_scene_seed(key, idx), plastic, other)
     if conf:  # rescale the drawn "confidences" into the scenario's range
         lo, hi = conf

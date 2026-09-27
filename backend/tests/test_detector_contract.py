@@ -170,7 +170,7 @@ def test_summarise_caps_area_at_one():
 
 
 def test_real_mode_without_weights_is_an_error_not_a_stub_fallback(set_env, tmp_path):
-    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt")
+    set_env(DETECTOR_MODE="real", DETECTOR_WEIGHTS=tmp_path / "missing.pt", ROBOFLOW_API_KEY="")
     out = detector.run_detection(textured_photo(tmp_path / "p.jpg"))
     assert out.ai_status == AiStatus.error
     assert out.detections == [] and out.annotated_jpg_path is None
