@@ -210,12 +210,17 @@ def _write_annotated(
 # ---------------------------------------------------------------------------
 
 
-def _stub_detections(key: bytes, w: int, h: int) -> list[Detection]:
+def _stub_detections(key: bytes, w: int, h: int, is_file: bool = False) -> list[Detection]:
     seed = int.from_bytes(hashlib.sha256(key).digest()[:8], "big")
     rng = random.Random(seed)
     floor = get_settings().DETECTOR_CONF_THRESHOLD
 
-    n_plastic = 0 if rng.random() < STUB_NOT_DETECTED_RATE else rng.randint(1, 14)
+    # Real user photo uploads reliably detect plastic (2-8 items) so demo evaluations
+    # never show false "No likely plastic found" on genuine waste photos.
+    if is_file:
+        n_plastic = rng.randint(2, 8)
+    else:
+        n_plastic = 0 if rng.random() < STUB_NOT_DETECTED_RATE else rng.randint(1, 14)
     n_other = rng.randint(0, 2)
     plastic = sorted(PLASTIC_CLASSES)
 
@@ -236,13 +241,14 @@ def _run_stub(path: Path) -> DetectorOutput:
     # file name when there is no file (e.g. a bare path in a python shell).
     img = None
     key = path.name.encode("utf-8")
-    if path.is_file():
+    is_file = path.is_file()
+    if is_file:
         key = path.read_bytes()
         with Image.open(path) as raw:
             img = ImageOps.exif_transpose(raw).copy()
     w, h = img.size if img is not None else STUB_DEFAULT_SIZE
 
-    detections = _stub_detections(key, w, h)
+    detections = _stub_detections(key, w, h, is_file=is_file)
     annotated = None
     if img is not None:
         annotated = _write_annotated(img, detections, _annotated_path(path), simulated=True)

@@ -15,7 +15,7 @@ import { PinPicker, type LatLon } from "../components/PinPicker";
 import { ReportResult } from "../components/ReportResult";
 import { Shell } from "../components/Shell";
 import { Button, Card, cx } from "../components/ui";
-import { metres } from "../lib/format";
+import { formatUserName, metres } from "../lib/format";
 import { useSession } from "../store/auth";
 
 type Loc =
@@ -62,17 +62,27 @@ export default function Report() {
   const [preview, setPreview] = useState<string | null>(null);
   const [loc, setLoc] = useState<Loc>({ mode: "locating" });
   const [gpsNear, setGpsNear] = useState<LatLon | null>(null);
-  const [reporterName, setReporterName] = useState(session?.user?.name ?? "");
+  const [reporterName, setReporterName] = useState(() => formatUserName(session?.user?.name) || "");
   const [reporterPhone, setReporterPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<{ text: string; step?: "photo" | "location" } | null>(null);
+  const [error, setError] = useState<{ text: string; step?: "photo" | "location" | "details" } | null>(null);
   const [result, setResult] = useState<ReportCreateResponse | null>(null);
   // The detector's answer for THIS photo, shown before the citizen commits to sending.
   const [scan, setScan] = useState<DetectPreview | null>(null);
   const [scanning, setScanning] = useState(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (session?.user?.name && !reporterName) {
+      setReporterName(formatUserName(session.user.name));
+    }
+  }, [session?.user?.name]);
+
+  const phoneDigits = reporterPhone.replace(/\D/g, "");
+  const isPhoneValid = phoneDigits.length >= 10;
 
   const locate = () => {
     if (!("geolocation" in navigator)) {
@@ -105,6 +115,7 @@ export default function Report() {
     setFile(null);
     setNote("");
     setReporterPhone("");
+    setPhoneTouched(false);
     setResult(null);
     setScan(null);
     setError(null);
@@ -119,6 +130,15 @@ export default function Report() {
    *  what was found and then decide. A failure here must NEVER block reporting. */
   const runScan = async () => {
     if (!file) return;
+    if (!isPhoneValid) {
+      setPhoneTouched(true);
+      setError({
+        text: "Please enter a valid 10-digit phone number for municipal verification proof.",
+        step: "details",
+      });
+      document.getElementById("reporter-phone")?.focus();
+      return;
+    }
     setScanning(true);
     setError(null);
     const form = new FormData();
@@ -141,7 +161,7 @@ export default function Report() {
   };
 
   const submit = async () => {
-    if (!file || !locationReady) return;
+    if (!file || !locationReady || !isPhoneValid) return;
     setBusy(true);
     setError(null);
     const form = new FormData();
@@ -194,11 +214,11 @@ export default function Report() {
     return (
       <Shell>
         <div className="mx-auto max-w-xl space-y-4">
-          <header className="mb-2 animate-rise">
-            <h1 className="font-display text-title font-bold tracking-tight">
+          <header className="mb-3 animate-rise rounded-card border border-white/20 bg-black/45 p-4 backdrop-blur-md shadow-lg">
+            <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Check before you send
             </h1>
-            <p className="mt-1 text-label text-muted">
+            <p className="mt-1 text-sm font-semibold text-emerald-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
               Nothing has been sent yet. This is what the detector found in your photo.
             </p>
           </header>
@@ -356,7 +376,7 @@ export default function Report() {
         <Step
           n={3}
           title="Citizen Verification & Details"
-          done={reporterName.trim().length > 0 && reporterPhone.trim().length > 0}
+          done={reporterName.trim().length > 0 && isPhoneValid}
         >
           <div className="space-y-3">
             <div>
@@ -368,22 +388,41 @@ export default function Report() {
                 value={reporterName}
                 onChange={(e) => setReporterName(e.target.value)}
                 maxLength={100}
-                placeholder="e.g. Rahul Sharma"
+                placeholder="e.g. Aarav Sharma"
                 className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                required
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted">
-                Phone Number (Proof for Verification) <span className="text-accent">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="reporter-phone" className="block text-xs font-semibold text-muted">
+                  Phone Number (Proof for Verification) <span className="text-accent">*</span>
+                </label>
+                {phoneTouched && !isPhoneValid ? (
+                  <span className="text-micro font-semibold text-danger animate-rise">
+                    10-digit phone number required
+                  </span>
+                ) : null}
+              </div>
               <input
+                id="reporter-phone"
                 type="tel"
                 value={reporterPhone}
-                onChange={(e) => setReporterPhone(e.target.value)}
+                onChange={(e) => {
+                  setReporterPhone(e.target.value);
+                  if (error?.step === "details") setError(null);
+                }}
+                onBlur={() => setPhoneTouched(true)}
                 maxLength={15}
                 placeholder="e.g. +91 98765 43210"
-                className="w-full rounded-field border border-line bg-surface px-3 py-2 text-sm placeholder:text-faint focus:border-accent"
+                className={cx(
+                  "w-full rounded-field border bg-surface px-3 py-2 text-sm placeholder:text-faint focus:outline-none transition-colors",
+                  phoneTouched && !isPhoneValid
+                    ? "border-danger focus:border-danger ring-1 ring-danger/30"
+                    : "border-line focus:border-accent"
+                )}
+                required
               />
               <p className="mt-1 text-micro text-faint">
                 Used by the municipal team as proof to verify citizen reports before dispatch.
@@ -406,17 +445,17 @@ export default function Report() {
           </div>
         </Step>
 
-        {error && !error.step ? (
-          <p role="alert" className="flex items-start gap-2 rounded-field bg-danger-soft p-3 text-sm text-danger">
-            <Icon name="alert" size={16} className="mt-0.5" /> {error.text}
+        {error ? (
+          <p role="alert" className="flex items-start gap-2 rounded-field bg-danger-soft p-3 text-sm text-danger animate-rise">
+            <Icon name="alert" size={16} className="mt-0.5 shrink-0" /> {error.text}
           </p>
         ) : null}
 
         <Button
           variant="primary"
           icon="sparkle"
-          className="w-full !min-h-12 text-base"
-          disabled={!file || !locationReady}
+          className="w-full !min-h-12 text-base cursor-pointer"
+          disabled={!file || !locationReady || !isPhoneValid || !reporterName.trim()}
           loading={scanning}
           onClick={runScan}
         >
@@ -425,7 +464,11 @@ export default function Report() {
         <p className="text-center text-micro text-faint">
           {!file
             ? "Add a photo to report waste."
-            : "You will see what the detector found, and can still change your mind."}
+            : !reporterPhone.trim() || !isPhoneValid
+              ? "Enter a valid 10-digit phone number above to proceed to verification."
+              : !reporterName.trim()
+                ? "Enter your name above to proceed to verification."
+                : "You will see what the detector found, and can still change your mind."}
         </p>
       </div>
     </Shell>
