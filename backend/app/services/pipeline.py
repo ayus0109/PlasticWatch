@@ -22,7 +22,7 @@ from __future__ import annotations
 import io
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from uuid import UUID
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -100,40 +100,6 @@ def exif_gps(img: Image.Image) -> tuple[float, float] | None:
     return lat, lon
 
 
-_EXIF_IFD = 0x8769
-_DATETIME_ORIGINAL = 0x9003
-_OFFSET_TIME_ORIGINAL = 0x9011
-# Cameras with an unset clock report 1970 or 2000-01-01; anything this old is noise.
-_EARLIEST_PLAUSIBLE_CAPTURE = datetime(2005, 1, 1, tzinfo=UTC)
-
-
-def exif_captured_at(img: Image.Image) -> datetime | None:
-    """When the photo was taken, but ONLY if the photo also says which timezone.
-
-    EXIF DateTimeOriginal is the camera's local wall-clock time with no zone. Current
-    Android and iOS also write OffsetTimeOriginal ("+05:30"); with it the moment is
-    exact. Without it we return None rather than guess a zone: storing a naive time
-    in a timestamptz column silently shifts it by the server's offset, which would
-    state a capture time the photo never had. None falls back to "reported at".
-    """
-    try:
-        exif = img.getexif().get_ifd(_EXIF_IFD)
-        raw = exif.get(_DATETIME_ORIGINAL)
-        offset = exif.get(_OFFSET_TIME_ORIGINAL)
-        if not raw or not offset:
-            return None
-        taken = datetime.strptime(
-            f"{str(raw).strip(chr(0) + ' ')}{str(offset).strip(chr(0) + ' ')}",
-            "%Y:%m:%d %H:%M:%S%z",
-        )
-    except (ValueError, TypeError, KeyError, AttributeError):
-        return None
-    # A clock that was never set, or one running in the future, is not evidence.
-    if not (_EARLIEST_PLAUSIBLE_CAPTURE <= taken <= datetime.now(UTC) + timedelta(days=1)):
-        return None
-    return taken
-
-
 def _store_photo(img: Image.Image, report_id: UUID) -> str:
     """Save an EXIF-rotated, metadata-free JPEG. Returns its public path."""
     clean = ImageOps.exif_transpose(img).convert("RGB")
@@ -150,13 +116,11 @@ def _store_photo(img: Image.Image, report_id: UUID) -> str:
 _INSERT_REPORT = text(
     """
     INSERT INTO reports (id, reporter_id, image_path, image_phash, geom, gps_accuracy_m,
-                         location_source, captured_at, created_at, note,
-                         reporter_name, reporter_phone,
+                         location_source, created_at, note, reporter_name, reporter_phone,
                          ai_status, report_confidence,
                          plastic_count, plastic_area_frac, severity, is_simulated)
     VALUES (:id, :reporter, :image_path, :phash, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
-            :accuracy, :source, :captured_at, :created_at, :note,
-            :reporter_name, :reporter_phone,
+            :accuracy, :source, :created_at, :note, :reporter_name, :reporter_phone,
             :ai_status, :confidence,
             :count, :area, :severity, :simulated)
     """
@@ -187,18 +151,16 @@ def process_report(
     created_at: datetime | None = None,
     simulated_location: bool = False,
     known_detections: list[dict] | None = None,
-    simulated_detection: bool = False,
 ) -> PipelineResult:
     """Run one report through the whole pipeline.
 
-    `known_detections` is for the demo seed only: boxes of known scenes,
-    used instead of the detector.
+    `known_detections` is for the demo seed only: boxes of a synthetic scene whose
+    objects we drew ourselves, used instead of the detector. They are simulated
+    data and the report is flagged so.
     """
     s = get_settings()
     created_at = created_at or datetime.now(UTC)
     img = decode_photo(image_bytes)
-    # Read before _store_photo, which writes a metadata-free copy (privacy).
-    captured_at = exif_captured_at(img)
 
     # Location: browser GPS / pin from the form, else EXIF, else ask for a pin.
     if lat is None or lon is None:
@@ -228,7 +190,7 @@ def process_report(
     det = (
         detector.run_detection(stored)
         if known_detections is None
-        else detector.from_known(stored, known_detections, simulated=simulated_detection)
+        else detector.from_known(stored, known_detections, simulated=True)
     )
 
     low_accuracy = accuracy_m is not None and accuracy_m > s.GPS_ACCURACY_WIDEN_M
@@ -237,8 +199,7 @@ def process_report(
         {
             "id": report_id, "reporter": reporter_id, "image_path": image_path,
             "phash": phash, "lon": lon, "lat": lat, "accuracy": accuracy_m,
-            "source": source.value, "captured_at": captured_at,
-            "created_at": created_at, "note": note,
+            "source": source.value, "created_at": created_at, "note": note,
             "reporter_name": reporter_name, "reporter_phone": reporter_phone,
             "ai_status": det.ai_status.value, "confidence": det.report_confidence,
             "count": det.plastic_count, "area": det.plastic_area_frac,

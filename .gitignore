@@ -1,8 +1,6 @@
 # Environment & secrets
 .env
 *.env
-.env*
-*.bak
 !.env.example
 
 # Python

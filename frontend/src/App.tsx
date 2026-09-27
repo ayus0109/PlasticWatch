@@ -2,15 +2,13 @@ import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { HashRouter, Link, Navigate, Route, Routes } from "react-router";
 import { warmupApi, type UserRole } from "./api/client";
 import { EmptyState, Skeleton } from "./components/ui";
-import { WavesBackground } from "./components/WavesBackground";
+import { EarthBackground } from "./components/EarthBackground";
 import { homeFor, loginAs, useSession } from "./store/auth";
 
-const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Report = lazy(() => import("./pages/Report"));
 const MyReports = lazy(() => import("./pages/MyReports"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Scanner = lazy(() => import("./pages/Scanner"));
 
 function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const session = useSession();
@@ -33,6 +31,11 @@ function RequireRole({ role, children }: { role: UserRole; children: ReactNode }
   }
 
   return <>{children}</>;
+}
+
+function Home() {
+  const session = useSession();
+  return <Navigate to={session ? homeFor(session.user.role) : "/login"} replace />;
 }
 
 function NotFound() {
@@ -69,17 +72,15 @@ export default function App() {
 
   return (
     <HashRouter>
-      <WavesBackground />
+      <EarthBackground />
       <div className="relative z-10 min-h-full">
         <Suspense fallback={<PageLoading />}>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/report" element={<RequireRole role="citizen"><Report /></RequireRole>} />
             <Route path="/my-reports" element={<RequireRole role="citizen"><MyReports /></RequireRole>} />
             <Route path="/dashboard" element={<RequireRole role="authority"><Dashboard /></RequireRole>} />
-            <Route path="/scanner" element={<Scanner />} />
-            <Route path="/detect" element={<Navigate to="/scanner" replace />} />
             {/* The old fragmented authority tabs all live on the dashboard now. */}
             {["/map", "/queue", "/tasks", "/reviews", "/hotspots/:id", "/team/tasks", "/team/tasks/:id"].map(
               (path) => (

@@ -76,6 +76,7 @@ export default function HotspotMap({
     if (!el.current || map.current) return;
     const m = L.map(el.current, { zoomControl: false, preferCanvas: false }).setView([20, 0], 2);
     L.control.zoom({ position: "topright" }).addTo(m);
+    L.control.scale({ position: "bottomright", imperial: false }).addTo(m);
     const tiles = L.tileLayer(OSM_TILES, {
       attribution: OSM_ATTRIBUTION,
       maxZoom: 19,

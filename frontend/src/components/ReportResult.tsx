@@ -1,15 +1,11 @@
-import { useState } from "react";
 import { Link } from "react-router";
 import type { ReportCreateResponse } from "../api/client";
 import { mediaUrl } from "../api/client";
-import { getDatasetSampleForReport } from "../lib/images";
 import { plural } from "../lib/format";
 import { citizenStage } from "../lib/status";
 import { Icon } from "./Icon";
-import { PhotoFrame } from "./PhotoFrame";
-import { PhotoInfo } from "./PhotoInfo";
 import { StageTracker } from "./StageTracker";
-import { Button, Card, Chip, TierChip } from "./ui";
+import { Button, Card, Chip, SimulatedBadge, TierChip } from "./ui";
 
 /** The citizen's result card: what the model thinks, with its tier, and what happens next. */
 export function ReportResult({
@@ -21,30 +17,16 @@ export function ReportResult({
 }) {
   const r = result.report;
   const detected = r.ai_status === "detected";
-  const fallback = getDatasetSampleForReport(r.id);
-  const [imgSrc, setImgSrc] = useState(mediaUrl(r.annotated_jpg_path ?? r.image_path) || fallback);
+  const img = mediaUrl(r.annotated_jpg_path ?? r.image_path);
 
   return (
     <Card pad="none" className="overflow-hidden animate-rise">
-      {imgSrc ? (
-        <PhotoFrame
-          src={imgSrc}
-          alt="Your photo, annotated with likely-plastic detections"
-          maxHeight="420px"
-          onError={() => setImgSrc(fallback)}
-        />
+      {img ? (
+        <div className="relative bg-surface-2">
+          <img src={img} alt="Your photo, annotated with likely-plastic detections" className="max-h-[420px] w-full object-contain" />
+          {r.is_simulated ? <SimulatedBadge className="absolute bottom-3 left-3" /> : null}
+        </div>
       ) : null}
-      {/* The stored copy is metadata-free, so these facts come from what was RECORDED
-          for this report, not from the file. Below the photo, never on it. */}
-      <PhotoInfo
-        className="px-6 pt-4"
-        lat={r.lat}
-        lon={r.lon}
-        source={r.location_source}
-        accuracyM={r.gps_accuracy_m}
-        capturedAt={r.captured_at}
-        reportedAt={r.created_at}
-      />
 
       <div className="space-y-4 p-6">
         <div className="flex items-start gap-3">

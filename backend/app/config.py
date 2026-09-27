@@ -55,17 +55,11 @@ class Settings(BaseSettings):
     # detector.TACO_TO_CONTRACT maps onto the frozen five (SPEC §6). Person/vehicle
     # labels are dropped by the same filter as every other path (CLAUDE.md §2.4).
     ROBOFLOW_API_KEY: str = ""
-    # One model (e.g. "plastic-management/1" or "plastic-bags-aenhn/1"),
-    # or a comma-separated ensemble
-    # (e.g. "plastic-management/1,waste-tfpi0/7").
-    # Supports models from Roboflow Universe:
-    # - "plastic-management/1":
-    #   https://universe.roboflow.com/plastic-waste-management/plastic-management
-    # - https://universe.roboflow.com/margo-k/plastic-bags-aenhn ("plastic-bags-aenhn/1")
-    # - https://universe.roboflow.com/aditya-raj-kmypu/waste-tfpi0 ("waste-tfpi0/7")
-    ROBOFLOW_MODEL_ID: str = "plastic-management/1"
+    # One model (e.g. "waste-tfpi0/7") or a comma-separated ensemble
+    # (e.g. "waste-tfpi0/7,garbage-0q3db/10").
+    ROBOFLOW_MODEL_ID: str = "waste-tfpi0/7,garbage-0q3db/10"
     ROBOFLOW_URL: str = "https://serverless.roboflow.com"
-    ROBOFLOW_TIMEOUT_S: float = 25.0
+    ROBOFLOW_TIMEOUT_S: float = 12.0
 
     # --- Confidence tiers (CLAUDE.md §2.7) ----------------------------------
     # Raw confidence is not a calibrated probability; the UI always shows a tier.
@@ -186,11 +180,6 @@ class Settings(BaseSettings):
     # nothing sensitive — it exists so role violations return 403.
     DEMO_TOKEN_SECRET: str = "plasticwatch-demo-secret-change-me"
     DEMO_TOKEN_TTL_HOURS: int = 24
-    # Municipal centre / ward IDs a government account may register and sign in with,
-    # comma-separated. A stand-in for accounts issued by the municipality: the IDs are
-    # not secret, so this keeps casual sign-ups out of the authority role but is not
-    # identity verification.
-    AUTHORITY_CENTRE_IDS: str = "PMC-CENTRE-401,WARD-04"
 
 
 @lru_cache

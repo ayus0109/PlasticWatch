@@ -8,16 +8,8 @@
  * Nothing here decides anything. It is a preview: the citizen still chooses to send,
  * and a person still verifies afterwards (CLAUDE.md §2.5).
  */
-import type {
-  ConfidenceTier,
-  DetectPreview,
-  Detection,
-  DetectionClass,
-  LocationSource,
-} from "../api/client";
+import type { DetectPreview, Detection, DetectionClass } from "../api/client";
 import { Icon } from "./Icon";
-import { PhotoFrame } from "./PhotoFrame";
-import { PhotoInfo } from "./PhotoInfo";
 import { Button, Card, SimulatedBadge, TierChip, cx } from "./ui";
 
 /** Reads as a sentence, and never says plain "plastic" (CLAUDE.md §2.1). */
@@ -27,29 +19,6 @@ const CLASS_LABEL: Record<DetectionClass, string> = {
   plastic_packaging: "likely packaging",
   plastic_other: "other likely plastic",
   non_plastic_litter: "non-plastic litter",
-};
-
-/** One box is one item, so its label is singular. Still "likely", never "plastic". */
-const BOX_LABEL: Record<DetectionClass, string> = {
-  plastic_bottle: "likely bottle",
-  plastic_bag_film: "likely bag/film",
-  plastic_packaging: "likely packaging",
-  plastic_other: "likely other plastic",
-  non_plastic_litter: "non-plastic litter",
-};
-
-const TIER_WORD: Record<ConfidenceTier, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-};
-
-/** Where the report will say the photo was taken — mirrors exactly what submitting sends. */
-export type StampLocation = {
-  lat: number | null;
-  lon: number | null;
-  source: LocationSource | null;
-  accuracyM?: number | null;
 };
 
 const PLASTIC_CLASSES: DetectionClass[] = [
@@ -62,14 +31,12 @@ const PLASTIC_CLASSES: DetectionClass[] = [
 export function ScanPreview({
   scan,
   imageUrl,
-  location,
   sending,
   onSend,
   onRetake,
 }: {
   scan: DetectPreview;
   imageUrl: string;
-  location: StampLocation;
   sending: boolean;
   onSend: () => void;
   onRetake: () => void;
@@ -85,52 +52,29 @@ export function ScanPreview({
 
   return (
     <Card pad="none" className="overflow-hidden animate-rise">
-      <PhotoFrame
-        src={imageUrl}
-        alt="Your photo, with the items the detector marked"
-        width={scan.image_width}
-        height={scan.image_height}
-      >
+      <div className="relative bg-surface-2">
+        <img
+          src={imageUrl}
+          alt="Your photo, with the items the detector marked"
+          className="block max-h-[46dvh] w-full object-contain"
+        />
         {result.detections.map((d: Detection, i: number) => {
           const plastic = PLASTIC_CLASSES.includes(d.class_name);
-          const topPct = (d.y1 / scan.image_height) * 100;
-          const leftPct = (d.x1 / scan.image_width) * 100;
-          const tier = scan.detection_tiers?.[i];
-          // §2.7: the number never appears without its tier.
-          const label = `${BOX_LABEL[d.class_name]} · ${tier ? TIER_WORD[tier] : "?"} ${Math.round(
-            d.confidence * 100,
-          )}%`;
           return (
-            <div
+            <span
               key={`${d.x1}-${d.y1}-${i}`}
               aria-hidden
-              className="pointer-events-none absolute"
+              className={cx(
+                "pointer-events-none absolute rounded-[3px] border-2",
+                plastic ? "border-accent" : "border-faint",
+              )}
               style={{
-                left: `${leftPct}%`,
-                top: `${topPct}%`,
+                left: `${(d.x1 / scan.image_width) * 100}%`,
+                top: `${(d.y1 / scan.image_height) * 100}%`,
                 width: `${((d.x2 - d.x1) / scan.image_width) * 100}%`,
                 height: `${((d.y2 - d.y1) / scan.image_height) * 100}%`,
               }}
-            >
-              <span
-                className={cx(
-                  "block h-full w-full rounded-[3px] border-2",
-                  plastic ? "border-accent shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "border-faint",
-                )}
-              />
-              <span
-                className={cx(
-                  // A box touching the top edge keeps its label inside the photo.
-                  topPct < 7 ? "top-0" : "-top-5",
-                  // ...and one on the right half grows leftward, so it stays on the photo.
-                  leftPct > 55 ? "right-0" : "left-0",
-                  "absolute z-10 whitespace-nowrap rounded px-1.5 py-0.5 text-micro font-bold shadow",
-                  plastic ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted",
-                )}
-              >
-                {label}
-              </span>
-            </div>
+            />
           );
         })}
         {scan.is_simulated ? (
@@ -138,16 +82,7 @@ export function ScanPreview({
             <SimulatedBadge title="The detector is in demo mode: these boxes are fabricated." />
           </div>
         ) : null}
-      </PhotoFrame>
-      {/* Below the photo, never on it: an overlay hid the very waste this screen shows. */}
-      <PhotoInfo
-        className="px-5 pt-3"
-        lat={location.lat}
-        lon={location.lon}
-        source={location.source}
-        accuracyM={location.accuracyM}
-        capturedAt={scan.captured_at}
-      />
+      </div>
 
       <div className="p-5">
         <div className="flex items-start gap-3">
@@ -157,7 +92,7 @@ export function ScanPreview({
               found ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted",
             )}
           >
-            <Icon name={found ? "detect" : "eye"} size={20} />
+            <Icon name={found ? "sparkle" : "eye"} size={20} />
           </span>
           <div className="min-w-0">
             <h2 className="font-display text-heading font-bold tracking-tight">

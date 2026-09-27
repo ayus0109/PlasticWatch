@@ -49,48 +49,24 @@ export function Logo({
   compact = false,
   className = "",
   onDark = false,
-  size = "md",
 }: {
   compact?: boolean;
   className?: string;
   /** For the landing hero, whose scrim stays dark in BOTH themes. The lockup goes
    *  mono there: the two-tone accent is unreadable on a dark green photograph. */
   onDark?: boolean;
-  size?: "sm" | "md" | "lg" | "xl";
 }) {
-  const iconSizeClasses = {
-    sm: "h-7 w-7",
-    md: "h-8 w-8",
-    lg: "h-11 w-11 sm:h-12 sm:w-12",
-    xl: "h-14 w-14 sm:h-16 sm:w-16",
-  }[size];
-
-  const textSizeClasses = {
-    sm: "text-[15px]",
-    md: "text-[18px]",
-    lg: "text-2xl sm:text-[28px] md:text-3xl",
-    xl: "text-3xl sm:text-4xl",
-  }[size];
-
-  const gapClasses = {
-    sm: "gap-2",
-    md: "gap-2.5",
-    lg: "gap-3 sm:gap-3.5",
-    xl: "gap-4",
-  }[size];
-
   return (
-    <span className={cx("flex items-center select-none", gapClasses, className)}>
+    <span className={cx("flex items-center gap-2.5 select-none", className)}>
       <img
         src="/logo-icon.png"
         alt="PlasticWatch"
-        className={cx("object-contain shrink-0 drop-shadow-sm transition-transform hover:scale-105", iconSizeClasses)}
+        className="h-8 w-8 object-contain shrink-0 drop-shadow-sm transition-transform hover:scale-105"
       />
       {compact ? null : (
         <span
           className={cx(
-            "font-display font-extrabold tracking-tight",
-            textSizeClasses,
+            "font-display text-[17px] font-extrabold tracking-tight",
             onDark ? "text-white" : "text-ink",
           )}
         >
@@ -192,15 +168,6 @@ function MobileNav({ role }: { role: UserRole }) {
   );
 }
 
-function cleanUserName(name: string): string {
-  if (!name) return "";
-  if (name === "Demo Citizen A") return "Aarav Sharma";
-  if (name === "Demo Citizen B") return "Rohan Mehta";
-  if (name === "Demo Ward Authority") return "Priya Verma (Officer)";
-  if (name === "Demo Cleanup Team 1") return "Rapid Cleanup Team 1";
-  return name.replace(/^Demo\s+/i, "");
-}
-
 function RoleSwitcher() {
   const session = useSession();
   const navigate = useNavigate();
@@ -224,13 +191,12 @@ function RoleSwitcher() {
   }, [open]);
 
   if (!session) return null;
-  const displayName = cleanUserName(session.user.name);
   const pick = async (u: DemoUser) => {
     setOpen(false);
     try {
       await loginAs({ user_id: u.id });
       navigate(homeFor(u.role));
-      toast("info", `Now acting as ${cleanUserName(u.name)}.`);
+      toast("info", `Now acting as ${u.name}.`);
     } catch (e) {
       toast("error", (e as Error).message);
     }
@@ -245,18 +211,16 @@ function RoleSwitcher() {
         className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-sm transition-colors hover:border-line-strong"
       >
         <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent">
-          {displayName
+          {session.user.name
             .split(" ")
-            // Only words that start with a letter (a letter has distinct cases).
-            .filter((w) => w !== "" && w[0].toLowerCase() !== w[0].toUpperCase())
-            .map((w) => w[0].toUpperCase())
-            .slice(0, 2)
+            .map((w) => w[0])
+            .slice(-2)
             .join("")}
         </span>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-label font-semibold">{displayName}</span>
+          <span className="block text-label font-semibold">{session.user.name}</span>
           <span className="block text-micro text-muted">
-            {ROLE_LABEL[session.user.role]}
+            {session.user.is_simulated ? `${ROLE_LABEL[session.user.role]} (Demo)` : ROLE_LABEL[session.user.role]}
           </span>
         </span>
       </button>
@@ -272,7 +236,7 @@ function RoleSwitcher() {
             </div>
           ) : null}
           <p className="px-2.5 pb-1.5 pt-1 text-micro font-semibold uppercase tracking-wider text-faint">
-            Switch active role
+            {session.user.is_simulated ? "Switch demo role" : "Demo roles (Testing)"}
           </p>
           {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
             <button
@@ -285,7 +249,7 @@ function RoleSwitcher() {
               )}
             >
               <span>
-                <span className="block font-medium">{cleanUserName(u.name)}</span>
+                <span className="block font-medium">{u.name}</span>
                 <span className="block text-xs text-muted">{ROLE_LABEL[u.role]}</span>
               </span>
               {u.id === session.user.id ? <Icon name="check" size={16} className="text-accent" /> : null}
@@ -300,30 +264,11 @@ function RoleSwitcher() {
             }}
             className="flex min-h-11 w-full items-center gap-2 rounded-field px-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink"
           >
-            <Icon name="logout" size={16} /> Log out
+            <Icon name="logout" size={16} /> Sign out
           </button>
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** Always visible on signed-in pages: logging out should never be hidden in a menu. */
-function LogoutButton() {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        logout();
-        navigate("/");
-      }}
-      aria-label="Log out"
-      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95 sm:px-3"
-    >
-      <Icon name="logout" size={18} />
-      <span className="hidden sm:inline">Log out</span>
-    </button>
   );
 }
 
@@ -370,22 +315,21 @@ export function Shell({
   const role = session?.user.role ?? "citizen";
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/92 backdrop-blur-md">
-        <div className="mx-auto flex h-14 items-center gap-3 sm:gap-6 px-3 sm:px-6">
-          <NavLink to="/" aria-label="PlasticWatch home" className="-mx-1 sm:-mx-2 flex min-h-11 items-center px-1 sm:px-2">
-            <Logo size="md" />
+      <header className="sticky top-0 z-[1000] border-b border-line bg-surface/80 backdrop-blur-md">
+        <div className="mx-auto flex h-14 items-center gap-6 px-4 sm:px-6">
+          <NavLink to="/" aria-label="PlasticWatch home" className="-mx-2 flex min-h-11 items-center px-2">
+            <Logo />
           </NavLink>
           <Tabs role={role} />
-          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+          <div className="ml-auto flex items-center gap-1.5">
             <ThemeToggle />
             <RoleSwitcher />
-            <LogoutButton />
           </div>
         </div>
         {banner}
         {role === "authority" ? (
-          <p className="flex items-center justify-center gap-1.5 border-t border-line px-3 py-1.5 text-center text-micro text-muted">
-            <Icon name="info" size={13} className="shrink-0 text-accent" />
+          <p className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-1 text-center text-micro text-muted">
+            <Icon name="info" size={12} className="shrink-0 text-accent" />
             {NON_ATTRIBUTION_NOTE}
           </p>
         ) : null}
@@ -393,7 +337,7 @@ export function Shell({
       <main
         className={cx(
           "flex-1",
-          fullBleed ? "relative" : "pb-nav mx-auto w-full max-w-7xl px-3 pt-4 sm:px-6 sm:pt-6 md:pb-12",
+          fullBleed ? "relative" : "pb-nav mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 sm:pt-6 md:pb-12",
         )}
       >
         {children}
@@ -403,7 +347,11 @@ export function Shell({
   );
 }
 
-/** Shown while seeded/stub data is on screen — hidden for production presentation. */
+/** Shown while seeded/stub data is on screen (CLAUDE.md §2.2). */
 export function SimulatedBanner() {
-  return null;
+  return (
+    <div className="border-t border-dashed border-sim-line bg-sim-bg px-4 py-1.5 text-center text-xs font-semibold text-sim-fg">
+      SIMULATED DEMO DATA — geotags and/or detections on this screen are fabricated for the demo.
+    </div>
+  );
 }

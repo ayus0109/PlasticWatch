@@ -271,25 +271,10 @@ def from_known(path: Path, known: list[dict], simulated: bool = True) -> Detecto
     return summarise(dets, annotated)
 
 
-def _resolve_cache_path(cache_path: str) -> Path | None:
-    if not cache_path:
-        return None
-    p = Path(cache_path)
-    if p.is_file():
-        return p
-    bp = Path(__file__).resolve().parent.parent.parent / cache_path
-    if bp.is_file():
-        return bp
-    rp = Path(__file__).resolve().parents[3] / "seed" / "demo_images" / "detections.json"
-    if rp.is_file():
-        return rp
-    return None
-
-
 @lru_cache
 def _load_cache(cache_path: str) -> tuple[tuple[imagehash.ImageHash, list[dict], bool], ...]:
-    p = _resolve_cache_path(cache_path)
-    if p is None or not p.is_file():
+    p = Path(cache_path)
+    if not cache_path or not p.is_file():
         return ()
     data = json.loads(p.read_text(encoding="utf-8"))
     return tuple(
@@ -398,76 +383,6 @@ TACO_TO_CONTRACT: dict[str, DetectionClass] = {
 # ---------------------------------------------------------------------------
 
 
-def _resolve_weights_path(weights_str: str) -> Path | None:
-    """Resolve detector weights path robustly across CWD variations."""
-    p = Path(weights_str)
-    if p.is_file():
-        return p
-    backend_p = Path(__file__).resolve().parent.parent.parent / weights_str
-    if backend_p.is_file():
-        return backend_p
-    alt = Path(__file__).resolve().parent.parent.parent / "weights" / Path(weights_str).name
-    if alt.is_file():
-        return alt
-    return None
-
-
-def resolve_roboflow_class(raw: str) -> DetectionClass | None:
-    """Map raw class names from arbitrary Roboflow models onto the five SPEC §6 classes."""
-    raw_name = raw.lower().strip()
-    if is_forbidden_label(raw_name):
-        return None
-    # 1. Exact match against 5 contract classes
-    if raw_name in ALLOWED_CLASS_NAMES:
-        return DetectionClass(raw_name)
-    # 2. Known TACO mapping
-    if raw_name in TACO_TO_CONTRACT:
-        return TACO_TO_CONTRACT[raw_name]
-    # 3. Known COCO mapping
-    if raw_name in COCO_TO_CONTRACT:
-        return COCO_TO_CONTRACT[raw_name]
-    # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, plastic-waste-ag4eg, etc.)
-    if "bottle" in raw_name:
-        return (
-            DetectionClass.non_plastic_litter
-            if "glass" in raw_name
-            else DetectionClass.plastic_bottle
-        )
-    if any(
-        k in raw_name
-        for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly",
-                  "polythene", "sachet")
-    ):
-        return DetectionClass.plastic_bag_film
-    if any(
-        k in raw_name
-        for k in ("cup", "can", "bowl", "box", "pack", "container", "tub", "carton",
-                  "lid", "tetra")
-    ):
-        return DetectionClass.plastic_packaging
-    # Handle disposable plastic tumblers/cups (e.g. "plastic glass" in plastic-management/1)
-    if any(
-        k in raw_name
-        for k in ("plastic glass", "plastic-glass", "plastic cup", "plastic tumbler")
-    ):
-        return DetectionClass.plastic_packaging
-    if any(
-        k in raw_name
-        for k in (
-            "plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery",
-            "waste", "garbage", "trash", "rubbish", "dump", "debris", "litter"
-        )
-    ):
-        return DetectionClass.plastic_other
-    if any(
-        k in raw_name
-        for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe",
-                  "textile", "cloth", "wood", "battery")
-    ):
-        return DetectionClass.non_plastic_litter
-    return None
-
-
 @lru_cache
 def _load_model(weights: str):
     from ultralytics import YOLO  # imported lazily: the stub must not need it
@@ -479,8 +394,8 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
     """Run YOLO only if trained weights exist on disk, so a host that cannot afford
     PyTorch's ~800MB never loads it."""
     s = get_settings()
-    custom = _resolve_weights_path(s.DETECTOR_WEIGHTS)
-    if custom is None:
+    custom = Path(s.DETECTOR_WEIGHTS)
+    if not custom.is_file():
         return None
 
     # No import probe here: _load_model() is the single lazy import site, and the
@@ -506,7 +421,20 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
             if is_forbidden_label(raw_name):
                 continue
 
-            target_class = resolve_roboflow_class(raw_name)
+            target_class: DetectionClass | None = None
+            if raw_name in ALLOWED_CLASS_NAMES:
+                target_class = DetectionClass(raw_name)
+            elif raw_name in COCO_TO_CONTRACT:
+                target_class = COCO_TO_CONTRACT[raw_name]
+            elif "bottle" in raw_name:
+                target_class = DetectionClass.plastic_bottle
+            elif "bag" in raw_name:
+                target_class = DetectionClass.plastic_bag_film
+            elif any(k in raw_name for k in ("cup", "can", "bowl", "box", "pack", "container")):
+                target_class = DetectionClass.plastic_packaging
+            elif "plastic" in raw_name or "waste" in raw_name or "litter" in raw_name:
+                target_class = DetectionClass.plastic_other
+
             if target_class is None:
                 continue
 
@@ -528,7 +456,48 @@ def _try_yolo_detection(path: Path) -> DetectorOutput | None:
         return None
 
 
-
+def resolve_roboflow_class(raw: str) -> DetectionClass | None:
+    """Map raw class names from arbitrary Roboflow models onto the five SPEC §6 classes."""
+    raw_name = raw.lower().strip()
+    if is_forbidden_label(raw_name):
+        return None
+    # 1. Exact match against 5 contract classes
+    if raw_name in ALLOWED_CLASS_NAMES:
+        return DetectionClass(raw_name)
+    # 2. Known TACO mapping
+    if raw_name in TACO_TO_CONTRACT:
+        return TACO_TO_CONTRACT[raw_name]
+    # 3. Known COCO mapping
+    if raw_name in COCO_TO_CONTRACT:
+        return COCO_TO_CONTRACT[raw_name]
+    # 4. Keyword fallbacks for arbitrary Roboflow models (waste-tfpi0, garbage-0q3db, etc.)
+    if "bottle" in raw_name:
+        return (
+            DetectionClass.non_plastic_litter
+            if "glass" in raw_name
+            else DetectionClass.plastic_bottle
+        )
+    if any(k in raw_name for k in ("bag", "film", "wrapper", "packet", "pouch", "sack", "poly")):
+        return DetectionClass.plastic_bag_film
+    if any(
+        k in raw_name
+        for k in ("cup", "can", "bowl", "box", "pack", "container", "tub", "carton",
+                  "lid", "tetra")
+    ):
+        return DetectionClass.plastic_packaging
+    if any(
+        k in raw_name
+        for k in ("plastic", "polystyrene", "styrofoam", "straw", "utensil", "cutlery")
+    ):
+        return DetectionClass.plastic_other
+    if any(
+        k in raw_name
+        for k in ("glass", "metal", "paper", "cardboard", "organic", "bio", "shoe",
+                  "textile", "cloth", "wood", "battery", "litter", "trash", "waste",
+                  "garbage", "rubbish")
+    ):
+        return DetectionClass.non_plastic_litter
+    return None
 
 
 def _box_iou(b1: Detection, b2: Detection) -> float:
@@ -565,10 +534,7 @@ def _query_single_roboflow_model(
     api_key: str,
     api_url: str,
 ) -> tuple[str, list[dict] | None]:
-    normalized_id = model_id.strip()
-    if "/" not in normalized_id:
-        normalized_id = f"{normalized_id}/1"
-    url = f"{api_url.rstrip('/')}/{normalized_id}?confidence={conf_floor}&format=json"
+    url = f"{api_url.rstrip('/')}/{model_id}?confidence={conf_floor}&format=json"
     req = urllib.request.Request(
         url,
         data=body,
@@ -605,25 +571,16 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
             img = ImageOps.exif_transpose(raw).convert("RGB")
         w, h = img.size
 
-        # Optimize payload size for fast, reliable network transport
-        max_dim = 1280
-        scale = min(1.0, max_dim / float(max(w, h)))
-        upload_img = img
-        if scale < 1.0:
-            upload_img = img.resize(
-                (round(w * scale), round(h * scale)), Image.Resampling.BILINEAR
-            )
-
         # Send the EXIF-corrected image, so the boxes we get back are in the same
         # orientation as the image we draw them on.
         buf = _io.BytesIO()
-        upload_img.save(buf, format="JPEG", quality=85)
+        img.save(buf, format="JPEG", quality=90)
         body = base64.b64encode(buf.getvalue())
 
         conf_floor = min(s.DETECTOR_CONF_THRESHOLD, 0.25)
         model_ids = [m.strip() for m in s.ROBOFLOW_MODEL_ID.split(",") if m.strip()]
         if not model_ids:
-            model_ids = ["plastic-management/1"]
+            model_ids = ["waste-tfpi0/7", "garbage-0q3db/10"]
 
         results_per_model: list[tuple[str, list[dict] | None]] = []
         if len(model_ids) == 1:
@@ -660,10 +617,8 @@ def _try_roboflow_detection(path: Path) -> DetectorOutput | None:
                 target = resolve_roboflow_class(raw_name)
                 if target is None:
                     continue
-                cx = float(pred.get("x", 0)) / scale
-                cy = float(pred.get("y", 0)) / scale
-                bw = float(pred.get("width", 0)) / scale
-                bh = float(pred.get("height", 0)) / scale
+                cx, cy = float(pred.get("x", 0)), float(pred.get("y", 0))
+                bw, bh = float(pred.get("width", 0)), float(pred.get("height", 0))
                 raw_detections.append(
                     _box(target, float(pred.get("confidence", 0.0)),
                          cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2, w, h)
@@ -777,35 +732,23 @@ def _run_real(path: Path) -> DetectorOutput:
         return _error_output()
 
     # 1. The trained model, when its weights are actually on disk.
-    best_res: DetectorOutput | None = None
-    if _resolve_weights_path(s.DETECTOR_WEIGHTS) is not None:
+    if Path(s.DETECTOR_WEIGHTS).is_file():
         yolo_res = _try_yolo_detection(path)
         if yolo_res is not None:
-            if yolo_res.plastic_count > 0 or not s.ROBOFLOW_API_KEY:
-                return yolo_res
-            best_res = yolo_res
-
-    # 2. Hosted inference, if a key is configured.
-    # Runs when local weights are absent, failed, or when local weights found 0 plastic.
+            return yolo_res
+    # 2. Hosted inference, if a key is configured. A real model, but a third party's,
+    #    and the photo leaves this machine to reach it — so it never runs ahead of
+    #    local weights, only when those are absent or failed.
     if s.ROBOFLOW_API_KEY:
         rf_res = _try_roboflow_detection(path)
         if rf_res is not None:
-            if rf_res.plastic_count > 0 or best_res is None:
-                return rf_res
-
-    if best_res is not None and not s.DETECTOR_CV_FALLBACK:
-        return best_res
-
+            return rf_res
     # 3. Opt-in contour heuristic for hosts that cannot afford PyTorch. Off by default:
     #    it is a shape signal, not a detector, and it is labelled as one.
     if s.DETECTOR_CV_FALLBACK:
         cv_res = _try_cv_detection(path)
         if cv_res is not None:
             return cv_res
-
-    if best_res is not None:
-        return best_res
-
     # 4. No usable detector. Refusing to fall back to the stub: that would present
     #    fake output as real (CLAUDE.md §2.2, §5).
     return _error_output()

@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
-import type { DemoUser, UserRole } from "../api/client";
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router";
+import type { DemoUser, PublicSummary, UserRole } from "../api/client";
 import { useApi } from "../api/hooks";
-import { HamburgerMenu } from "../components/HamburgerMenu";
 import { Icon, type IconName } from "../components/Icon";
-import { Logo } from "../components/Shell";
-import { Button, cx, Spinner } from "../components/ui";
+import { Logo, ThemeToggle } from "../components/Shell";
+import { Button, cx, SimulatedBadge, Spinner } from "../components/ui";
 import {
   homeFor,
   loginAs,
@@ -18,7 +17,7 @@ import {
 const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   citizen: {
     id: "11111111-1111-4111-8111-111111111111",
-    name: "Aarav Sharma",
+    name: "Demo Citizen A",
     email: "citizen@plasticwatch.local",
     role: "citizen",
     ward_id: 1,
@@ -27,7 +26,7 @@ const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   },
   authority: {
     id: "22222222-2222-4222-8222-222222222222",
-    name: "Priya Verma (Officer)",
+    name: "Demo Ward Authority",
     email: "authority@plasticwatch.local",
     role: "authority",
     ward_id: null,
@@ -36,7 +35,7 @@ const FALLBACK_USERS: Record<UserRole, DemoUser> = {
   },
   team: {
     id: "33333333-3333-4333-8333-333333333333",
-    name: "Rapid Cleanup Team 1",
+    name: "Demo Cleanup Team 1",
     email: "team@plasticwatch.local",
     role: "team",
     ward_id: null,
@@ -60,13 +59,28 @@ const ROLES: { role: UserRole; title: string; blurb: string; icon: IconName }[] 
   },
 ];
 
+const PRINCIPLES: { icon: IconName; text: string }[] = [
+  { icon: "sparkle", text: "The AI flags likely plastic — it never has the last word." },
+  { icon: "shield", text: "Nothing is verified or resolved until a person confirms it." },
+  { icon: "users", text: "Reports show waste is present, never who is responsible." },
+];
+
+/** Live civic totals. Only counts the public endpoint actually returns — no
+ *  accuracy or tonnage claims, because nothing here can measure those. */
+const HERO_TILES: { key: keyof PublicSummary; label: string; hint: string }[] = [
+  { key: "active_hotspots", label: "Active hotspots", hint: "open and tracked" },
+  { key: "awaiting_verification", label: "Awaiting review", hint: "queued for a person" },
+  { key: "total_reports", label: "Citizen reports", hint: "photos submitted" },
+  { key: "resolved_hotspots", label: "Resolved", hint: "closed by an authority" },
+];
+
 type AuthTab = "login" | "register" | "demo";
 
 export default function Login() {
   const session = useSession();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const users = useApi<DemoUser[]>("/auth/demo-users");
+  const stats = useApi<PublicSummary>("/analytics/public");
 
   const [tab, setTab] = useState<AuthTab>("login");
   const [busy, setBusy] = useState<boolean>(false);
@@ -76,44 +90,14 @@ export default function Login() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  // Citizens and officials sign in with different credentials: officials add a Centre ID.
-  const [portal, setPortal] = useState<"citizen" | "authority">("citizen");
-  const [loginCentreId, setLoginCentreId] = useState("");
 
   // Register form state
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState<UserRole>("citizen");
-  const [regCentreId, setRegCentreId] = useState("");
-  const [regDepartment, setRegDepartment] = useState("");
-
-  // Read URL query parameter: e.g. /login?role=citizen or /login?role=authority
-  useEffect(() => {
-    const roleParam = searchParams.get("role");
-    if (roleParam === "citizen" || roleParam === "authority") {
-      setPortal(roleParam);
-      fillDemoCredentials(roleParam);
-      setRegRole(roleParam);
-    }
-  }, [searchParams]);
 
   if (session) return <Navigate to={homeFor(session.user.role)} replace />;
-
-  const fillDemoCredentials = (role: UserRole) => {
-    setTab("login");
-    setLoginEmail(
-      role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local",
-    );
-    setLoginPassword("password123");
-    setPortal(role === "authority" ? "authority" : "citizen");
-    setLoginCentreId(role === "authority" ? "PMC-CENTRE-401" : "");
-    if (role === "authority") {
-      setRegCentreId("PMC-CENTRE-401");
-      setRegDepartment("Urban Solid Waste & Sanitation Bureau");
-    }
-    setError(null);
-  };
 
   const handleDemoSignIn = async (u: DemoUser) => {
     setDemoBusy(u.id);
@@ -122,6 +106,8 @@ export default function Login() {
       await loginAs({ user_id: u.id, role: u.role });
       navigate(homeFor(u.role), { replace: true });
     } catch {
+      // Offline fallback: if network fails or server is cold-starting,
+      // create a local demo session so the user is never locked out.
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
       setSessionToken("offline-demo-token", u, expiresAt);
       navigate(homeFor(u.role), { replace: true });
@@ -133,11 +119,7 @@ export default function Login() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim() || !loginPassword) {
-      setError("Please provide your email and password.");
-      return;
-    }
-    if (portal === "authority" && !loginCentreId.trim()) {
-      setError("Government sign-in needs your Municipal Centre / Ward ID.");
+      setError("Please provide your email/username and password.");
       return;
     }
     setBusy(true);
@@ -146,8 +128,6 @@ export default function Login() {
       const res = await loginWithPassword({
         email: loginEmail.trim(),
         password: loginPassword,
-        role: portal,
-        centre_id: portal === "authority" ? loginCentreId.trim() : undefined,
       });
       navigate(homeFor(res.user.role), { replace: true });
     } catch (err) {
@@ -171,10 +151,6 @@ export default function Login() {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (regRole === "authority" && !regCentreId.trim()) {
-      setError("Municipal Centre ID or Ward ID is required for Government Official accounts (e.g. PMC-CENTRE-401).");
-      return;
-    }
     setBusy(true);
     setError(null);
     try {
@@ -183,8 +159,6 @@ export default function Login() {
         email: regEmail.trim(),
         password: regPassword,
         role: regRole,
-        centre_id: regRole === "authority" ? regCentreId.trim() : undefined,
-        department: regRole === "authority" ? regDepartment.trim() : undefined,
       });
       navigate(homeFor(res.user.role), { replace: true });
     } catch (err) {
@@ -194,32 +168,157 @@ export default function Login() {
     }
   };
 
+  /** Hero CTAs do not sign anyone in: they carry you to the access panel with the
+   *  matching demo credentials filled, so the click does exactly what it says. */
+  const goToAccess = (role: UserRole) => {
+    fillDemoCredentials(role);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById("access")
+      ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  };
+
+  const fillDemoCredentials = (role: UserRole) => {
+    setTab("login");
+    setLoginEmail(role === "citizen" ? "citizen@plasticwatch.local" : "authority@plasticwatch.local");
+    setLoginPassword("password123");
+    setError(null);
+  };
+
   return (
-    <div className="relative min-h-full bg-bg text-ink flex flex-col">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/92 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-3 sm:px-6">
-          <Link to="/" aria-label="Back to home" className="flex items-center gap-2">
-            <Logo size="md" />
-          </Link>
+    <div className="relative min-h-full">
+      {/* ----------------------------------------------------------------- hero ---- */}
+      <section className="relative isolate overflow-hidden text-white">
+        {/* Underlay tone */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-30 bg-[#042019]"
+        />
+        {/* Background waterway photograph */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat transition-all duration-700"
+          style={{ backgroundImage: "url('/hero-waterway.jpg')" }}
+        />
+        {/* Semi-transparent scrim: deeper on the left for text readability,
+            gentler on the right so the waterway, park, and city skyline remain clearly visible */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(108deg, rgba(4, 38, 28, 0.88) 0%, rgba(4, 38, 28, 0.72) 42%, rgba(6, 60, 48, 0.38) 78%, rgba(15, 23, 42, 0.48) 100%)",
+          }}
+        />
+        {/* Vertical vignette to anchor bottom cards */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0, 0, 0, 0.20) 0%, transparent 40%, rgba(4, 25, 20, 0.55) 100%)",
+          }}
+        />
 
-          <HamburgerMenu showLogin={false} />
+        <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 md:py-16">
+          <div className="flex items-center justify-between gap-4">
+            <Logo onDark />
+            <ThemeToggle onDark />
+          </div>
+
+          <div className="animate-rise">
+            <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-micro font-semibold backdrop-blur-sm shadow-sm">
+              <Icon name="sparkle" size={13} />
+              AI-assisted spatial triage
+            </span>
+
+            <h1 className="font-display mt-5 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+              AI and GIS for urban waterway and waste intelligence
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-body leading-relaxed text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+              Citizens photograph likely plastic waste. Duplicate reports merge into hotspots,
+              ranked by impact near drains and water — then a person, not the model, decides
+              what happens next.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => goToAccess("citizen")}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field bg-accent px-5 text-label font-semibold text-accent-fg transition-transform duration-150 hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+              >
+                <Icon name="camera" size={17} />
+                Sign in to report waste
+              </button>
+              <button
+                type="button"
+                onClick={() => goToAccess("authority")}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-white/30 bg-white/10 px-5 text-label font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-white/20 active:translate-y-0 active:scale-[0.98]"
+              >
+                <Icon name="shield" size={17} />
+                Sign in as authority
+              </button>
+            </div>
+
+            <ul className="mt-8 flex flex-col gap-2 text-label text-white/80 sm:flex-row sm:flex-wrap sm:gap-x-6">
+              {PRINCIPLES.map((pr) => (
+                <li key={pr.text} className="flex items-start gap-2">
+                  <Icon name={pr.icon} size={15} className="mt-0.5 shrink-0 text-accent" />
+                  <span>{pr.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Live counts from /analytics/public — totals only, no session required. */}
+          <div className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {HERO_TILES.map((t) => {
+              const value = stats.data ? (stats.data[t.key] as number) : null;
+              return (
+                <div
+                  key={t.key}
+                  className="rounded-card border border-white/20 bg-black/25 p-4 backdrop-blur-md shadow-md"
+                >
+                  <div className="text-micro font-semibold text-white/70">{t.label}</div>
+                  <div className="font-display tabular mt-1.5 text-display font-bold">
+                    {stats.loading ? (
+                      <span className="inline-block h-7 w-16 animate-pulse rounded-field bg-white/25" />
+                    ) : value === null ? (
+                      "—"
+                    ) : (
+                      value.toLocaleString()
+                    )}
+                  </div>
+                  <div className="mt-1 text-micro text-white/65">{t.hint}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex min-h-7 flex-wrap items-center gap-2 text-micro text-white/70">
+            {stats.error ? (
+              <span>Live totals are unavailable right now. The figures above will fill in once the service responds.</span>
+            ) : stats.data?.simulated_data ? (
+              <>
+                <SimulatedBadge />
+                <span>These counts come from seeded demo data.</span>
+              </>
+            ) : null}
+          </div>
         </div>
-      </header>
+      </section>
 
-      {/* Main Authentication Card */}
-      <main className="flex-1 flex items-center justify-center p-3 sm:p-6 md:p-10">
-        <div className="w-full max-w-md animate-rise">
-          <div className="rounded-panel border border-line bg-surface/95 backdrop-blur-md p-5 shadow-raised sm:p-8">
-            <div className="text-center sm:text-left">
-              <span className="inline-block rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent mb-2">
-                Authentication Portal
-              </span>
-              <h1 className="font-display text-heading font-bold tracking-tight text-ink">
+      {/* --------------------------------------------------------------- access ---- */}
+      <section id="access" className="bg-bg">
+        <div className="mx-auto w-full max-w-lg px-5 py-12 sm:px-8 md:py-16">
+          <div className="rounded-panel border border-line bg-surface p-6 shadow-raised sm:p-7">
+            <div>
+              <h2 className="font-display text-heading font-bold tracking-tight text-ink">
                 Sign in to PlasticWatch
-              </h1>
+              </h2>
               <p className="mt-1 text-label text-muted">
-                Access your citizen report history or government triage desk.
+                Use your account, create one, or pick a demo role.
               </p>
             </div>
 
@@ -268,7 +367,7 @@ export default function Login() {
                     : "text-muted hover:text-ink",
                 )}
               >
-                Role Preview
+                Quick Demo
               </button>
             </div>
 
@@ -283,40 +382,9 @@ export default function Login() {
             {/* Tab 1: Email + Password Login */}
             {tab === "login" && (
               <form onSubmit={handlePasswordLogin} className="mt-5 space-y-4">
-                <fieldset>
-                  <legend className="mb-1.5 block text-sm font-semibold text-ink">I am signing in as</legend>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        { key: "citizen", label: "Citizen", icon: "camera" },
-                        { key: "authority", label: "Government", icon: "shield" },
-                      ] as const
-                    ).map((p) => (
-                      <button
-                        key={p.key}
-                        type="button"
-                        aria-pressed={portal === p.key}
-                        onClick={() => {
-                          setPortal(p.key);
-                          setError(null);
-                        }}
-                        className={cx(
-                          "flex min-h-12 items-center justify-center gap-2 rounded-field border text-sm font-semibold transition-colors",
-                          portal === p.key
-                            ? "border-accent bg-accent-soft text-accent"
-                            : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink",
-                        )}
-                      >
-                        <Icon name={p.icon} size={17} />
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-
                 <div>
-                  <label className="block text-sm font-semibold text-ink" htmlFor="login-email">
-                    Email address
+                  <label className="block text-xs font-semibold text-ink" htmlFor="login-email">
+                    Email or Username
                   </label>
                   <input
                     id="login-email"
@@ -324,36 +392,15 @@ export default function Login() {
                     autoComplete="username"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder={portal === "authority" ? "officer@city.gov.in" : "you@example.org"}
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    placeholder="name@example.com or citizen"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
-                {portal === "authority" ? (
-                  <div className="animate-rise">
-                    <label className="block text-sm font-semibold text-ink" htmlFor="login-centre-id">
-                      Municipal Centre / Ward ID
-                    </label>
-                    <input
-                      id="login-centre-id"
-                      type="text"
-                      autoComplete="off"
-                      value={loginCentreId}
-                      onChange={(e) => setLoginCentreId(e.target.value.toUpperCase())}
-                      placeholder="e.g. PMC-CENTRE-401"
-                      className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 font-mono text-base tracking-wide text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                      required
-                    />
-                    <p className="mt-1 text-xs text-muted">
-                      The ID your municipality issued with your government account.
-                    </p>
-                  </div>
-                ) : null}
-
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="block text-sm font-semibold text-ink" htmlFor="login-password">
+                    <label className="block text-xs font-semibold text-ink" htmlFor="login-password">
                       Password
                     </label>
                   </div>
@@ -364,7 +411,7 @@ export default function Login() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
@@ -373,30 +420,28 @@ export default function Login() {
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full !min-h-12 text-base font-bold"
+                  className="w-full"
                 >
-                  {portal === "authority" ? "Sign in as government" : "Sign in as citizen"}
+                  Sign In
                 </Button>
 
-                {/* Quick Autofill helper for Presentation & Demo */}
+                {/* Demo Quick Fill helper */}
                 <div className="mt-4 rounded-field border border-line/60 bg-surface-2 p-3 text-xs text-muted">
-                  <div className="font-semibold text-ink">Fill in a demo account:</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="font-semibold text-ink">Testing or evaluating?</div>
+                  <div className="mt-1 flex flex-wrap gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("citizen")}
-                      className="flex-1 min-h-[38px] rounded border border-line bg-surface px-3 py-1.5 font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 text-center flex items-center justify-center gap-1.5"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
-                      <Icon name="camera" size={14} className="text-accent" />
-                      Citizen
+                      Fill Citizen Credentials
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoCredentials("authority")}
-                      className="flex-1 min-h-[38px] rounded border border-line bg-surface px-3 py-1.5 font-medium hover:border-accent hover:text-accent transition-colors active:scale-95 text-center flex items-center justify-center gap-1.5"
+                      className="rounded border border-line bg-surface px-3 py-1.5 min-h-[36px] font-medium hover:border-accent hover:text-accent transition-colors active:scale-95"
                     >
-                      <Icon name="shield" size={14} className="text-accent" />
-                      Government
+                      Fill Authority Credentials
                     </button>
                   </div>
                 </div>
@@ -407,7 +452,7 @@ export default function Login() {
             {tab === "register" && (
               <form onSubmit={handleRegister} className="mt-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-name">
+                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-name">
                     Full Name
                   </label>
                   <input
@@ -416,14 +461,14 @@ export default function Login() {
                     autoComplete="name"
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Aarav Sharma"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    placeholder="Jane Doe"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-email">
+                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-email">
                     Email Address
                   </label>
                   <input
@@ -432,14 +477,14 @@ export default function Login() {
                     autoComplete="email"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="user@example.org"
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    placeholder="jane@example.org"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-ink" htmlFor="reg-password">
+                  <label className="block text-xs font-semibold text-ink" htmlFor="reg-password">
                     Password (min 6 characters)
                   </label>
                   <input
@@ -450,13 +495,13 @@ export default function Login() {
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="••••••••"
                     minLength={6}
-                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-1.5">
+                  <label className="block text-xs font-semibold text-ink mb-1.5">
                     Account Role
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -473,7 +518,7 @@ export default function Login() {
                       <Icon name="camera" size={16} />
                       <div>
                         <div>Local Citizen</div>
-                        <div className="text-xs opacity-75">Report waste</div>
+                        <div className="text-[10px] opacity-75">Report waste</div>
                       </div>
                     </button>
 
@@ -490,80 +535,32 @@ export default function Login() {
                       <Icon name="shield" size={16} />
                       <div>
                         <div>Government</div>
-                        <div className="text-xs opacity-75">Verify & plan</div>
+                        <div className="text-[10px] opacity-75">Verify & plan</div>
                       </div>
                     </button>
                   </div>
                 </div>
 
-                {/* Government Official Centre ID Verification */}
-                {regRole === "authority" && (
-                  <div className="rounded-card border border-accent/40 bg-accent-soft/30 p-3.5 space-y-3 animate-rise">
-                    <div className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-wider">
-                      <Icon name="shield" size={15} />
-                      <span>Official Government Credentials</span>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-ink" htmlFor="reg-centre-id">
-                        Municipal Centre / Ward ID <span className="text-accent">*</span>
-                      </label>
-                      <input
-                        id="reg-centre-id"
-                        type="text"
-                        value={regCentreId}
-                        onChange={(e) => setRegCentreId(e.target.value.toUpperCase())}
-                        placeholder="e.g. PMC-CENTRE-401 or WARD-04"
-                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent font-mono tracking-wide"
-                        required={regRole === "authority"}
-                      />
-                      <p className="mt-1 text-xs text-muted">
-                        Verification proof: Required municipal center or ward badge ID for authority triage.
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-ink" htmlFor="reg-department">
-                        Department / Designation (optional)
-                      </label>
-                      <input
-                        id="reg-department"
-                        type="text"
-                        value={regDepartment}
-                        onChange={(e) => setRegDepartment(e.target.value)}
-                        placeholder="e.g. Solid Waste & Sanitation Bureau"
-                        className="mt-1 w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
-                    </div>
-                  </div>
-                )}
-
                 <Button
                   type="submit"
                   variant="primary"
                   loading={busy}
-                  className="w-full !min-h-12 text-base font-bold mt-2"
+                  className="w-full mt-2"
                 >
                   Create Account
                 </Button>
               </form>
             )}
 
-            {/* Tab 3: Quick Role Preview */}
+            {/* Tab 3: Quick Demo Roles */}
             {tab === "demo" && (
               <div className="mt-5 space-y-3">
                 <p className="text-xs text-muted">
-                  Instant one-click access for evaluation:
+                  One-click demo login without credentials for fast evaluation:
                 </p>
                 {ROLES.map((r) => {
                   const u = users.data?.find((x) => x.role === r.role) ?? FALLBACK_USERS[r.role];
                   const isBusy = demoBusy === u.id || demoBusy === r.role;
-                  const displayName =
-                    u.name === "Demo Citizen A"
-                      ? "Aarav Sharma"
-                      : u.name === "Demo Ward Authority"
-                      ? "Priya Verma (Officer)"
-                      : u.name.replace(/^Demo\s+/i, "");
                   return (
                     <button
                       key={r.role}
@@ -582,7 +579,7 @@ export default function Login() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 font-semibold text-sm">
                           {r.title}
-                          <span className="truncate text-xs font-normal text-faint">{displayName}</span>
+                          <span className="truncate text-xs font-normal text-faint">{u.name}</span>
                         </span>
                         <span className="mt-0.5 block text-xs text-muted">{r.blurb}</span>
                       </span>
@@ -601,19 +598,11 @@ export default function Login() {
               </div>
             )}
           </div>
-
-          {/* Comfortable, prominent mobile-friendly return link */}
-          <div className="mt-6 text-center">
-            <Link
-              to="/"
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-field border border-line bg-surface px-5 text-base font-semibold text-ink shadow-card transition-all hover:border-line-strong hover:bg-surface-2 active:scale-[0.98] sm:w-auto"
-            >
-              <Icon name="chevronLeft" size={20} />
-              <span>Return to PlasticWatch Overview</span>
-            </Link>
-          </div>
+          <p className="mt-5 text-center text-micro text-faint">
+            SDGs 11 · 12 · 14 · detection model trained on TACO. Demo geotags are simulated.
+          </p>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

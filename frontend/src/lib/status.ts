@@ -26,7 +26,7 @@ interface StatusMeta {
 export const STATUS: Record<HotspotStatus, StatusMeta> = {
   ai_detected: {
     label: "AI-flagged",
-    icon: "detect",
+    icon: "sparkle",
     tone: "neutral",
     hint: "The model flagged likely plastic. No human has looked yet.",
   },

@@ -82,7 +82,7 @@
   --text-eyebrow--line-height: 1.4;
   --text-eyebrow--letter-spacing: 0.06em;
 
-  --text-micro: 0.75rem;
+  --text-micro: 0.6875rem;
   --text-micro--line-height: 1.35;
   --text-micro--letter-spacing: 0.02em;
 
@@ -92,6 +92,16 @@
   --animate-slide-in: slide-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-sheet-up: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-ping-soft: ping-soft 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-earth-spin: earth-spin 120s linear infinite;
+}
+
+@keyframes earth-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes shimmer {
@@ -182,20 +192,6 @@
   }
   .snap-item {
     scroll-snap-align: center;
-  }
-  /* Responsive orientation rules for Indian ecological artwork */
-  .app-eco-bg {
-    background-position: center bottom;
-  }
-  @media (orientation: landscape) and (min-width: 768px) {
-    .app-eco-bg {
-      background-position: center center;
-    }
-  }
-  @media (orientation: portrait) {
-    .app-eco-bg {
-      background-position: center bottom !important;
-    }
   }
 }
 

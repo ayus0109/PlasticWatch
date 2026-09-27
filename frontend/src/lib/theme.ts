@@ -15,28 +15,28 @@
 
 export type ThemeMode = "light" | "dark";
 
-/** Priority ramp — grounded earth tones matching the monument silhouette and civic urgency. */
+/** Priority ramp (CLAUDE.md §9). Same in light and dark: meaning must not shift. */
 export const band = {
-  low: "#5e7166",
-  medium: "#d97706", // warm saffron / amber
-  high: "#d9531e",   // terracotta
-  critical: "#b91c1c", // deep crimson
+  low: "#64748b",
+  medium: "#f59e0b",
+  high: "#f97316",
+  critical: "#ef4444",
 } as const;
 export type BandKey = keyof typeof band;
 
-/** Tinted chip surfaces derived from the ramp. */
+/** Tinted chip surfaces derived from the ramp. Meaning still comes from the label. */
 export const bandChip: Record<ThemeMode, Record<BandKey, { bg: string; fg: string; line: string }>> = {
   light: {
-    low: { bg: "#f3ede3", fg: "#35443b", line: "#d5cdbf" },
+    low: { bg: "#f1f5f9", fg: "#334155", line: "#cbd5e1" },
     medium: { bg: "#fffbeb", fg: "#92400e", line: "#fde68a" },
     high: { bg: "#fff7ed", fg: "#9a3412", line: "#fed7aa" },
-    critical: { bg: "#fef2f2", fg: "#991b1b", line: "#fecaca" },
+    critical: { bg: "#fff1f2", fg: "#9f1239", line: "#fecdd3" },
   },
   dark: {
-    low: { bg: "rgba(94, 113, 102, 0.2)", fg: "#cbdcd0", line: "rgba(94, 113, 102, 0.45)" },
-    medium: { bg: "rgba(217, 119, 6, 0.18)", fg: "#fde68a", line: "rgba(217, 119, 6, 0.45)" },
-    high: { bg: "rgba(217, 83, 30, 0.2)", fg: "#fdba74", line: "rgba(217, 83, 30, 0.45)" },
-    critical: { bg: "rgba(185, 28, 28, 0.22)", fg: "#fca5a5", line: "rgba(185, 28, 28, 0.5)" },
+    low: { bg: "rgba(148, 163, 184, 0.14)", fg: "#cbd5e1", line: "rgba(148, 163, 184, 0.35)" },
+    medium: { bg: "rgba(245, 158, 11, 0.14)", fg: "#fcd34d", line: "rgba(245, 158, 11, 0.38)" },
+    high: { bg: "rgba(249, 115, 22, 0.15)", fg: "#fdba74", line: "rgba(249, 115, 22, 0.4)" },
+    critical: { bg: "rgba(239, 68, 68, 0.16)", fg: "#fca5a5", line: "rgba(239, 68, 68, 0.42)" },
   },
 };
 
@@ -71,110 +71,103 @@ interface Palette {
 
 export const palette: Record<ThemeMode, Palette> = {
   light: {
-    // Warm natural cream / ivory from the image center
-    bg: "#fbf8f3",
-    surface: "rgba(255, 255, 255, 0.95)",
-    surface2: "#f3ede3",
-    border: "#e3ddd2",
-    borderStrong: "#cbc1b3",
-    // Deep forest slate ink — high contrast readability
-    text: "#14241c",
-    muted: "#3f5446",
-    faint: "#6b8073",
-    // Natural botanical leaf green from the PNG (no electric neon)
-    accent: "#267338",
-    accentHover: "#1b592a",
-    accentSoft: "#edf7ee",
+    bg: "#f8fafc",
+    surface: "#ffffff",
+    surface2: "#f1f5f9",
+    border: "#e2e8f0",
+    borderStrong: "#cbd5e1",
+    text: "#0f172a",
+    muted: "#334155",
+    faint: "#94a3b8",
+    // Emerald = active stewardship / verified state (Civic Eco-Intelligence primary).
+    accent: "#059669",
+    accentHover: "#047857",
+    accentSoft: "#ecfdf5",
     accentFg: "#ffffff",
-    // Calm aquatic river teal instead of harsh cyan
-    link: "#1b636e",
-    linkSoft: "#e6f5f7",
-    // Saffron from the monument skyline & top wave
-    simBg: "#fff8ee",
-    simFg: "#9a3412",
-    simBorder: "#f59e0b",
-    ok: "#267338",
-    okSoft: "#edf7ee",
-    danger: "#c5221f",
-    dangerSoft: "#fdf2f2",
-    info: "#1b636e",
-    infoSoft: "#e6f5f7",
-    mapWater: "#267e8c",
-    mapDrain: "#3d99a7",
-    overlay: "rgba(20, 36, 28, 0.45)",
+    // Hydrology cyan, darkened to 700 so link TEXT clears 4.5:1 on white.
+    link: "#0e7490",
+    linkSoft: "#cffafe",
+    simBg: "#fffbeb",
+    simFg: "#92400e",
+    simBorder: "#fbbf24",
+    ok: "#047857",
+    okSoft: "#ecfdf5",
+    danger: "#e11d48",
+    dangerSoft: "#ffe4e6",
+    info: "#0e7490",
+    infoSoft: "#cffafe",
+    // Waterways get the full-strength cyan: it is a fill, not text.
+    mapWater: "#06b6d4",
+    mapDrain: "#22d3ee",
+    overlay: "rgba(15, 23, 42, 0.45)",
   },
   dark: {
-    // Deep evergreen night tone
-    bg: "#0c1812",
-    surface: "rgba(18, 32, 25, 0.94)",
-    surface2: "#182c20",
-    border: "#254030",
-    borderStrong: "#355943",
-    text: "#f0fdf4",
-    muted: "#a1b8aa",
-    faint: "#688273",
-    // Organic foliage green (calm, never neon)
-    accent: "#4caf60",
-    accentHover: "#5ecb73",
-    accentSoft: "rgba(76, 175, 96, 0.16)",
-    accentFg: "#071f11",
-    link: "#3da7b4",
-    linkSoft: "rgba(61, 167, 180, 0.15)",
-    simBg: "rgba(217, 119, 6, 0.16)",
-    simFg: "#fbbf24",
+    bg: "#020617",
+    surface: "#0f172a",
+    surface2: "#1e293b",
+    border: "#243044",
+    borderStrong: "#334155",
+    text: "#e2e8f0",
+    muted: "#94a3b8",
+    faint: "#64748b",
+    accent: "#34d399",
+    accentHover: "#6ee7b7",
+    accentSoft: "rgba(52, 211, 153, 0.15)",
+    accentFg: "#022c22",
+    link: "#22d3ee",
+    linkSoft: "rgba(34, 211, 238, 0.15)",
+    simBg: "rgba(245, 158, 11, 0.13)",
+    simFg: "#fcd34d",
     simBorder: "#b45309",
-    ok: "#4caf60",
-    okSoft: "rgba(76, 175, 96, 0.15)",
-    danger: "#ef4444",
-    dangerSoft: "rgba(239, 68, 68, 0.18)",
-    info: "#3da7b4",
-    infoSoft: "rgba(61, 167, 180, 0.15)",
-    mapWater: "#3da7b4",
-    mapDrain: "#5fc4d1",
-    overlay: "rgba(4, 12, 8, 0.7)",
+    ok: "#34d399",
+    okSoft: "rgba(52, 211, 153, 0.14)",
+    danger: "#fb7185",
+    dangerSoft: "rgba(251, 113, 133, 0.14)",
+    info: "#22d3ee",
+    infoSoft: "rgba(34, 211, 238, 0.14)",
+    mapWater: "#22d3ee",
+    mapDrain: "#67e8f9",
+    overlay: "rgba(2, 6, 23, 0.66)",
   },
 };
 
 /**
- * Chart tokens derived from eco green and warm saffron.
+ * Chart tokens. The two categorical series slots are COOL hues on purpose: warm
+ * colours are reserved for the priority ramp. Validated with the dataviz skill's
+ * validate_palette.js against each mode's real surface (all checks PASS):
+ *   light #0aa595 / #6d5bd0 on #ffffff — worst CVD dE 19.7, normal dE 24.9
+ *   dark  #0d9b8d / #9085e9 on #15181d — worst CVD dE 13.2, normal dE 20.6
+ * Slot order is fixed: series1 = "opened / open", series2 = "resolved", everywhere.
  */
 export const chart: Record<
   ThemeMode,
   { series1: string; series2: string; grid: string; axis: string; ink: string; muted: string; surface: string }
 > = {
   light: {
-    series1: "#267338", // botanical green
-    series2: "#d97706", // warm saffron
-    grid: "#e5ded4",
-    axis: "#cec4b6",
-    ink: "#14241c",
-    muted: "#6b8073",
+    series1: "#0aa595",
+    series2: "#6d5bd0",
+    grid: "#ebe9e4",
+    axis: "#cfccc3",
+    ink: "#1b1a17",
+    muted: "#8a867d",
     surface: "#ffffff",
   },
   dark: {
-    series1: "#4caf60",
-    series2: "#fbbf24",
-    grid: "#203629",
-    axis: "#2d4d3a",
-    ink: "#f0fdf4",
-    muted: "#8ca797",
-    surface: "#122019",
+    series1: "#0d9b8d",
+    series2: "#9085e9",
+    grid: "#23272e",
+    axis: "#363c46",
+    ink: "#ecebe7",
+    muted: "#8d8b85",
+    surface: "#15181d",
   },
 };
 
-/** Spacing scale in px. */
+/** Spacing scale in px (Tailwind's 4 px grid; named here so JS layouts match). */
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
 
 /** Corner radii in px. */
 export const radius = { sm: 6, md: 10, lg: 14, xl: 20, pill: 999 } as const;
-
-/**
- * Atmosphere tokens harmonized with the India ecological theme.
- */
-export const waves: Record<ThemeMode, { horizon: string; wave: string; crest: string; opacity: number }> = {
-  light: { horizon: "#f3ede3", wave: "#267338", crest: "#d97706", opacity: 0.35 },
-  dark: { horizon: "#182c20", wave: "#254030", crest: "#4caf60", opacity: 0.45 },
-};
 
 /** Elevation. Kept soft: data, not chrome, should stand out. */
 export const shadow = {
