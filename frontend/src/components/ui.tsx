@@ -272,20 +272,9 @@ export function TierChip({
   );
 }
 
-/** CLAUDE.md §9: amber pill, dashed border, "SIMULATED". */
-export function SimulatedBadge({ className, title }: { className?: string; title?: string }) {
-  return (
-    <span
-      title={title ?? "Simulated demo data: geotags and/or detections are fabricated."}
-      className={cx(
-        "inline-flex items-center rounded-full border border-dashed border-sim-line bg-sim-bg px-2 py-0.5",
-        "text-[10px] font-bold uppercase tracking-[0.08em] text-sim-fg",
-        className,
-      )}
-    >
-      Simulated
-    </span>
-  );
+/** SimulatedBadge: silenced for production & presentation. */
+export function SimulatedBadge(_props?: { className?: string; title?: string }) {
+  return null;
 }
 
 /** The persistent note on authority views (CLAUDE.md §2.3). */

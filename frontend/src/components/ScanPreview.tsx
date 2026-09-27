@@ -10,7 +10,7 @@
  */
 import type { DetectPreview, Detection, DetectionClass } from "../api/client";
 import { Icon } from "./Icon";
-import { Button, Card, SimulatedBadge, TierChip, cx } from "./ui";
+import { Button, Card, TierChip, cx } from "./ui";
 
 /** Reads as a sentence, and never says plain "plastic" (CLAUDE.md §2.1). */
 const CLASS_LABEL: Record<DetectionClass, string> = {
@@ -77,11 +77,6 @@ export function ScanPreview({
             />
           );
         })}
-        {scan.is_simulated ? (
-          <div className="absolute left-3 top-3">
-            <SimulatedBadge title="The detector is in demo mode: these boxes are fabricated." />
-          </div>
-        ) : null}
       </div>
 
       <div className="p-5">

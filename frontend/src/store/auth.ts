@@ -8,11 +8,19 @@ import { useSyncExternalStore } from "react";
 // client.ts imports getToken/logout from here; neither module calls the other at load
 // time, so this cycle is safe.
 import { api, type DemoUser, type TokenResponse, type UserRole } from "../api/client";
+import { formatUserName } from "../lib/format";
 
 export interface Session {
   token: string;
   user: DemoUser;
   expiresAt: string;
+}
+
+function cleanUser(user: DemoUser): DemoUser {
+  return {
+    ...user,
+    name: formatUserName(user.name),
+  };
 }
 
 const KEY = "pw-session";
@@ -23,7 +31,8 @@ function load(): Session | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Session;
-    return new Date(s.expiresAt).getTime() > Date.now() ? s : null;
+    if (new Date(s.expiresAt).getTime() <= Date.now()) return null;
+    return { ...s, user: cleanUser(s.user) };
   } catch {
     return null;
   }
@@ -57,7 +66,7 @@ export function useSession(): Session | null {
 }
 
 export function setSessionToken(token: string, user: DemoUser, expiresAt: string): void {
-  emit({ token, user, expiresAt });
+  emit({ token, user: cleanUser(user), expiresAt });
 }
 
 export function getCurrentUser(): DemoUser | null {
@@ -66,7 +75,7 @@ export function getCurrentUser(): DemoUser | null {
 
 export async function loginAs(pick: { role?: UserRole; user_id?: string }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/demo-login", pick);
-  const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
+  const next = { token: res.token, user: cleanUser(res.user), expiresAt: res.expires_at };
   emit(next);
   return next;
 }
@@ -76,7 +85,7 @@ export async function loginWithPassword(creds: {
   password: string;
 }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/login", creds);
-  const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
+  const next = { token: res.token, user: cleanUser(res.user), expiresAt: res.expires_at };
   emit(next);
   return next;
 }
@@ -89,7 +98,7 @@ export async function registerUser(data: {
   ward_id?: number | null;
 }): Promise<Session> {
   const res = await api.post<TokenResponse>("/auth/register", data);
-  const next = { token: res.token, user: res.user, expiresAt: res.expires_at };
+  const next = { token: res.token, user: cleanUser(res.user), expiresAt: res.expires_at };
   emit(next);
   return next;
 }

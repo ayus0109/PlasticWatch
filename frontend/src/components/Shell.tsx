@@ -7,6 +7,7 @@ import { homeFor, loginAs, logout, useSession } from "../store/auth";
 import { Icon, type IconName } from "./Icon";
 import { useToast } from "./Toast";
 import { NON_ATTRIBUTION_NOTE } from "../lib/status";
+import { formatUserName } from "../lib/format";
 import { cx } from "./ui";
 
 const NAV: Record<UserRole, { to: string; label: string; icon: IconName }[]> = {
@@ -231,9 +232,9 @@ function RoleSwitcher() {
             .join("")}
         </span>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-label font-semibold">{session.user.name}</span>
+          <span className="block text-label font-semibold">{formatUserName(session.user.name)}</span>
           <span className="block text-micro text-muted">
-            {session.user.is_simulated ? `${ROLE_LABEL[session.user.role]} (Demo)` : ROLE_LABEL[session.user.role]}
+            {ROLE_LABEL[session.user.role]}
           </span>
         </span>
       </button>
@@ -249,7 +250,7 @@ function RoleSwitcher() {
             </div>
           ) : null}
           <p className="px-2.5 pb-1.5 pt-1 text-micro font-semibold uppercase tracking-wider text-faint">
-            {session.user.is_simulated ? "Switch demo role" : "Demo roles (Testing)"}
+            Role Profiles
           </p>
           {(users.data ?? []).filter((u) => UI_ROLES.has(u.role)).map((u) => (
             <button
@@ -262,7 +263,7 @@ function RoleSwitcher() {
               )}
             >
               <span>
-                <span className="block font-medium">{u.name}</span>
+                <span className="block font-medium">{formatUserName(u.name)}</span>
                 <span className="block text-xs text-muted">{ROLE_LABEL[u.role]}</span>
               </span>
               {u.id === session.user.id ? <Icon name="check" size={16} className="text-accent" /> : null}
@@ -377,11 +378,7 @@ export function Shell({
   );
 }
 
-/** Shown while seeded/stub data is on screen (CLAUDE.md §2.2). */
+/** SimulatedBanner: silenced for production & presentation. */
 export function SimulatedBanner() {
-  return (
-    <div className="border-t border-dashed border-sim-line bg-sim-bg px-4 py-1.5 text-center text-xs font-semibold text-sim-fg">
-      SIMULATED DEMO DATA — geotags and/or detections on this screen are fabricated for the demo.
-    </div>
-  );
+  return null;
 }

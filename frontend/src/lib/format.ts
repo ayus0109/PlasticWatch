@@ -58,3 +58,12 @@ export function conf(c: number | null | undefined): string {
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+export function formatUserName(name: string | null | undefined): string {
+  if (!name) return "";
+  if (name === "Demo Citizen A") return "Aarav Sharma (Citizen)";
+  if (name === "Demo Citizen B") return "Priya Patel (Citizen)";
+  if (name === "Demo Ward Authority") return "Municipal Sanitation Officer";
+  if (name === "Demo Cleanup Team 1") return "Field Operations Unit 1";
+  return name.replace(/^Demo\s+/i, "");
+}

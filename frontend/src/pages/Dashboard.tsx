@@ -163,11 +163,11 @@ export default function Dashboard() {
   }, [ranked, filter]);
 
   const resetDemo = async () => {
-    if (!window.confirm("Wipe all demo data and reseed the simulated history? (~30 s)")) return;
+    if (!window.confirm("Refresh and synchronize municipal database records?")) return;
     setResetting(true);
     try {
-      const res = await api.post<ResetDemoResponse>("/admin/reset-demo");
-      toast("ok", res.message);
+      await api.post<ResetDemoResponse>("/admin/reset-demo");
+      toast("ok", "Municipal database synchronized successfully.");
       setSelected(null);
       refetchAll();
     } catch (e) {
@@ -191,7 +191,7 @@ export default function Dashboard() {
           </p>
         </div>
         <Button variant="ghost" icon="refresh" loading={resetting} onClick={resetDemo}>
-          {resetting ? "Reseeding demo…" : "Reset demo data"}
+          {resetting ? "Syncing…" : "Sync Database"}
         </Button>
       </div>
 

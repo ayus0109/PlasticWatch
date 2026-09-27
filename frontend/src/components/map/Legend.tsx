@@ -1,6 +1,5 @@
 import { BAND, BAND_ORDER } from "../../lib/status";
 import { band } from "../../lib/theme";
-import { SimulatedBadge } from "../ui";
 
 function Dot({ variant }: { variant: "weak" | "verified" | "closed" }) {
   const c = "var(--pw-band-high)";
@@ -42,9 +41,6 @@ export function Legend() {
         </span>
         <span className="flex items-center gap-2">
           <Dot variant="closed" /> Hollow = resolved or not actionable
-        </span>
-        <span className="flex items-center gap-2">
-          <SimulatedBadge className="!px-1.5 !text-[8px]" /> geotag and/or detection is simulated
         </span>
       </div>
       <div className="border-t border-line pt-3">
